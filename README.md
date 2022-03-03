@@ -2,7 +2,10 @@
 傻妞机器人插件收集
 
 进入傻妞文件夹/develop/replies/
-执行命令 git clone https://github.com/LevenYi/sillyGirl_Plugins.git
+执行命令 
+
+git clone https://github.com/LevenYi/sillyGirl_Plugins.git && mv ./sillyGirl_Plugins/* ./ && rm sillyGirl_Plugins -rf
+
 
 重启傻妞，向傻妞发送“命令”查看所有指令
 
