@@ -10,7 +10,7 @@
 * @rule [\s\S]+
 * @public false
 * @admin false
-* @version v2.1.4
+* @version v2.1.5
 */
 
 //修改命令样例：修改命令 $ql cron run ? $运行 ?
@@ -70,9 +70,9 @@ function main(){
 			s.reply("执行命令:"+command+"\n"+sillyGirl.session(command)().message)
 			let flag=0
 			while(!flag){
-				let im=s.listen(25000).getContent()
-				if(im!=null){
-					s.reply(sillyGirl.session(im)().message)
+				let sg=s.listen(25000)
+				if(sg!=null){
+					s.reply(sillyGirl.session(sg.getContent())().message)
 				}
 				else
 					flag=1
@@ -203,37 +203,41 @@ notify+=(i+1)+"、"+data[i].redi+"\n"
 	
 	
 	s.reply("共"+data.length+"个重定向命令(\"-数字\"删除,输入命令执行,\"q\"退出)\n"+notify)
-	let choose=s.listen(10000).getContent()
-	if(choose==""||choose=="q"){
+	let sg=s.listen(20000)
+	if(sg==null||sg.getContent()=="q"){
 		s.reply("已退出")
 		return
 	}
+	else if(sg.getContent()>=0){
+		s.reply("请输入命令执行")
+		return	
+	}
 	//删除
-	let n=choose.match(/(?<=-)\d+$/g)
-	if(n!=null){//删除自定义命令
+//	let n=sg.getContent().match(/(?<=-)\d+$/g)
+	else if(sg.getContent()<0){//删除自定义命令
+		let n=Math.abs(sg.getContent())
 		if(n>data.length){
 			s.reply("超出选择范围，已退出")
 			return
-			}
+		}
 		try{
 			s.reply("已删除重定向命令:"+data[n-1].redi)	
-	data.splice(n-1,1)
-	db.set("redirect",JSON.stringify(data))		
+			data.splice(n-1,1)
+			db.set("redirect",JSON.stringify(data))		
 		}
 		catch(err){
 			s.reply("删除失败")
 		}
-	
 	}
 	else{//执行自定义命令
-		let command=Redirect(choose)
+		let command=Redirect(sg.getContent())
 		if(command!=false){//命中，执行重定向
 			s.reply("执行命令:"+command+"\n"+sillyGirl.session(command)().message)
 			let flag=0
 			while(!flag){
-				let im=s.listen(15000).getContent()
-				if(im!=""){
-					s.reply(sillyGirl.session(im)().message)
+				let im=s.listen(15000)
+				if(im!=null){
+					s.reply(sillyGirl.session(im.getContent())().message)
 				}
 				else
 					flag=1

@@ -6,7 +6,7 @@
 * @title 京东资产过期提醒
 * @platform qq wx tg pgm web cron
 * @rule 提醒资产过期
-* @cron 0 18 * * *
+* @cron 20 14 * * *
 * @public false
 * @admin true
 */

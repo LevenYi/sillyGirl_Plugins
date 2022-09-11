@@ -7,7 +7,7 @@
 * @rule [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
 * @rule [\s\S]*https://\S+\.isvjcloud\.com/\S+[\s\S]*
 * @rule [\s\S]*https://\S+\.isvjd\.com/\S+[\s\S]*
-* @rule [\s\S]*https://jdjoy.jd.com[\s\S]*
+* @rule [\s\S]*https://[\s\S]{2,}\.jd.com[\s\S]*
 * @rule [\s\S]*export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
 * @rule 迁移ql spy
 * @rule 恢复ql spy
@@ -207,7 +207,7 @@ function main() {
 
 function Spy_Manager() {
 	const LIMIT = 24//循环次数限制，防止意外死循环
-	const WAIT = 60 * 1000//输入等待时间
+	const WAIT = 10 * 1000//输入等待时间
 	let notify = ""
 	let qldb = new Bucket("qinglong")
 	let data = qldb.get("QLS")
@@ -239,7 +239,7 @@ function Spy_Manager() {
 		urldecodes = JSON.parse(data4)
 
 	let limit = LIMIT
-	let inp = 1//随便什么值，非空即可
+	let inp = 1//随便什么值，非null即可
 	while (true) {
 		if (limit-- < 0) {
 			s.reply("由于您长时间未操作，已自动退出，数据未保存")
@@ -247,10 +247,15 @@ function Spy_Manager() {
 		}
 		if (inp != null)
 			Print_SpyMenu(Listens, silent, targets)
-		inp = s.listen(WAIT).getContent()
+		let temp=s.listen(WAIT)
+		if(temp!=null)
+			inp = temp.getContent()
+		else
+			inp=null
 		if (inp == "q") {
 			s.reply("请确认是否保存？输入\"是\"保存")
-			if (s.listen(WAIT).getContent() == "是")
+			let temp2=s.listen(WAIT)
+			if (temp!=null&&temp2.getContent() == "是")
 				s.reply(SaveData(Listens, silent, targets, trans, urldecodes))
 			else
 				s.reply("未保存本次修改内容")
@@ -277,9 +282,15 @@ function Spy_Manager() {
 					s.reply("由于您长时间未操作，已自动退出，数据未保存")
 					return
 				}
-				if (inp2 != "")
+				if (inp2 != null)
 					Print_SpyTran(trans)
-				inp2 = s.listen(WAIT).getContent()
+
+				let temp2=s.listen(WAIT)
+				if(temp2!=null)
+					inp2 = temp2.getContent()
+				else
+					inp2=null
+
 				if (inp2 == "u")
 					break
 				else if (inp2 < 0) {
@@ -296,14 +307,19 @@ function Spy_Manager() {
 						redi: "",
 						name: ""
 					}
-					s.reply("请输入您想转换的变量名：")
-					tran.ori = s.listen(WAIT).getContent()
-					s.reply("请输入您想变为的变量名：")
-					tran.redi = s.listen(WAIT).getContent()
-					s.reply("请输入该转换任务的备注名称：")
-					tran.name = s.listen(WAIT).getContent()
-					trans.push(tran)
-					s.reply("已添加" + tran.name + ":" + tran.ori + "-->" + tran.redi + "\n您可以继续添加转换变量或者返回上一级菜单")
+					try{
+						s.reply("请输入您想转换的变量名：")
+						tran.ori = s.listen(WAIT).getContent()
+						s.reply("请输入您想变为的变量名：")
+						tran.redi = s.listen(WAIT).getContent()
+						s.reply("请输入该转换任务的备注名称：")
+						tran.name = s.listen(WAIT).getContent()
+						trans.push(tran)
+						s.reply("已添加变量转换任务\n【" + tran.name + "】:" + tran.ori + "-->" + tran.redi + "\n您可以继续添加转换变量或者返回上一级菜单")
+					}
+					catch(err){
+						s.reply("输入超时，请重新添加转换任务")
+					}
 				}
 			}
 		}
@@ -316,9 +332,15 @@ function Spy_Manager() {
 					s.reply("由于您长时间未操作，已自动退出，数据未保存")
 					return
 				}
-				if (inp2 != "")
+				if (inp2 != null)
 					Print_SpyUrl(urldecodes)
-				inp2 = s.listen(WAIT).getContent()
+
+				let temp2=s.listen(WAIT)
+				if(temp2!=null)
+					inp2 = temp2.getContent()
+				else
+					inp2=null
+				console.log("输入"+inp2)
 				if (inp2 == "u")
 					break
 				else if (inp2 < 0) {
@@ -338,16 +360,21 @@ function Spy_Manager() {
 							redi: ""
 						}]
 					}
-					s.reply("请输入您想解析链接的关键词(例如：http://xxx.com/yyyy/zzzz/)")
-					decode.keyword = s.listen(WAIT).getContent()
-					s.reply("请输入您想提取的参数（例如:http://...../?actid=xxx中的actid,若使用整段链接作为变量请输入-1)")
-					decode.trans[0].ori = s.listen(WAIT).getContent()
-					s.reply("请输入您想使用该参数的变量名：")
-					decode.trans[0].redi = s.listen(WAIT).getContent()
-					s.reply("请输入该解析任务的备注名称：")
-					decode.name = s.listen(WAIT).getContent()
-					urldecodes.push(decode)
-					s.reply("已添加" + decode.name + "(" + decode.keyword + "):" + decode.trans[0].ori + "-->" + decode.trans[0].redi + "\n您可以继续添加转换变量或者返回上一级菜单")
+					try{
+						s.reply("请输入您想解析链接的关键词(例如：http://xxx.com/yyyy/zzzz/)")
+						decode.keyword = s.listen(WAIT).getContent()
+						s.reply("请输入您想提取的参数（例如:http://...../?actid=xxx中的actid,若使用整段链接作为变量请输入-1)")
+						decode.trans[0].ori = s.listen(WAIT).getContent()
+						s.reply("请输入您想使用该参数的变量名：")
+						decode.trans[0].redi = s.listen(WAIT).getContent()
+						s.reply("请输入该解析任务的备注名称：")
+						decode.name = s.listen(WAIT).getContent()
+						urldecodes.push(decode)
+						s.reply("已添加" + decode.name + "(" + decode.keyword + "):" + decode.trans[0].ori + "-->" + decode.trans[0].redi + "\n您可以继续添加转换变量或者返回上一级菜单")					
+					}
+					catch(err){
+						s.reply("输入超时，请重新添加解析任务")
+					}
 				}
 			}
 		}
@@ -360,9 +387,15 @@ function Spy_Manager() {
 					s.reply("由于您长时间未操作，已自动退出，数据未保存")
 					return
 				}
-				if (inp2 != "")
+				if (inp2 != null)
 					Print_SpyTargets(targets)
-				inp2 = s.listen(WAIT).getContent()
+
+				let temp2=s.listen(WAIT)
+				if(temp2!=null)
+					inp2 = temp2.getContent()
+				else
+					inp2=null
+
 				if (inp2 == "u")
 					break
 				else if (inp2 < 0) {
@@ -374,18 +407,16 @@ function Spy_Manager() {
 					}
 				}
 				else if (inp2 == "0") {
-					s.reply("请输入新添加的监听目标的账号ID或者群ID：")
-					let id = s.listen(WAIT).getContent()
-					if (id == null) {
-						s.reply("已超时，请重新添加")
-						continue
+					try{
+						s.reply("请输入新添加的监听目标的账号ID或者群ID：")
+						let id = s.listen(WAIT).getContent()
+						s.reply("请输入新添加的监听目标的备注名称：")
+						let name = s.listen(WAIT).getContent()
+						targets.push({ id: id, name: name })
 					}
-					s.reply("请输入新添加的监听目标的备注名称：")
-					let name = s.listen(WAIT).getContent()
-					if (name == null) {
-						s.reply("已超时，未添加备注名称")
+					catch(err){
+						s.reply("输入超时，请重新添加")
 					}
-					targets.push({ id: id, name: name })
 				}
 			}
 		}
@@ -403,18 +434,25 @@ function Spy_Manager() {
 				TODO: [],
 				DONE: []
 			}
-			for (let i = 0; i < QLS.length; i++)
-				spy.Clients.push(QLS[i].client_id)
-			s.reply("请输入监视任务名称：")
-			spy.Name = s.listen(WAIT).getContent()
-			s.reply("请输入脚本关键词：")
-			spy.Keyword = s.listen(WAIT).getContent()
-			s.reply("请输入洞察变量：")
-			spy.Envs.push(s.listen(WAIT).getContent())
-			s.reply("请输入运行间隔时间(分钟):")
-			spy.Interval = s.listen(WAIT).getContent()
-			s.reply("已添加监视任务，默认作用所有容器，如需修改请在下面主菜单选择编辑")
-			Listens.push(spy)
+			try{
+			for (
+				let i = 0; i < QLS.length; i++)//默认监控非禁用容器
+					if(!QLS.disable)
+						spy.Clients.push(QLS[i].client_id)
+				s.reply("请输入监视任务名称：")
+				spy.Name = s.listen(WAIT).getContent()
+				s.reply("请输入脚本关键词：")
+				spy.Keyword = s.listen(WAIT).getContent()
+				s.reply("请输入洞察变量：")
+				spy.Envs.push(s.listen(WAIT).getContent())
+				s.reply("请输入运行间隔时间(分钟):")
+				spy.Interval = s.listen(WAIT).getContent()
+				s.reply("已添加监视任务，默认作用所有容器，如需修改请在下面主菜单选择编辑")
+				Listens.push(spy)
+			}
+			catch(err){
+				s.reply("输入超时，请重新添加")
+			}
 		}
 
 		else if (inp < 0) {
@@ -435,17 +473,28 @@ function Spy_Manager() {
 					s.reply("由于您长时间未操作，已自动退出，数据未保存")
 					return
 				}
-				if (inp2 != "")
+				if (inp2 != null)
 					Print_SpyItem(Listens[inp - 1], QLS)
-				inp2 = s.listen(WAIT).getContent()
+
+				let temp2=s.listen(WAIT)
+				if(temp2!=null)
+					inp2 = temp2.getContent()
+				else
+					inp2=null
+
 				if (inp2 == "u")
 					break
 				else if (inp2 == "q") {
-					s.reply("请确认是否保存？输入\"是\"保存")
-					if (s.listen(WAIT).getContent() == "是")
-						s.reply(SaveData(Listens, silent, targets, trans, urldecodes))
-					else
-						s.reply("未保存本次修改内容")
+					try{
+						s.reply("请确认是否保存？输入\"是\"保存")
+						if (s.listen(WAIT).getContent() == "是")
+							s.reply(SaveData(Listens, silent, targets, trans, urldecodes))
+						else
+							s.reply("未保存本次修改内容")
+					}
+					catch(err){
+						s.reply("输入超时，未保存本次修改内容")
+					}
 					return
 				}
 				else if (inp2 == "wq") {
@@ -455,11 +504,23 @@ function Spy_Manager() {
 
 				else if (inp2 == 1) {
 					s.reply("请输入监视任务名称：")
-					Listens[inp - 1].Name = s.listen(WAIT).getContent()
+					let temp3= s.listen(WAIT)
+					if(temp3!=null)
+						Listens[inp - 1].Name = temp3.getContent()
+					else{
+						s.reply("输入超时")
+						continue
+					}
 				}
 				else if (inp2 == 2) {
 					s.reply("请输入脚本关键词：")
-					Listens[inp - 1].Keyword = s.listen(WAIT).getContent()
+					let temp3= s.listen(WAIT)
+					if(temp3!=null)
+						Listens[inp - 1].Keyword = temp3.getContent()
+					else{
+						s.reply("输入超时")
+						continue
+					}
 				}
 				else if (inp2 == 3) {//修改洞察变量
 					let inp3 = 1
@@ -469,14 +530,24 @@ function Spy_Manager() {
 							s.reply("您已经长时间未操作，已自动退出，数据未保存")
 							return
 						}
-						if (inp3 != "")
+						if (inp3 != null)
 							Print_Spy_Envs(Listens[inp - 1].Envs)
-						inp3 = s.listen(WAIT).getContent()
+						let temp3=s.listen(WAIT)
+						if(temp3!=null)
+							inp3 = temp3.getContent()
+						else
+							inp3=null
+						
 						if (inp3 == "u")
 							break
 						else if (inp3 == "0") {
 							s.reply("请输入新添加的洞察变量：")
-							Listens[inp - 1].Envs.push(s.listen(WAIT).getContent())
+							try{
+								Listens[inp - 1].Envs.push(s.listen(WAIT).getContent())
+							}
+							catch(err){
+								s.reply("输入超时")
+							}
 						}
 						else if (inp3 < 0) {
 							try {
@@ -498,7 +569,9 @@ function Spy_Manager() {
 						}
 						if (inp3 != "")
 							Print_SpyClients(QLS, Listens[inp - 1].Clients)
-						inp3 = s.listen(WAIT).getContent()
+
+						let temp3=s.listen(WAIT)
+						inp3 = temp3==null?null:temp3.getContent()
 						if (inp3 == "u")
 							break
 						else if (inp3 == "0") {
@@ -528,7 +601,11 @@ function Spy_Manager() {
 				}
 				else if (inp2 == 6) {
 					s.reply("请输入运行间隔时间(分钟):")
-					Listens[inp - 1].Interval = s.listen(WAIT).getContent()
+					let temp4=s.listen(WAIT)
+					if(temp4!=null)
+						Listens[inp - 1].Interval = temp4.getContent()
+					else
+						s.reply("已超时，请重新修改")
 				}
 
 			}
@@ -885,22 +962,28 @@ function Export_Spy() {
 	let spys = JSON.parse(data)
 	let n = 0//监控数组截取位置
 	s.reply("请输入每条消息导出项数(当导出项数过多时会导致无法导出或者最后无法导入，输入0将一次全部导出，建议不超过10)")
-	let num = s.listen(25000).getContent()
-	if (num.match(/[^\d]/g) != null) {
+	let temp = s.listen(25000)
+	if(temp==null){
+		s.reply("输入超时，已退出")
+		return
+	}
+	num=temp.getContent()
+	if (Number(num)==NaN) {
 		s.reply("输入有误，已退出")
 		return
 	}
 	num = Number(num)
 	if (num == 0) {
 		let temp = ClearHistory(spys)
-		if (s.reply("ImportWhiteEye=" + JSON.stringify(temp)) == "")
+		if (typeof(s.reply("ImportWhiteEye=" + JSON.stringify(temp)))!="string"){
 			s.reply("导出数量过多，导出失败,请重新导出并减少单次导出项数")
-		return
+			return
+		}
 	}
 	while (n + num < spys.length) {
 		let temp = ClearHistory(spys.slice(n, n += num))
 
-		if (s.reply("ImportWhiteEye=" + JSON.stringify(temp)) == "")
+		if (typeof(s.reply("ImportWhiteEye=" + JSON.stringify(temp)))!= "string")
 			s.reply("导出数量过多，导出失败,请重新导出并减少单次导出项数")
 	}
 	if (n < spys.length)//导出末尾未截取到的部分
@@ -1950,6 +2033,15 @@ var DefaultUrlDecode =
 				redi: "jd_cjwxShopFollowActivity_activityId"//kr
 			}]
 		},
+		
+		{
+			keyword: "https://cjhy-isv.isvjcloud.com/wxShopFollowActivity/activity",
+			name: "M关注抽奖",
+			trans: [{
+				ori: "-1",
+				redi: "M_WX_FOLLOW_DRAW_URL"
+			}]
+		},
 
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/drawCenter",
@@ -2111,14 +2203,6 @@ var DefaultUrlDecode =
 			}]
 		},
 
-		{
-			keyword: "https://cjhy-isv.isvjcloud.com/wxShopFollowActivity/activity",
-			name: "M关注抽奖",
-			trans: [{
-				ori: "-1",
-				redi: "M_WX_FOLLOW_DRAW_URL"
-			}]
-		},
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/wxShopGift/activity",
 			name: "M关注有礼无线",
