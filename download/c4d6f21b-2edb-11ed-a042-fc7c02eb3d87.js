@@ -1471,8 +1471,10 @@ function Notify_MainKey(mainKey, isGroup, msg, tgmsg) {
 			if (NotifyMode == 1) {
 				if (toType[i] != "tg")
 					sillyGirl.push(NotifyTo)
-				else
-					SendToTG(ids[j], tgmsg)
+				else{
+					if(!SendToTG(ids[j], tgmsg))//发送失败使用傻妞通知
+						sillyGirl.push(NotifyTo)
+				}
 			}
 			else
 				sillyGirl.push(NotifyTo)
@@ -1495,16 +1497,20 @@ function Notify(msg, tgmsg) {//s.reply("通知")
 		else {
 			if (NotifyMode == 1) {
 				msg = msg.replace(/(?<!\\)_/g,"\\_")
-				if (s.getChatId() != 0)
-					SendToTG(s.getChatId(), msg)
-				else
-					SendToTG(s.getUserId(), msg)
+				if (s.getChatId() != 0){
+					if(!SendToTG(s.getChatId(), msg))
+						s.reply(msg)
+				}
+				else{
+					if(!SendToTG(s.getUserId(), msg))
+						s.reply(msg)
+				}
 			}
 			else 
 				s.reply(msg)
 		}
 	}
-	else {
+	else {//静默
 		let from = "处理来自" + s.getPlatform() + ":"
 		if (s.getChatId() != 0) {
 			/*			if(s.getChatname()!="")

@@ -1,11 +1,13 @@
 /*
 * @author https://t.me/sillyGirl_Plugin
+* @rule 口令解析手动版
 * @version v1.0.0
 * @create_at 2022-09-08 15:06:22
 * @description jx +口令
 * @title 口令解析手动版
 * @platform qq wx tg pgm sxg
-* @rule jx\S[\s\S]+
+* @rule jx [\s\S]*
+* @priority 100
 * @public false
 * @admin true
 */
@@ -23,7 +25,7 @@ main()
 function main(){
 	let uid=s.getUserId(),chatid=s.getChatId(),imType=s.getPlatform()
 	let tipid=s.reply("正在解析...")
-	let msg=GetContent(),JDCODE=""
+	let msg=s.getContent(),JDCODE=""
 	let notify="",DPS="", spy=""
 	
 	JDCODE=msg.slice(3)
@@ -41,7 +43,7 @@ function main(){
 				DPS="\n\n--本次解析服务由Windfgg提供"
 			else{
 				s.reply("解析失败")
-				Continue()
+				s.continue()
 				return		
 			}		
 		}	
@@ -51,14 +53,18 @@ function main(){
 	let title=info.title
 	let sharefrom=info.userName
 	let url=info.jumpUrl
-	RecallMessage(tipid)
+	s.recallMessage(tipid)
 	if(imType=="pgm")
 		s.reply("["+title+"]("+url+")")
 	else if(imType=="tg"){
-		if(chatid==0)
-			SendToTG(uid,"["+title+"]("+url+")")
-		else
-			SendToTG(cid,"["+title+"]("+url+")")			
+		if(chatid==0){
+			if(!SendToTG(uid,"["+title+"]("+url+")"))
+				s.reply("【"+title+"】\n"+url)
+		}
+		else{
+			if(!SendToTG(cid,"["+title+"]("+url+")"))
+				s.reply("【"+title+"】\n"+url)
+		}			
 	}
 	else if(imType=="qq")
 		s.reply("[CQ:share,url="+url+",title="+title+"]")
@@ -70,16 +76,23 @@ function main(){
 }
 
 
-function SendToTG(id, msg) {
-	request({
-		url: "https://api.telegram.org/bot" + (new Bucket("tg")).get("token") + "/sendMessage",
-		method: "post",
-		body: {
-			"chat_id": id,
-			"parse_mode": "markdown",
-			"text": msg
+function SendToTG(id,msg){
+	let resp=request({
+		url:"https://api.telegram.org/bot"+(new Bucket("tg")).get("token")+"/sendMessage",
+		method:"post",
+		body:{
+			"chat_id":id,
+			"parse_mode":"markdown",
+			"text":msg
 		}
 	})
+	try{		
+		return JSON.parse(resp.body).ok
+	}
+	catch(err){
+		return false
+	}
+	return
 }
 
 
