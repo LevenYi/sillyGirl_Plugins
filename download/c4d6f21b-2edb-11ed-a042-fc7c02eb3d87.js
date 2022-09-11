@@ -207,7 +207,7 @@ function main() {
 
 function Spy_Manager() {
 	const LIMIT = 24//循环次数限制，防止意外死循环
-	const WAIT = 10 * 1000//输入等待时间
+	const WAIT = 60 * 1000//输入等待时间
 	let notify = ""
 	let qldb = new Bucket("qinglong")
 	let data = qldb.get("QLS")
@@ -340,7 +340,7 @@ function Spy_Manager() {
 					inp2 = temp2.getContent()
 				else
 					inp2=null
-				console.log("输入"+inp2)
+				//console.log("输入"+inp2)
 				if (inp2 == "u")
 					break
 				else if (inp2 < 0) {

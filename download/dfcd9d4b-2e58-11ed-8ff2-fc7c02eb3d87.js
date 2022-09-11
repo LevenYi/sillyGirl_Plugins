@@ -8,7 +8,7 @@
 * @cron 40 14 * * *
 * @admin true
 * @public false
-* @version v2.1.1
+* @version v2.1.2
 */ 
 
 //上面触发命令与定时规则可自行修改
