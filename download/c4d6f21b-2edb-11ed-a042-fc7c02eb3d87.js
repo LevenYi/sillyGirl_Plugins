@@ -1722,16 +1722,23 @@ function NolanDecode(code) {
 
 
 /****************tg bot API*********************/
-function SendToTG(id, msg) {
-	request({
-		url: "https://api.telegram.org/bot" + (new Bucket("tg")).get("token") + "/sendMessage",
-		method: "post",
-		body: {
-			"chat_id": id,
-			"parse_mode": "markdown",
-			"text": msg
+function SendToTG(id,msg){
+	let resp=request({
+		url:"https://api.telegram.org/bot"+(new Bucket("tg")).get("token")+"/sendMessage",
+		method:"post",
+		body:{
+			"chat_id":id,
+			"parse_mode":"markdown",
+			"text":msg
 		}
 	})
+	try{		
+		return JSON.parse(resp.body).ok
+	}
+	catch(err){
+		return false
+	}
+	return
 }
 
 
