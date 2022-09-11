@@ -28,7 +28,7 @@ const SelectMode=2
 //填写位置不动的变量序号，-1表示该容器不调整顺序
 //例：单容器[[1,2,3,4,5]]
 //例：多容器[[1,2,3],[-1],[]]，容器1环境变量1-3不动，容器2所有变量位置不动，容器3无车头,填写容器数量及顺序必须与傻妞中的容器数量及顺序保持一致
-const NotMove=[[1,2,3,8,55,56,57,58,59,60,61]]
+const NotMove=[[1,2,3,4,55,56,57,58,59,60,61]]
 
 
 //通知模式，0表示不通知，1表示通知管理员默认内容，2表示除通知管理员外再另外在客户群组通知
@@ -130,6 +130,7 @@ function main(){
 		notify+="以下账号移动至前排\n"	
 //		let backup=Backup_NotMoveEnvOrder(NotMove[i],envs)//备份移动之前不动变量及其位置[{order:位置,name:变量名,value:变量值}]	
 		for(let j=move.length-1;j>=0;j--){//从前往后将移动变量移至前排，以免导致未移动变量位置改变
+		console.log(envs[move[j]].value.match(/(?<=pt_pin=)[^;]+/g)+":"+envs[move[j]]._id+":"+move[j]+"-->"+fp+"\n")
 			if(envs[move[j]].id){
 				if(Move_QL_Env(QLS[i].host,ql_token,envs[move[j]].id,move[j],fp)!=null){
 					if(envs[move[j]].name=="JD_COOKIE"){
@@ -146,7 +147,6 @@ function main(){
 				if(Move_QL_Env(QLS[i].host,ql_token,envs[move[j]]._id,move[j],fp)!=null){
 					if(envs[move[j]].name=="JD_COOKIE"){
 						Notify+="京东账号【"+envs[move[j]].value.match(/(?<=pt_pin=)[^;]+/g)+"】\n"//管理员通知，使用pin
-//console.log(envs[move[j]].value.match(/(?<=pt_pin=)[^;]+/g)+":"+envs[move[j]]._id+":"+move[j]+"-->"+fp+"\n")
 						notify+="京东账号【"+GetName(envs[move[j]].value)+"】\n"//客户通知，使用昵称
 					}
 					else
@@ -164,6 +164,40 @@ function main(){
 	SendNotify(Notify,notify)
 	return
 }
+
+
+
+
+function Backup_NotMoveEnvOrder(notmove,envs){
+	let temp=[]
+	for(let i=0;i<notmove.length;i++)
+		temp.push({order:notmove[i]-1,name:envs[notmove[i]-1].name,value:envs[notmove[i]-1].value})
+	return temp
+}
+
+function Recovery_NotMoveEnvOrder(notmove,backup,ql_host,ql_token){
+	let notify=""
+	let envs=Get_QL_Envs(ql_host,ql_token)//获取容器当前变量信息
+	for(let i=0;i<notmove.length;i++){
+		for(let j=notmove[i]-1;j<envs.length;j++){
+			if(envs[j].name==backup[notmove[i]-1].name&&envs[j].value==backup[notmove[i]-1].value&&j!=notmove[i]-1){
+				console.log(`恢复位置${envs[j].value}:${j}-->${notmove[i]-1}`)
+				if(envs[j].id){
+					if(Move_QL_Env(ql_host,ql_token,envs[j].id,j,notmove[i]-1)==null)
+						notify+="变量"+backup[notmove[i]].name+":"+backup[notmove[i]].value+"恢复失败\n"					
+				}
+				else {
+					if(Move_QL_Env(ql_host,ql_token,envs[j]._id,j,notmove[i]-1)==null)
+						notify+="变量"+backup[notmove[i]].name+":"+backup[notmove[i]].value+"恢复失败\n"					
+				}
+				sleep(50)
+				break
+			}
+		}
+	}
+	return notify
+}
+
 
 
 function SendNotify(Notify,notify){
@@ -251,36 +285,6 @@ function JD_UserInfo(ck){
 	catch(err){
 		return null
 	}
-}
-
-
-function Backup_NotMoveEnvOrder(notmove,envs){
-	let temp=[]
-	for(let i=0;i<notmove.length;i++)
-		temp.push({order:notmove[i]-1,name:envs[notmove[i]-1].name,value:envs[notmove[i]-1].value})
-	return temp
-}
-function Recovery_NotMoveEnvOrder(notmove,backup,ql_host,ql_token){
-	let notify=""
-	let envs=Get_QL_Envs(ql_host,ql_token)//获取容器当前变量信息
-	for(let i=0;i<notmove.length;i++){
-		for(let j=notmove[i];j<envs.length;j++){
-			if(envs[j].name==backup[notmove[i]].name&&envs[j].value==backup[notmove[i]].value&&j!=backup[notmove[i]].order){
-//				console.log(`恢复位置${envs[j].value}:${j}-->${notmove[i]}`)
-				if(envs[j].id){
-					if(Move_QL_Env(ql_host,ql_token,envs[j].id,j,notmove[i]-1)==null)
-						notify+="变量"+backup[notmove[i]].name+":"+backup[notmove[i]].value+"恢复失败\n"					
-				}
-				else {
-					if(Move_QL_Env(ql_host,ql_token,envs[j]._id,j,notmove[i]-1)==null)
-						notify+="变量"+backup[notmove[i]].name+":"+backup[notmove[i]].value+"恢复失败\n"					
-				}
-				sleep(50)
-				break
-			}
-		}
-	}
-	return notify
 }
 
 //获取min~max(不含max)之间但不存在于数组exception中的随机数
