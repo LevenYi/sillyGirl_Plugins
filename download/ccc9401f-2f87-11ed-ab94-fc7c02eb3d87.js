@@ -76,7 +76,7 @@ function main(){
 						tip+=redpackets_data.expiredBalance+"元红包与"+exbeans+"京豆将于近期过期"
 						//console.log(pin+tip)
 						if(record.indexOf(pin)==-1){//console.log(pin+tip)
-							st.NotifyCK(pin,tip)
+							st.NotifyPin(pin,tip)
 							notify+="【"+pin+"】:"+redpackets_data.expiredBalance+"\n"
 							record.push(pin)
 							sleep(Math.random()*10000+10000)
