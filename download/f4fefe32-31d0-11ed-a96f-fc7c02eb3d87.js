@@ -7,7 +7,7 @@
 * @platform qq wx tg pgm sxg
 * @rule 执行任务
 * @cron 0 19 * * *
-* @public false
+ * @public false
 * @admin true
 * @disable true
 */

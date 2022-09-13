@@ -16,9 +16,9 @@
 * @rule 保存昵称
 * @rule 获取\S+昵称
 * @rule 查找\s\S+
-* @public false
+ * @public false
 * @admin true
-* @version v1.8.0
+* @version v1.8.1
 */
 
 /***********青龙管理******************
@@ -83,12 +83,16 @@
 //2022-8-15 v1.7.6 恢复青龙变量时跳过pin值相同的JD_COOKIE变量
 //2022-8-30 v1.7.7 移除监控相关功能，添加根据pin获取昵称和根据昵称获取账号pin及所在容器位置的命令
 //2022-9-5 v1.8.0 适配最新傻妞
+//2022-9-12 v1.8.1 模块化
 
 
 
 const s = sender
 const sillyGirl=new SillyGirl()
 const db= new Bucket("qinglong")
+
+const ql=require("qinglong")
+const st=require("something")
 	
 var ql_host=""
 var ql_client_id=""
@@ -106,7 +110,7 @@ function main(){
 	var QLS=JSON.parse(data)
 	if(msg.match(/^交换\s\d+\s\d+$/)!=null){
 		let params=msg.split(" ")
-		s.reply(Exchange_JDCK(QLS,params[1]-1,params[2]-1))
+		s.reply(Exchange_JDPin(QLS,params[1]-1,params[2]-1))
 	}
 	
 	else if(msg.match(/^\S+,JD_COOKIE已失效。$/)!=null)
@@ -157,7 +161,7 @@ function main(){
 }
 
 function GetJDCOOKIE(QLS,kickname){
-	let tipid=s.reply("正在查找，请稍等...")
+	let tipid=s.reply("正在查找，请稍等...");//console.log(tipid)
 	let notify=""
 	let find=false
 	for(let i=0;i<QLS.length;i++){
@@ -167,13 +171,13 @@ function GetJDCOOKIE(QLS,kickname){
 		ql_host=QLS[i].host
 		ql_client_id=QLS[i].client_id
 		ql_client_secret=QLS[i].client_secret
-		ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+		ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 		if(ql_token==null){
 			s.reply("容器"+QLS[i].name+"token获取失败,跳过\n")
 			continue
 		}
 		
-		let envs=Get_QL_Envs(ql_host,ql_token)
+		let envs=ql.Get_QL_Envs(ql_host,ql_token)
 		if(envs==null){
 			s.reply(QLS[i].name+"青龙变量获取失败，跳过")
 			continue
@@ -213,13 +217,13 @@ function GetJDKickName(QLS,pin){
 		ql_host=QLS[i].host
 		ql_client_id=QLS[i].client_id
 		ql_client_secret=QLS[i].client_secret
-		ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+		ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 		if(ql_token==null){
 			s.reply("容器"+QLS[i].name+"token获取失败,跳过\n")
 			continue
 		}
 		
-		let envs=Get_QL_Envs(ql_host,ql_token)
+		let envs=ql.Get_QL_Envs(ql_host,ql_token)
 		if(envs==null){
 			s.reply(QLS[i].name+"青龙变量获取失败，跳过")
 			continue
@@ -243,7 +247,7 @@ function Notify_Again(pin){
 //	s.reply(pin)
 	let notify=""
 	let name=GetName("pt_pin="+pin+";");//s.reply(name)
-	let to=Notify_CK(pin,"温馨提示，您的账号【"+name+"】已过期，请重新登陆")
+	let to=st.NotifyPin(pin,"温馨提示，您的账号【"+name+"】已过期，请重新登陆")
 	if(to.length!=0){
 		for(let i=0;i<to.length;i++)
 			notify+="已通知"+to[i].imType+"-"+to[i].uid+"\n"
@@ -265,16 +269,15 @@ function Bean_Info(QLS,n,m){
 	ql_host=QLS[n-1].host
 	ql_client_id=QLS[n-1].client_id
 	ql_client_secret=QLS[n-1].client_secret
-	ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+	ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 	if(ql_token==null)
 		return "token获取失败，退出"
-	let envs=Get_QL_Envs(ql_host,ql_token)
+	let envs=ql.Get_QL_Envs(ql_host,ql_token)
 	if(m>envs.length)
 		return "查询序号大于容器变量数量，退出"
 	else if(envs[m-1].name!="JD_COOKIE")
 		return "查询序号变量非京东CK，退出"
-//	s.reply('Help')	
-	info=JD_BeanInfo(envs[m-1].value)
+	info=st.JD_BeanInfo(envs[m-1].value,1)
 	if(info==null)
 		return "京东数据获取失败"
 	else if(info.length==0)
@@ -313,18 +316,18 @@ function SaveJDUserName(QLS){
 		ql_host=QLS[i].host
 		ql_client_id=QLS[i].client_id
 		ql_client_secret=QLS[i].client_secret
-		ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+		ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 		if(ql_token==null){
 			notify+="容器【"+QLS[i].name+"】token获取失败,跳过\n"
 			continue
 		}
 		notify+="--------【"+QLS[i].name+"】--------\n"
-		let envs=Get_QL_Envs(ql_host,ql_token)	
+		let envs=ql.Get_QL_Envs(ql_host,ql_token)	
 		for(let j=0;j<envs.length;j++){
 			if(envs[j].name=="JD_COOKIE"){
 				let pin=envs[j].value.match(/(?<=pin=)[^;]+/g)[0]
 				notify+="【"+pin+"】-"
-				let userInfo=JD_UserInfo(envs[j].value)
+				let userInfo=st.JD_UserInfo(envs[j].value)
 				if(userInfo){
 					let find=0
 					for(let k=0;k<names.length;k++)
@@ -365,14 +368,14 @@ function Recovery_qlEnv(QLS){
 		let addenvs=[]//将要恢复的变量
 		if(QLS.length>1)
 			s.reply("\n请选择备份容器【"+backup[i].name+"】的恢复容器\n")
-		let ql=Get_QL(QLS)
-		if(ql==-1)
+		let inp=Get_QL(QLS)
+		if(inp==-1)
 			return "获取QLS失败，退出"	
-		ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+		ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 		if(ql_token==null)
 			return "容器"+QLS[i].name+"token获取失败,退出"
 			
-		let envs=Get_QL_Envs(ql_host,ql_token)
+		let envs=ql.Get_QL_Envs(ql_host,ql_token)
 		for(let j=0;j<backup[i].envs.length;j++){
 			if(EnvExist(envs,backup[i].envs[j])){//跳过已存在变量，防止重复
 				continue
@@ -394,13 +397,13 @@ function Recovery_qlEnv(QLS){
 		addenvs=JSON.parse(JSON.stringify(addenvs))//????
 //		s.reply(JSON.stringify(addenvs))
 		if(addenvs.length>0)
-			suss=Add_QL_Env(ql_host,ql_token,addenvs)
+			suss=ql.Add_QL_Env(ql_host,ql_token,addenvs)
 		else{
 			s.reply("该备份容器所有变量已存在于选择的容器中,已忽略")
 			continue
 		}
 		if(suss!=null)
-			s.reply("成功恢复\n备份容器【"+backup[i].name+"】-->【"+QLS[ql].name+"】\n共"+addenvs.length+"个变量\n----------------\n"+notify)
+			s.reply("成功恢复\n备份容器【"+backup[i].name+"】-->【"+QLS[inp].name+"】\n共"+addenvs.length+"个变量\n----------------\n"+notify)
 		else
 			s.reply("恢复失败") 
 		sleep(3000)
@@ -421,13 +424,13 @@ function Backup_qlEnv(QLS){
 		ql_host=QLS[i].host
 		ql_client_id=QLS[i].client_id
 		ql_client_secret=QLS[i].client_secret
-		ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+		ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 		if(ql_token==null){
 			notify+="容器"+QLS[i].name+"token获取失败,跳过\n"
 			continue
 		}
 		
-		let envs=Get_QL_Envs(ql_host,ql_token)
+		let envs=ql.Get_QL_Envs(ql_host,ql_token)
 		if(envs==null){
 			s.reply(QLS[i].name+"青龙变量获取失败，跳过")
 			continue
@@ -457,12 +460,12 @@ function Delete_JDCK_disabled(QLS){
 		ql_host=QLS[j].host
 		ql_client_id=QLS[j].client_id
 		ql_client_secret=QLS[j].client_secret
-		ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+		ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 		if(ql_token==null){
 			notify+="容器"+QLS[j].name+"token获取失败,跳过\n"
 			continue
 		}
-		var envs=Get_QL_Envs(ql_host,ql_token)	
+		var envs=ql.Get_QL_Envs(ql_host,ql_token)	
 		if(envs==null){
 			s.reply(QLS[j].name+"青龙变量获取失败，跳过")
 			continue
@@ -483,7 +486,7 @@ function Delete_JDCK_disabled(QLS){
 			notify+="本容器无失效账号\n"
 		}
 		else{
-			if(Delete_QL_Envs(ql_host,ql_token,envsID)!=true)
+			if(ql.Delete_QL_Envs(ql_host,ql_token,envsID)!=true)
 				notify+="删除失败\n"
 			else{
 				notify+="删除"+(envsID.length)+"个账号\n"
@@ -510,12 +513,12 @@ function Notify_JDCK_disabled(QLS){
 		ql_host=QLS[j].host
 		ql_client_id=QLS[j].client_id
 		ql_client_secret=QLS[j].client_secret
-		ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+		ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 		if(ql_token==null){
 			notify+="容器"+QLS[j].name+"token获取失败,跳过\n"
 			continue
 		}
-		var envs=Get_QL_Envs(ql_host,ql_token)
+		var envs=ql.Get_QL_Envs(ql_host,ql_token)
 		if(envs==null){
 			notify+=QLS[j].name+"青龙变量获取失败，跳过"
 			continue
@@ -529,7 +532,7 @@ function Notify_JDCK_disabled(QLS){
 				if(record.indexOf(pin)==-1){//避免多容器重复通知
 					notify=notify+"\n变量"+(i+1)+"【"+pin+"】\n"
 					if(toType==""){//一对一通知
-					let to=Notify_CK(pin,"温馨提示，您的账号【"+name+"】已过期，请重新登陆")
+					let to=st.NotifyPin(pin,"温馨提示，您的账号【"+name+"】已过期，请重新登陆")
 						if(to.length!=0){
 							record.push(pin)//记录已通知pin
 							for(let k=0;k<to.length;k++)
@@ -544,7 +547,7 @@ function Notify_JDCK_disabled(QLS){
 						for(let k=0;k<toType.length;k++){
 							let gid=gn.get(toType[k]).split("&")
 							for(l=0;l<gid.length;l++)
-								if(NotifyInGroup(toType[k],gid[l],pin,"温馨提示，您的账号【"+name+"】已过期，请重新登陆")){
+								if(st.NotifyPinInGroup(toType[k],gid[l],pin,"温馨提示，您的账号【"+name+"】已过期，请重新登陆")){
 									record.push(pin)//记录已通知pin
 									notify=notify+"★通知"+toType[k]+"群"+gid[l]+"成功\n"
 									sleep(Math.random()*5000+5000)
@@ -568,10 +571,10 @@ function Move_qlEnv(QLS,from,to_index){
 	let suss=false
 	if(Get_QL(QLS)==-1)
 		return "获取QLS失败"
-	ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+	ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 	if(ql_token==null)
 		return "青龙对接失败，请检查青龙管理是否配置有误"
-	let envs=Get_QL_Envs(ql_host,ql_token)
+	let envs=ql.Get_QL_Envs(ql_host,ql_token)
 	if(envs==null)
 		return "青龙变量获取失败"
 	if(to_index>=envs.length)
@@ -581,9 +584,9 @@ function Move_qlEnv(QLS,from,to_index){
 		if(from>=envs.length)
 			return "原位置有误，超出变量总数"
 		if(envs[from]._id)
-			suss=Move_QL_Env(ql_host,ql_token,envs[from]._id,from-1,to_index)
+			suss=ql.Move_QL_Env(ql_host,ql_token,envs[from]._id,from-1,to_index)
 		else
-			suss=Move_QL_Env(ql_host,ql_token,envs[from].id,from-1,to_index)
+			suss=ql.Move_QL_Env(ql_host,ql_token,envs[from].id,from-1,to_index)
 		let pin=envs[from].value.match(/(?<=pin=)\S+(?=;)/g)
 		if(pin!=null){
 			if(!suss)
@@ -604,9 +607,9 @@ function Move_qlEnv(QLS,from,to_index){
 			return "未找到该变量"
 		console.log(`${from_index+1}\n${to_index+1}`)
 		if(envs[from_index]._id)
-			suss=Move_QL_Env(ql_host,ql_token,envs[from_index]._id,from_index,to_index)
+			suss=ql.Move_QL_Env(ql_host,ql_token,envs[from_index]._id,from_index,to_index)
 		else
-			suss=Move_QL_Env(ql_host,ql_token,envs[from_index].id,from_index,to_index)			
+			suss=ql.Move_QL_Env(ql_host,ql_token,envs[from_index].id,from_index,to_index)			
 		let pin=envs[from_index].value.match(/(?<=pin=)\S+(?=;)/g)
 		if(pin!=null){
 			if(!suss)
@@ -624,26 +627,26 @@ function Move_qlEnv(QLS,from,to_index){
 	return 	notify
 }
 
-function Exchange_JDCK(QLS,x,y){
+function Exchange_JDPin(QLS,x,y){
 	let notify=""
 	let suss=null
 	if(Get_QL(QLS)==-1)
 		return "获取QLS失败"
-	ql_token=Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
+	ql_token=ql.Get_QL_Token(ql_host,ql_client_id,ql_client_secret)
 	if(ql_token==null)
 		return "token获取失败,退出"
-	let envs=Get_QL_Envs(ql_host,ql_token)
+	let envs=ql.Get_QL_Envs(ql_host,ql_token)
 	if(envs==null)
 		return "青龙变量获取失败，跳过"
 	if(envs[x]._id){
-		suss=Update_QL_Env(ql_host,ql_token,envs[x]._id,envs[y].name,envs[y].value,envs[y].remarks)
+		suss=ql.Update_QL_Env(ql_host,ql_token,envs[x]._id,envs[y].name,envs[y].value,envs[y].remarks)
 		if(suss!=null)
-			suss=Update_QL_Env(ql_host,ql_token,envs[y]._id,envs[x].name,envs[x].value,envs[x].remarks)
+			suss=ql.Update_QL_Env(ql_host,ql_token,envs[y]._id,envs[x].name,envs[x].value,envs[x].remarks)
 	}
 	else{
-		suss=Update_QL_Env(ql_host,ql_token,envs[x].id,envs[y].name,envs[y].value,envs[y].remarks)
+		suss=ql.Update_QL_Env(ql_host,ql_token,envs[x].id,envs[y].name,envs[y].value,envs[y].remarks)
 		if(suss!=null)
-			suss=Update_QL_Env(ql_host,ql_token,envs[y].id,envs[x].name,envs[x].value,envs[x].remarks)
+			suss=ql.Update_QL_Env(ql_host,ql_token,envs[y].id,envs[x].name,envs[x].value,envs[x].remarks)
 	}
 	if(suss!=null)
 		return "成功交换【"+envs[x].value.match(/(?<=pin=)[^;]+/)+"】与【"+envs[y].value.match(/(?<=pin=)[^;]+/)+"】"
@@ -689,14 +692,6 @@ function EnvExist(envs,env){
 	return false
 }
 
-//获取环境变量中变量名为name的所有环境变量
-function Get_env(envs,name){
-	let temp=[]
-	for(let i=0,j=0;i<envs.length;i++)
-		if(envs[i].name==name)
-			temp.push(envs[i])
-	return temp	
-}
 
 //在环境变量中找到变量名或者备注为string，或者value含string的变量
 function Find_env(envs,string){
@@ -707,89 +702,12 @@ function Find_env(envs,string){
 	return -1
 }
 
-//在totype群cid中通知绑定pin的客户消息msg
-function NotifyInGroup(totype,cid,pin,msg){
-	let find=0
-	if(totype=="qq"){
-		let uid=(new Bucket("pinQQ")).get(pin)
-		if(uid!=""){
-			find=1
-		sillyGirl.push({
-				platform:totype,
-				userID:uid,
-				groupCode:cid,
-				content:msg
-			})	
-		}
-	}
-	else if(totype=="tg"){
-		let uid=(new Bucket("pinTG")).get(pin)
-		if(uid!=""){
-			find=1
-		sillyGirl.push({
-				platform:totype,
-				userID:uid,
-				groupCode:cid,
-				content:msg
-			})	
-		}
-	}
-	else if(totype=="wx"){
-		let uid=(new Bucket("pinWX")).get(pin)
-		if(uid!=""){
-			find=1
-		sillyGirl.push({
-				platform:totype,
-				userID:uid,
-				groupCode:cid,
-				content:msg
-			})	
-		}
-	}
-	return find
-}
 
-//向绑定pin的客户私聊发送msg
-function Notify_CK(pin,msg){
-	let to=[]
-	
-	let uid=(new Bucket("pinQQ")).get(pin)
-	if(uid!="")
-		to.push({imType:"qq",uid:uid})
-	
-	uid=(new Bucket("pinTG")).get(pin)
-	if(uid!="")
-		to.push({imType:"tg",uid:uid})
-		
-//	uid=bucketGet("pinPGM",pin)
-//	if(uid!="")
-//		to.push({imType:"pgm",uid:uid})
-		
-	uid=(new Bucket("pinWX")).get(pin)
-	if(uid!="")
-		to.push({imType:"wx",uid:uid})
-		
-	uid=(new Bucket("pinWXMP")).get(pin)
-	if(uid!="")
-		to.push({imType:"wxmp",uid:uid})
-		
-	uid=(new Bucket("pinSXG")).get(pin)
-	if(uid!="")
-		to.push({imType:"sxg",uid:uid})
-		
-	for(let i=0;i<to.length;i++)
-	sillyGirl.push({
-			platform:to[i].imType,
-			userID:to[i].uid,
-			content:msg,
-		})
-	return to
-}
 
 //获取ck对应账号通知时使用的称呼
 function GetName(ck){
 	let pin=ck.match(/(?<=pin=)[^;]+(?=;)/g)
-	let userInfo=JD_UserInfo(ck)
+	let userInfo=st.JD_UserInfo(ck)
 	if(userInfo!=null)//直接从京东获取到昵称
 		return userInfo.userInfo.baseInfo.nickname
 	else{
@@ -809,201 +727,6 @@ function GetName(ck){
 	}
 }
 
-
-/*****************青龙api***************/
-function Get_QL_Token(host,client_id,client_secret){
-	try{
-		let data=request({url:host+"/open/auth/token?client_id="+client_id+"&client_secret="+client_secret})
-		return JSON.parse(data.body).data	
-	}
-	catch(err){
-		return null
-	}
-}
-
-function Get_QL_Envs(host,token){
-	try{
-		let data=request({
-			url:host+"/open/envs",
-			method:"get",
-			headers:{
-				accept: "application/json",
-				Authorization:token.token_type+" "+token.token
-			}
-		})
-		return JSON.parse(data.body).data	
-	}
-	catch(err){
-		return null
-	}
-}
-
-function Add_QL_Env(host,token,envs){
-	try{
-		let data=request({
-			url:host+"/open/envs",
-			method:"post",
-			headers:{
-				accept: "application/json",
-				Authorization:token.token_type+" "+token.token,
-				contentType:"application/json"
-			},
-			body:envs,
-			dataType: "application/json"
-		})
-		return JSON.parse(data.body).data	
-	}
-	catch(err){
-		return null
-	}
-}
-		
-function Update_QL_Env(host,token,id,name,value,remark){
-	let body
-	if(id.search(/[^\d]/g)!=-1)
-		body={"value": value,"name": name,"remarks": remark,"_id":id}
-	else
-		body={"value": value,"name": name,"remarks": remark,"id":id}
-	try{
-		let data=request({
-			url:host+"/open/envs",
-			method:"put",
-			headers:{
-				accept: "application/json",
-				Authorization:token.token_type+" "+token.token,
-				contentType:"application/json"
-			},
-			body:body,
-			dataType: "application/json"
-		})
-		return JSON.parse(data.body).data	
-	}
-	catch(err){
-		return null
-	}
-}
-
-//返回值不可靠，提交成功即返回true
-function Delete_QL_Envs(host,token,id){
-	try{
-		let data=request({
-			url:host+"/open/envs",
-			method:"delete",
-			headers:{
-				accept: "application/json",
-				Authorization:token.token_type+" "+token.token,
-				contentType:"application/json"
-			},
-			body:id,
-			dataType: "application/json"
-		})	
-		if(JSON.parse(data.body).code==200)
-			return true
-		else
-			return false
-	}
-	catch(err){
-		return false
-	}
-}
-
-function Move_QL_Env(host,token,id,from,to){	
-	try{
-		let data=request({
-			url:host+"/open/envs/"+id+"/move",
-			method:"put",
-			headers:{
-				accept: "application/json",
-				Authorization:token.token_type+" "+token.token,
-				contentType:"application/json"
-			},
-			body:{"fromIndex": from,"toIndex": to},
-			dataType: "application/json"
-		})
-		return JSON.parse(data.body).data	
-	}
-	catch(err){
-		return null
-	}
-}
-
-
-//***************京东api********************/
-//获取ck对应账号的数据
-function JD_UserInfo(ck){
-	let resp=request({
-      url: "https://me-api.jd.com/user_new/info/GetJDUserInfoUnion",
-	  method:"get",
-//	  dataType:"json",
-      headers: {
-		"User-Agent": "jdapp;iPhone;9.4.4;14.3;network/4g;Mozilla/5.0 (iPhone; CPU iPhone OS 14_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1",
-        "Cookie": ck
-      }
-	})
-	try{
-		return JSON.parse(resp.body).data
-	}
-	catch(err){
-		return null
-	}
-}
-
-//获取ck对应账号最近一天的每一项收入
-//各项收入详情[{eventMassage:活动名,amount:获得京豆数量,date:获得时间,...}]
-function JD_BeanInfo(ck){
-//	s.reply(date1);s.reply(date2)
-	let stop=false
-	let page=1
-	let info=[]//各项活动详情统计
-	let limit=5//死循环保险
-	let day=0,once=false
-	while(!stop){
-		if(--limit<0){
-//			s.reply("死循环了")
-			break	
-		}
-		let body=escape(JSON.stringify({
-			"pageSize": "20", 
-			"page": page.toString()
-			}
-		))
-		let options = {
-			url: "https://api.m.jd.com/client.action?functionId=getJingBeanBalanceDetail",
-			method:"post",
-			dataType:"json",
-			body: "body="+body+"&appid=ld",
-			headers: {
-				"User-Agent": "jdltapp;iPad;3.7.0;14.4;network/wifi;hasUPPay/0sillyGirl.pushNoticeIsOpen/0;lang/zh_CN;model/iPad7,5;addressid/;hasOCPay/0;appBuild/1017;supportBestPay/0;pv/4.14;apprpd/MyJD_Main;ref/MyJdMTAManager;psq/3;ads/;psn/956c074c769cd2eeab2e36fca24ad4c9e469751a|8;jdv/0|;adk/;app_device/IOS;pap/JA2020_3112531|3.7.0|IOS 14.4;Mozilla/5.0 (iPad; CPU OS 14_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1",
-				"Host": "api.m.jd.com",
-				"Content-Type": "application/x-www-form-urlencoded",
-				"Cookie": ck
-			}
-		}
-		let data=request(options)
-		if(data.status==200&&data.body.code==0){
-			let beaninfo=data.body.detailList
-			//s.reply(JSON.stringify(beaninfo))
-			if(!once){
-				once=true
-				day=beaninfo[0].date.match(/\d+(?= )/).toString()
-			}
-			for(let i=0;i< beaninfo.length;i++){
-				if(day!=beaninfo[i].date.match(/\d+(?= )/).toString()){
-					stop=1
-					break
-				}
-				else {
-					info.push(beaninfo[i])
-				}
-			}
-		}
-		else
-			return null
-		sleep(200)
-		page++
-	}
-	return info	
-}
 
 
 main()

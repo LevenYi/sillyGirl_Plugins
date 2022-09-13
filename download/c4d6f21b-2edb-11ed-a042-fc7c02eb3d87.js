@@ -18,8 +18,8 @@
 * @rule 清空监控队列
 * @rule 清空监控记录
 * @rule 清空白眼数据
-* @public false
-* @version v1.2.4
+ * @public false
+* @version v1.2.5
 */
 
 
@@ -55,9 +55,8 @@
 插件中可能需要区分的名称：监控任务名称，自定义变量转换名称，自定义链接解析名称，青龙任务名称、以及内置的链接解析的名称
 插件最后为内置解析规则，同自定义解析规则，可自行添加
 */
-//如果自己tg收不到插件回复可将下面1修改为2
-const NotifyMode = 1
-
+//0不通知口令与链接解析以及加入队列
+const NotifyMode=0
 //2022-8-27 v1.0.0 
 //2022-8-27 v1.0.1 修复人形傻妞与tg机器人位于同一个对话时不停互相丢链接的问题，可能修复监控偶尔报错的问题
 //2022-8-29 v1.0.2 修复最新版傻妞重复迁移ql spy导致备份数据丢失的问题,修复多容器报错问题
@@ -72,6 +71,7 @@ const NotifyMode = 1
 //2022-9-5 v1.2.1 适配最新傻妞,修复自定义链接解析无法去重的问题
 //2022-9-8 v1.2.2 修复已知bug
 //2022-9-9 v1.2.3 修复链接解析问题，支持解析链接型变量
+//2022-9-12 v1.2.5 模块化
 
 
 
@@ -120,9 +120,13 @@ jd_cookie spy_urldecode_new：链接解析
 
 */
 
+const ql=require("qinglong")
+const st=require("something")
+
 const s = sender
 const sillyGirl = new SillyGirl()
 const db = new Bucket("jd_cookie")
+
 
 function main() {
 	//	let isspy=false
@@ -136,10 +140,10 @@ function main() {
 			let values = msg.match(/(?<=export[ ]+\w+[ ]*=[ ]*")[^"]+(?=")/g)
 			let envs = []
 			for (let i = 0; i < values.length; i++){
-				if(values[i].indexOf("https")!=-1){
+				/*if(values[i].indexOf("https")!=-1){
 					Urls_Decode([values[i]])
 				}
-				else
+				else*/
 					envs.push({ name: names[i], value: values[i] })
 			}
 			Env_Listen(envs)
@@ -171,10 +175,10 @@ function main() {
 
 
 	if (msg == "迁移ql spy") {
-		Migrate_qlspy()
+		ql.Migrate_qlspy()
 	}
 	else if (msg == "恢复ql spy") {
-		Recovery_qlspy()
+		ql.Recovery_qlspy()
 	}
 
 	else if (msg == "导出白眼")
@@ -726,7 +730,7 @@ function Recovery_qlspy() {
 }
 
 function Env_Listen(envs) {
-	//	s.reply(JSON.stringify(envs))
+	//console.log(JSON.stringify(envs))
 	if (envs.length == 0)
 		return
 	// 	检查变量名是否为用户配置的需要转换的变量名，是则先转换
@@ -779,65 +783,60 @@ function Env_Listen(envs) {
 
 
 
-			let record = []//将envs处理成任务队列
+			let que = []//将envs处理成任务队列
 			for (let j = 0; j < envs.length; j++) {
 				for (let k = 0; k < Listens[i].Envs.length; k++) {
 					if (envs[j].name == Listens[i].Envs[k]) {
 						find = true
-						//						console.log(JSON.stringify(envs[j])+"\n\n"+JSON.stringify(Listens[i].DONE))
+						//console.log(JSON.stringify(envs[j])+"\n\n"+JSON.stringify(Listens[i].DONE))
 						if (IsIn(envs[j], Listens[i].TODO) || IsIn(envs[j], Listens[i].DONE)) {
 							notify += "【" + envs[j].value + "】重复的变量，已忽略\n"
-							find = true
 							continue
 						}
 						else {
-							if (record.length == 0)
-								record.push([envs[j]])
-							else {
-								if (IsIn(envs[j], record))
-									record.push([envs[j]])
+							//console.log(JSON.stringify(que))
+							if(que.length==0)
+								que.push([envs[j]])
+							else{
+								if(que[que.length-1].findIndex((value,index,array)=>value.name==envs[j].name)
+								!=-1)
+									que.push([envs[j]])
 								else
-									record[record.length - 1].push(envs[j])
+									que[que.length-1].push(envs[j])
+								
 							}
-							//Notify(JSON.stringify(record))
-
 						}
 					}
 				}
 			}
 
-			if (record.length != 0) {
-				//				Notify(JSON.stringify(record))
+			if (que.length != 0) {
+				//console.log(JSON.stringify(que))
 				if (Listens[i].Disable)
-					notify += "发现洞察变量，检查到【" + Listens[i].Name + "】任务已禁用，已忽略\n"
+					notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】任务已禁用，已忽略\n"
 				else {
 					//检查监控任务填写容器是否错误
-					for (j = 0; j < Listens[i].Clients.length; j++) {
-						let findclient = false
-						for (k = 0; k < QLS.length; k++) {
-							if (Listens[i].Clients[j] == QLS[k].client_id) {
-								findclient = true
-								break
-							}
-						}
-						if (!findclient)
-							notify += "发现洞察变量，检查到监控任务【" + Listens[i].Name + "】配置的容器中存在不属于傻妞所对接容器的容器，请尽快前往‘监控管理’修改该任务的作用容器\n"
-					}
-					//检查是否有填写容器
-					if (Listens[i].Clients.length != 0) {
+					if (Listens[i].Clients.length == 0)
+						notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】无指定容器，已忽略\n请尽快前往‘监控管理’添加该任务的作用容器\n"
+					else {
+						if(!Listens[i].Clients.every((value)=>
+								QLS.findIndex((value2,index,arrat)=>
+									value2.client_id==value)!=-1
+							
+						))
+							notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】配置的容器中存在不属于傻妞所对接容器的容器，请尽快前往‘监控管理’修改该任务的作用容器\n"
+					
 						flag = true
-						notify += "发现" + record.length + "个洞察变量，【" + Listens[i].Name + "】加入任务队列\n"
-						Listens[i].TODO = record.concat(Listens[i].TODO)
-						//						s.reply(Listens[i].Name+"现队列\n"+JSON.stringify(Listens[i].TODO))//有坑,SendToTG会抹除最外围的[]符号
+						notify += "发现" + que.length + "个洞察变量，【" + Listens[i].Name + "】加入任务队列\n"
+						Listens[i].TODO = que.concat(Listens[i].TODO)
 					}
-					else
-						notify += "发现洞察变量，检查到监控任务【" + Listens[i].Name + "】无指定容器，已忽略，请尽快前往‘监控管理’添加该任务的作用容器\n"
 				}
 			}
 		}
-
+	
 		if (find) {
-			Notify(notify)
+			//if(NotifyMode)
+				Notify(notify)
 			if (flag) {
 				db.set("env_listens_new", JSON.stringify(Listens))
 				if (db.get("spy_locked") == "false") {
@@ -848,7 +847,8 @@ function Env_Listen(envs) {
 			}
 		}
 		else {
-			Notify("未监控的变量，已忽略")
+			//if(NotifyMode)
+				Notify("未监控的变量，已忽略")
 		}
 		if (unlock) {//用于某些特殊情况未能正常处理完队列导致锁未能打开时重新开锁
 			db.set("spy_locked", false)
@@ -861,59 +861,19 @@ function Env_Listen(envs) {
 }
 
 function JDCODE_Decode(JDCODE) {
-	let DSP = ""
-	let info = NolanDecode(JDCODE)
-	if (info != null)
-		DSP = "\n\n--本次解析服务由Nolan提供"
-	else {
-		info = WallDecode(JDCODE)
-		if (info != null)
-			DSP = "\n\n--本次解析服务由WALL提供"
-		else {
-			info = WindfggDecode(JDCODE)
-			if (info != null)
-				DSP = "\n\n--本次解析服务由Windfgg提供"
-			else {
+	let info = st.NolanDecode(JDCODE)
+	if (info == null){
+		info =st.WallDecode(JDCODE)
+		if (info == null){
+			info = st.WindfggDecode(JDCODE)
+			if (info == null){
 				Notify("解析失败")
 				return null
 			}
 		}
 	}
-
-	/*	let imType=s.getPlatform()
-		let img=info.img
-		let title=info.title
-		let sharefrom=info.userName
-		let url=info.jumpUrl
-	
-		let notify=""
-		if(imType=="tg"||imType=="pgm")
-			notify="["+title+"]("+url+")"
-		else if(imType=="qq")
-			notify="[CQ:share,url="+url+",title="+title+"]"
-	*/
+	Notify(st.ToHyperLink(s.getPlatform(),info.jumpUrl,info.title))//口令解析结果通知，不需要自行注释
 	Urls_Decode([info.jumpUrl])
-	/*	if(spy.length==0){//未解析到变量
-			let tip="\n\n未在链接中解析到变量，可在‘监控管理’内添加"
-			if(imType=="pgm"||imType=="qq"||imType=="tg")
-				Notify(notify+tip,notify+tip)
-			else
-				Notify("【"+title+"】\n"+url+tip,notify+tip)
-			return null
-		}
-		else{//解析到变量
-	//	s.reply(JSON.stringify(spy))
-			let tip="\n\n"
-			for(let i=0;i<spy.length;i++)
-				tip+="【"+spy[i].act+"】\n"+"export "+spy[i].name+"=\""+spy[i].value+"\"\n"
-			if(imType=="qq"||imType=="pgm"||imType=="tg")
-				Notify(notify+tip,notify+tip)
-			else
-				Notify("【"+title+"】\n"+url+tip,notify+tip)
-	//		console.log(notify+tip)
-			Env_Listen(spy)
-			return spy
-		}*/
 }
 
 function Urls_Decode(urls) {//console.log(urls)
@@ -921,12 +881,6 @@ function Urls_Decode(urls) {//console.log(urls)
 	let envs = []//记录urls中提取的变量
 	for (let i = 0; i < urls.length; i++) {
 		let spy = []
-		let tgLink = "[长按复制链接](" + urls[i] + ")\n"
-		if (s.getPlatform() == "qq")
-			notify += "[CQ:share,url=" + urls[i] + ",title=点击进入活动页面]\n"
-		else
-			notify += tgLink + "\n"
-		tgpush += tgLink + "\n"
 		//使用自定义解析规则尝试解析
 		let data = db.get("spy_urldecode_new")
 		if (data != "") {
@@ -938,18 +892,20 @@ function Urls_Decode(urls) {//console.log(urls)
 		}
 		if (spy.length == 0) {
 			notify += "未解析到变量\n可使用\"监控管理\"命令自行添加\n"
-			tgpush += "未解析到变量\n可使用\"监控管理\"命令自行添加\n"
 		}
 		else {
 			for (let i = 0; i < spy.length; i++) {
-				notify += "【" + spy[i].act + "】\n" + "export " + spy[i].name + "=\"" + spy[i].value + "\"\n"
-				tgpush += "【" + spy[i].act + "】\n" + "export " + spy[i].name + "=\"" + spy[i].value + "\"\n"
+				if(s.getPlatform()=="pgm")
+					notify += "**" + spy[i].act + "**\n`export " + spy[i].name + "=\"" + spy[i].value + "\"`\n"
+				else if(s.getPlatform()=="tg")
+					notify += "*" + spy[i].act + "*\n`export " + spy[i].name + "=\"" + spy[i].value + "\"`\n"
+				else
+					notify += "【" + spy[i].act + "】\n export " + spy[i].name + "=\"" + spy[i].value + "\"\n"
 				envs.push(spy[i])
 			}
 		}
 	}
-//	tgpush = tgpush.replace(/(?<!\\)_/g,"\\_")
-	Notify(notify, tgpush)
+	Notify(notify)//变量解析通知，不需要自行注释
 	if (envs.length != 0)
 		Env_Listen(envs)
 }
@@ -967,23 +923,18 @@ function Export_Spy() {
 		s.reply("输入超时，已退出")
 		return
 	}
-	num=temp.getContent()
-	if (Number(num)==NaN) {
-		s.reply("输入有误，已退出")
-		return
-	}
-	num = Number(num)
+	let num = Number(temp.getContent())
 	if (num == 0) {
 		let temp = ClearHistory(spys)
-		if (typeof(s.reply("ImportWhiteEye=" + JSON.stringify(temp)))!="string"){
-			s.reply("导出数量过多，导出失败,请重新导出并减少单次导出项数")
-			return
+		if (s.reply("ImportWhiteEye=" + JSON.stringify(temp))==""){
+			s.reply("导出数量过多，导出失败,请重新导出并减少单次导出项数")		
 		}
+		return
 	}
 	while (n + num < spys.length) {
 		let temp = ClearHistory(spys.slice(n, n += num))
 
-		if (typeof(s.reply("ImportWhiteEye=" + JSON.stringify(temp)))!= "string")
+		if (typeof(s.reply("ImportWhiteEye=" + JSON.stringify(temp)))=="")
 			s.reply("导出数量过多，导出失败,请重新导出并减少单次导出项数")
 	}
 	if (n < spys.length)//导出末尾未截取到的部分
@@ -1012,26 +963,6 @@ function Import_Spy(data) {
 
 	let oldspy = JSON.parse(olddata)
 	let result = Add_Spy(oldspy, newspy)
-/*	for (let i = result.addat; i < result.spys.length; i++) {
-		notify += (i + 1 - result.addat) + "、" + result.spys[i].Name + "\n"
-		          for(let j=0;j<result.spys[i].Clients.length;j++){//删除导入数据中容器非本人容器的id
-						   let find=false 
-						   for(let k=0;k<QLS.length;k++){                      	
-							   if(QLS[k].client_id==result.spys[i].Clients[j]){
-								   find=true
-								   break			
-							   }
-						   }
-						   if(!find)
-							   result.spys[i].Clients.splice(j,1)
-							   
-				   }
-		if (result.spys[i].Clients.length == 0)//导入数据容器全部非本人容器，则默认使用所有非禁用容器
-			for (let j = 0; j < QLS.length; j++)
-				if (!QLS[j].disable)
-					result.spys[i].Clients.push(QLS[j].client_id)
-	}*/
-	//		s.reply(JSON.stringify(result.spys))
 	db.set("env_listens_new", JSON.stringify(result.spys))
 	return "共导入" + (result.spys.length - result.addat) + "个监控任务\n" + notify
 
@@ -1074,8 +1005,9 @@ function Que_Manager(QLS) {
 
 
 		for (i = 0; i < QLS.length; i++) {
-			QLS[i]["envs"] = []
-			QLS[i]["keywords"] = []
+			QLS[i]["envs"] = []	//容器配置文件需要修改的变量
+			QLS[i]["keywords"] = []	//容器需要执行的任务的关键词
+			QLS[i]["listenIndex"]=[]	//记录keywords对应的监听任务,便于未能顺利执行时撤回
 		}
 
 		//执行任务
@@ -1133,44 +1065,55 @@ function Que_Manager(QLS) {
 				//				notify+=QLS[i].name+"无任务，跳过\n"
 				continue
 			}
-			let token = Get_QL_Token(QLS[i].host, QLS[i].client_id, QLS[i].client_secret)
+			let token = ql.Get_QL_Token(QLS[i].host, QLS[i].client_id, QLS[i].client_secret)
 			if (token == null) {
 				notify += QLS[i].name + "token获取失败，跳过\n"
 				continue
 			}
 
-			if (!Modify_QL_Config(QLS[i].host, token, QLS[i].envs)) {
+			if (!ql.Modify_QL_Config(QLS[i].host, token, QLS[i].envs)) {
 				notify += QLS[i].name + JSON.stringify(QLS[i].envs) + "配置文件变量修改失败，跳过\n"
 				continue
 			}
-			let crons = Get_QL_Crons(QLS[i].host, token)
+			let crons = ql.Get_QL_Crons(QLS[i].host, token)
 			if (crons == null) {
 				notify += QLS[i].name + "获取青龙任务失败，跳过\n"
 				continue
 			}
 			let ids = [], names = []//记录需要执行的青龙任务
+			/*for(j==0;j<QLS[i].keywords.length;j++){
+				for(k=0;k<crons.length;k++){
+					if(crons[k].name.indexOf(QLS[i].keywords[j]!=-1)||crons[k].command.indexOf(QLS[i].keywords[j]!=-1)){
+						if(crons[k].pid==""){//找到了任务但该任务还在执行,将对应监控任务队列
+							Listens[QLS[i].listenIndex[j]].TODO.push(Listens[QLS[i].listenIndex[j]].DONE[Listens[QLS[i].listenIndex[j]].DONE.length-1])
+						}
+					}
+				}
+			}*/
 			for (j = 0; j < crons.length; j++) {
 				for (k = 0; k < QLS[i].keywords.length; k++) {
 					if (crons[j].command.indexOf(QLS[i].keywords[k]) != -1 || crons[j].name.indexOf(QLS[i].keywords[k]) != -1) {
-						if (crons[j].id)
-							ids.push(crons[j].id)
-						else
-							ids.push(crons[j]._id)
-						names.push(crons[j].name)
-						QLS[i].keywords.splice(k, 1)//删除以避免执行容器内具有相同关键词的任务
+						//if(crons[j].pid==""){
+							if (crons[j].id)
+								ids.push(crons[j].id)
+							else
+								ids.push(crons[j]._id)
+							names.push(crons[j].name)
+							QLS[i].keywords.splice(k, 1)//删除以避免执行容器内具有相同关键词的任务
+						//}
 					}
 				}
 			}
 			if (ids.length == 0) {
 				notify += QLS[i].name + "容器未找到任务:" + QLS[i].keywords.toString() + "请检查是否监控任务配置有误\n"
 			}
-			if (!Stop_QL_Crons(QLS[i].host, token, ids)) {
+			if (!ql.Stop_QL_Crons(QLS[i].host, token, ids)) {
 				//				Notify(QLS[i].name+":\n"+names.toString()+"\n停止失败")		
 			}
 			sleep(1000)
-			if (Start_QL_Crons(QLS[i].host, token, ids)) {
-				//			if(true){
-				notify += "容器【" + QLS[i].name + "】:执行《" + names.toString() + "》执行成功"
+			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) {
+			//if(true){
+				notify += "容器【" + QLS[i].name + "】:执行〔" + names.toString() + "〕执行成功"
 				suss = true
 			}
 			//			else
@@ -1184,7 +1127,8 @@ function Que_Manager(QLS) {
 								Listens[i].DONE.pop()
 				}	*/
 		db.set("env_listens_new", JSON.stringify(Listens))
-		Notify(notify)
+		if(notify!="")
+			Notify(notify)
 		/*		count++
 		//		if(t>0){
 					s.reply("第"+count+"次循环,等待时长:"+t)
@@ -1227,6 +1171,106 @@ function DecodeUrl(url, urldecodes) {//console.log(url+"\n"+url.length)
 	return spy
 }
 
+
+
+
+//导入监控数据
+function Add_Spy(oldspy, newspy) {
+	let data = (new Bucket("qinglong")).get("QLS")
+	if (data == "") {
+		//		Notify("醒一醒，你都没对接青龙，使用\"青龙管理\"命令对接青龙")
+		return null
+	}
+	let QLS = JSON.parse(data)
+	//	console.log(JSON.stringify(oldspy)+"\n\n"+JSON.stringify(newspy))
+	let start = oldspy.length//保存导入结果数据中新添项开始的位置
+	console.log(newspy.length)
+	for (let i = 0; i < newspy.length; i++) {//导入监控配置与现存某项监控的变量相同则不导入此项监控配置
+		let find=function () {
+			for (let j = 0; j < oldspy.length; j++) {
+				for (k = 0; k < oldspy[j].Envs.length; k++) {
+					for (m = 0; m < newspy[i].Envs.length; m++) {
+						if (newspy[i].Envs[m] == oldspy[j].Envs[k]) {
+							console.log(newspy[i].Name + "的" + newspy[i].Envs[m] + "变量已存在于监控中，不导入\n")
+							return true
+						}
+					}
+				}
+			}
+			return false
+		}()
+		if(!find){
+			ClearHistory([newspy[i]])
+			for (let j = 0; j < newspy[i].Clients.length; j++) {//删除监控任务newspy[i]中指定容器非傻妞对接容器的容器
+				let noclient=function () {
+					for (k = 0; k = QLS.length; k++)
+						if (QLS.client_id == newspy[i].Clients[j])
+							return true
+					return false
+				}()
+				if(noclient){
+					console.log(`删除${newspy[i].Name}：${newspy[i].Clients[j]}`)
+					newspy[i].Clients.splice(j, 1)
+				}
+			}
+			if(newspy[i].Clients.length==0){//导入的任务无有效容器，将非禁用容器作为默认容器
+				for(j=0;j<QLS.length;j++)
+					if(!QLS.disable)
+						newspy[i].Clients.push(QLS[j].client_id)
+			}
+			oldspy.push(newspy[i])
+//			console.log("成功导入【" + newspy[i].Name + "】\n")
+		}
+		else {
+			console.log(newspy[i].Name + "已存在")
+		}
+	}
+//	console.log(JSON.stringify(oldspy))
+	return { spys: oldspy, addat: start }
+}
+
+
+//发送msg消息
+function Notify(msg) {//s.reply("通知")
+	let imType = s.getPlatform()
+	let message = s.getContent();//s.reply(message)
+	if (db.get("spy_silent_new") != "true" || s.isAdmin()) {//s.reply(msg)
+		if (imType != "tg")
+			s.reply(msg)
+		else {
+			//msg = msg.replace(/(?<!\\)_/g,"\\_")
+			if (s.getChatId() != 0){
+				if(!st.SendToTG(s.getChatId(), msg))
+					s.reply(msg)
+			}
+			else{
+				if(!st.SendToTG(s.getUserId(), msg))
+					s.reply(msg)
+			}
+		}
+	}
+	else {//静默
+		let from = "处理来自" + s.getPlatform() + ":"
+		if (s.getChatId() != 0) {
+			/*			if(s.getChatname()!="")
+							from+="群("+s.getChatname()+")"
+						else*/
+			from += "群(" + s.getChatId() + ")"
+		}
+		if (s.getUsername() != "")
+			from += "(" + s.getUsername() + ")"
+		else
+			from += "(" + s.getUserId() + ")"
+		from += "的消息\n---------------------\n【" + message.slice(0, 50) + "......】\n---------------------\n";
+//		tgmsg=(from + tgmsg).replace(/(?<!\\)_/g,"\\_")
+		st.NotifyMainKey("SpyNotify", false, from + msg + "\n--『白眼』")
+		st.NotifyMainKey("SpyGroupNotify", true, from + msg + "\n--『白眼』")
+	}
+}
+
+
+
+
 //清空Listens监控队列与记录
 function ClearHistory(Listens) {
 	for (let i = 0; i < Listens.length; i++) {
@@ -1247,7 +1291,8 @@ function ClearHistory(Listens) {
 //检查消息源是否监控目标或者管理员
 function IsTarget() {
 	try {
-		let uid = s.getUserId(), cid = s.getChatId(),tgbotid=(new Bucket("tg")).get("token").split(":")[0]
+		let uid = s.getUserId(), cid = s.getChatId()
+		let tgbotid=(new Bucket("tg")).get("token").split(":")[0]//不解析来自机器人的消息
 		let targets = JSON.parse(db.get("spy_targets_new"))
 		for (let i = 0; i < targets.length; i++){
 			if (targets[i].id == uid )
@@ -1416,419 +1461,6 @@ function Print_SpyUrl(decodes) {
 	s.reply(notify)
 }
 
-//导入监控数据
-function Add_Spy(oldspy, newspy) {
-	let data = (new Bucket("qinglong")).get("QLS")
-	if (data == "") {
-		//		Notify("醒一醒，你都没对接青龙，使用\"青龙管理\"命令对接青龙")
-		return null
-	}
-	let QLS = JSON.parse(data)
-	//	console.log(JSON.stringify(oldspy)+"\n\n"+JSON.stringify(newspy))
-	let start = oldspy.length//保存导入结果数据中新添项开始的位置
-	console.log(newspy.length)
-	for (let i = 0; i < newspy.length; i++) {//导入监控配置与现存某项监控的变量相同则不导入此项监控配置
-		let find=function () {
-			for (let j = 0; j < oldspy.length; j++) {
-				for (k = 0; k < oldspy[j].Envs.length; k++) {
-					for (m = 0; m < newspy[i].Envs.length; m++) {
-						if (newspy[i].Envs[m] == oldspy[j].Envs[k]) {
-							console.log(newspy[i].Name + "的" + newspy[i].Envs[m] + "变量已存在于监控中，不导入\n")
-							return true
-						}
-					}
-				}
-			}
-			return false
-		}()
-		if(!find){
-			ClearHistory([newspy[i]])
-			for (let j = 0; j < newspy[i].Clients.length; j++) {//删除监控任务newspy[i]中指定容器非傻妞对接容器的容器
-				let noclient=function () {
-					for (k = 0; k = QLS.length; k++)
-						if (QLS.client_id == newspy[i].Clients[j])
-							return true
-					return false
-				}()
-				if(noclient){
-					console.log(`删除${newspy[i].Name}：${newspy[i].Clients[j]}`)
-					newspy[i].Clients.splice(j, 1)
-				}
-			}
-			if(newspy[i].Clients.length==0){//导入的任务无有效容器，将非禁用容器作为默认容器
-				for(j=0;j<QLS.length;j++)
-					if(!QLS.disable)
-						newspy[i].Clients.push(QLS[j].client_id)
-			}
-			oldspy.push(newspy[i])
-//			console.log("成功导入【" + newspy[i].Name + "】\n")
-		}
-		else {
-			console.log(newspy[i].Name + "已存在")
-		}
-	}
-//	console.log(JSON.stringify(oldspy))
-	return { spys: oldspy, addat: start }
-}
-
-//修改青龙配置文件变量
-function Modify_QL_Config(host, token, envs) {
-	//s.reply(JSON.stringify(envs))
-	let oldConfig = Get_QL_Config(host, token, "config.sh")
-	if (oldConfig != null) {
-		let newConfig = oldConfig
-		for (let i = 0; i < envs.length; i++) {
-			let regstr = "(?<=export[ ]+" + envs[i].name + "[ ]*=[ ]*\")[^\"]*"
-			let reg = new RegExp(regstr)
-			//			s.reply(regstr)
-			//			s.reply(newConfig.match(reg))
-			if (newConfig.search(reg) == -1)
-				newConfig += "\nexport " + envs[i].name + "=\"" + envs[i].value + "\""
-			else
-				newConfig = newConfig.replace(reg, envs[i].value)
-		}
-		return Update_QL_Config(host, token, "config.sh", newConfig)
-	}
-	else return false
-}
-
-//修改配置文件变量[{name:变量名,value:变量值}]并执行含关键词keyword的任务
-function Spy_QL_Task(QL, envs, keyword) {
-	//	s.reply("ql task:"+JSON.stringify(envs)+"\n\n"+keyword)
-	let host = QL.host, client_id = QL.client_id, client_secret = QL.client_secret
-	let token = Get_QL_Token(host, client_id, client_secret)
-	//	let token={"token":"fcd177a5-e3e0-4791-8a41-dca51261462f","token_type":"Bearer","expiration":1663494257}
-	if (token == null)
-		return null
-	if (!Modify_QL_Config(host, token, envs)) {
-		Notify("变量修改失败" + JSON.stringify(envs))
-		return false
-	}
-	let crons = Get_QL_Crons(host, token)
-	for (let i = 0; i < crons.length; i++) {
-		if (crons[i].command.indexOf(keyword) != -1 || crons[i].name.indexOf(keyword) != -1) {
-			//			s.reply(crons[i].command+"\n\n"+crons[i].name)
-			if (crons[i]._id) {
-				if (!Stop_QL_Crons(host, token, [crons[i]._id])) {
-					Notify([crons[i]._id] + "停止失败")
-					//					return false
-				}
-				sleep(3000)
-				return Start_QL_Crons(host, token, [crons[i]._id])
-			}
-			else {
-				if (!Stop_QL_Crons(host, token, [crons[i].id]))
-					return false
-				sleep(3000)
-				return Start_QL_Crons(host, token, [crons[i].id])
-			}
-		}
-	}
-	s.reply("未找到" + keyword + "任务")
-	return false
-}
-
-
-
-//获取傻妞数据库mainkey下设置的通知渠道发送msg消息
-function Notify_MainKey(mainKey, isGroup, msg, tgmsg) {
-	let record = []//记录已通知[{imType:qq/tg/wx,id:ID}]
-	let NotifyTo = {
-		platform: "",
-		userID: "",
-		groupCode: "",
-		content: msg
-	}
-	let dbn = new Bucket(mainKey)
-	let toType = dbn.keys()
-	for (let i = 0; i < toType.length; i++) {
-		let ids = dbn.get(toType[i]).split("&")
-		if (ids == "")
-			continue
-		NotifyTo.platform = toType[i]
-		for (let j = 0; j < ids.length; j++) {
-			if (isGroup)
-				NotifyTo.groupCode = ids[j]
-			else
-				NotifyTo.userID = ids[j]
-			if (NotifyMode == 1) {
-				if (toType[i] != "tg")
-					sillyGirl.push(NotifyTo)
-				else{
-					if(!SendToTG(ids[j], tgmsg))//发送失败使用傻妞通知
-						sillyGirl.push(NotifyTo)
-				}
-			}
-			else
-				sillyGirl.push(NotifyTo)
-			record.push({ imType: toType[i], id: ids[j] })
-		}
-	}
-	//	s.reply(JSON.stringify(record))
-	return record
-}
-
-//根据静默与否发送msg消息,tgmsg:消息目标为tg时的消息(静默时需另行推送消息时使用)
-function Notify(msg, tgmsg) {//s.reply("通知")
-	let imType = s.getPlatform()
-	let message = s.getContent();//s.reply(message)
-	if (tgmsg == undefined)
-		tgmsg = msg
-	if (db.get("spy_silent_new") != "true" || s.isAdmin()) {//s.reply(msg)
-		if (imType != "tg")
-			s.reply(msg)
-		else {
-			if (NotifyMode == 1) {
-				msg = msg.replace(/(?<!\\)_/g,"\\_")
-				if (s.getChatId() != 0){
-					if(!SendToTG(s.getChatId(), msg))
-						s.reply(msg)
-				}
-				else{
-					if(!SendToTG(s.getUserId(), msg))
-						s.reply(msg)
-				}
-			}
-			else 
-				s.reply(msg)
-		}
-	}
-	else {//静默
-		let from = "处理来自" + s.getPlatform() + ":"
-		if (s.getChatId() != 0) {
-			/*			if(s.getChatname()!="")
-							from+="群("+s.getChatname()+")"
-						else*/
-			from += "群(" + s.getChatId() + ")"
-		}
-		if (s.getUsername() != "")
-			from += "(" + s.getUsername() + ")"
-		else
-			from += "(" + s.getUserId() + ")"
-		from += "的消息\n---------------------\n【" + message.slice(0, 20) + "......】\n---------------------\n";
-		tgmsg=(from + tgmsg).replace(/(?<!\\)_/g,"\\_")
-		Notify_MainKey("SpyNotify", false, from + msg,tgmsg  + "\n--『白眼』")
-		Notify_MainKey("SpyGroupNotify", true, from + msg, tgmsg  + "\n--『白眼』")
-	}
-}
-
-/**************青龙api************/
-//获取青龙token
-function Get_QL_Token(host, client_id, client_secret) {
-	try {
-		let data = request({ url: host + "/open/auth/token?client_id=" + client_id + "&client_secret=" + client_secret })
-		return JSON.parse(data.body).data
-	}
-	catch (err) {
-		return null
-	}
-}
-
-//获取青龙配置文件内容
-function Get_QL_Config(host, token, filename) {
-	try {
-		let data = request({
-			url: host + "/open/configs/" + filename,
-			method: "get",
-			headers: {
-				Authorization: token.token_type + " " + token.token
-			}
-		})
-		return JSON.parse(data.body).data
-	}
-	catch (err) {
-		return null
-	}
-}
-
-
-//修改配置文件
-function Update_QL_Config(host, token, filename, content) {
-	try {
-		let data = request({
-			url: host + "/open/configs/save",
-			method: "post",
-			headers: {
-				Authorization: token.token_type + " " + token.token,
-				"content-Type": "application/json"
-			},
-			body: { "name": filename, "content": content }
-		})
-		if (JSON.parse(data.body).code == 200)
-			return true
-		else
-			return false
-	}
-	catch (err) {
-		return false
-	}
-}
-
-//获取所有任务，返回所有任务对象数组
-function Get_QL_Crons(host, token) {
-	try {
-		let data = request({
-			url: host + "/open/crons",
-			method: "get",
-			headers: {
-				accept: "application/json",
-				Authorization: token.token_type + " " + token.token
-			},
-			dataType: "application/json"
-		})
-		return JSON.parse(data.body).data
-	}
-	catch (err) {
-		return null
-	}
-}
-
-//立即执行任务id,id为数组
-function Start_QL_Crons(host, token, id) {
-	try {
-		let data = request({
-			url: host + "/open/crons/run",
-			method: "put",
-			headers: {
-				accept: "application/json",
-				Authorization: token.token_type + " " + token.token,
-				contentType: "application/json"
-			},
-			body: id,
-			dataType: "application/json"
-		})
-		if (JSON.parse(data.body).code == 200)
-			return true
-		else
-			return false
-	}
-	catch (err) {
-		return false
-	}
-}
-
-//停止任务id,id为数组
-function Stop_QL_Crons(host, token, id) {
-	try {
-		let data = request({
-			url: host + "/open/crons/stop",
-			method: "put",
-			headers: {
-				accept: "application/json",
-				Authorization: token.token_type + " " + token.token,
-				contentType: "application/json"
-			},
-			body: id,
-			dataType: "application/json"
-		})
-		if (JSON.parse(data.body).code == 200)
-			return true
-		else
-			return false
-	}
-	catch (err) {
-		return false
-	}
-}
-
-
-
-/*************口令解析api******************/
-//WALL接口解析
-function WallDecode(code) {
-	let resp = request({
-		url: "http://ailoveu.eu.org:19840/jCommand",
-		headers: {
-			"User-Agent": "Mozilla/5.0 (Linux; U; Android 11; zh-cn; KB2000 Build/RP1A.201005.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36 HeyTapBrowser/40.7.19.3 uuid/cddaa248eaf1933ddbe92e9bf4d72cb3",
-			"Content-Type": "application/json;charset=utf-8",
-			"token": (new Bucket("otto")).get("WALL")
-		},
-		method: "post",
-		dataType: "json",
-		body: { "code": code }
-	})
-	try {//console.log(resp)
-		let data = resp.body
-		if (data.code == 200 && data.data != "无法解析该口令")
-			return data.data
-		else
-			return null
-	}
-	catch (err) {
-		return null
-	}
-	return null
-}
-
-//Windfgg接口解析
-function WindfggDecode(code) {
-	let data = request({
-		url: "http://api.windfgg.cf/jd/code",
-		headers: {
-			"User-Agent":
-				"Mozilla/5.0 (Linux; U; Android 11; zh-cn; KB2000 Build/RP1A.201005.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36 HeyTapBrowser/40.7.19.3 uuid/cddaa248eaf1933ddbe92e9bf4d72cb3",
-			"Content-Type": "application/json;charset=utf-8",
-			"Authorization": "Bearer " + get("WindfggToken")
-		},
-		method: "post",
-		dataType: "json",
-		body: { "code": code }
-	})
-	try {
-		//		s.reply(data)
-		if (data.code == 200)
-			return data.data
-		else
-			return null
-	}
-	catch (err) {
-		return null
-	}
-	return null
-}
-
-//nolan接口解析
-function NolanDecode(code) {
-	let resp = request({
-		url: "https://api.nolanstore.top/JComExchange",
-		method: "post",
-		body: { "code": code },
-		json: true
-	})
-	try {
-		//		s.reply(resp)
-		let data = JSON.parse(resp.body)
-		if (data.code == 0)
-			return data.data
-		else
-			return null
-	}
-	catch (err) {
-		return null
-	}
-	return null
-}
-
-
-/****************tg bot API*********************/
-function SendToTG(id,msg){
-	let resp=request({
-		url:"https://api.telegram.org/bot"+(new Bucket("tg")).get("token")+"/sendMessage",
-		method:"post",
-		body:{
-			"chat_id":id,
-			"parse_mode":"markdown",
-			"text":msg
-		}
-	})
-	try{		
-		return JSON.parse(resp.body).ok
-	}
-	catch(err){
-		return false
-	}
-	return
-}
 
 
 /****************内置解析链接规则****************** */
