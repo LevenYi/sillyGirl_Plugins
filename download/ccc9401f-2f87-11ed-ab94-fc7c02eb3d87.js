@@ -6,7 +6,7 @@
 * @title 京东资产过期提醒
 * @platform qq wx tg pgm web cron
 * @rule 提醒资产过期
-* @cron 20 14 * * *
+* @cron 43 17 * * *
  * @public false
 * @admin true
 */
@@ -69,12 +69,12 @@ function main(){
 					expirebean.forEach(value=>exbeans+=value.expireamount)
 					if(redpackets_data.expiredBalance=="")
 						redpackets_data.expiredBalance=0
-					//console.log(envs[j].value+"\n"+redpackets_data.expiredBalance+"\n"+exbeans)
+					console.log(envs[j].value+"\n"+redpackets_data.expiredBalance+"\n"+exbeans)
 					if(exbeans/100+Number(redpackets_data.expiredBalance)>=NUM){
 						let pin=envs[j].value.match(/(?<=pin=)[^;]+/)[0]
 						let tip="温馨提醒，您的账号【"+GetName(envs[j].value)+"】有"
 						tip+=redpackets_data.expiredBalance+"元红包与"+exbeans+"京豆将于近期过期"
-						//console.log(pin+tip)
+						console.log(pin+tip)
 						if(record.indexOf(pin)==-1){//console.log(pin+tip)
 							st.NotifyPin(pin,tip)
 							notify+="【"+pin+"】:"+redpackets_data.expiredBalance+"\n"

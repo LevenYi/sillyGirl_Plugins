@@ -15,6 +15,7 @@ module.exports={
 	NotifyMasters,NotifyMasters,
 	GetBind:GetBind,
 	ToHyperLink:ToHyperLink,
+	ToEasyCopy:ToEasyCopy,
 
 	JD_UserInfo:JD_UserInfo,
 	JD_BeanInfo:JD_BeanInfo,
@@ -26,6 +27,16 @@ module.exports={
 	NolanDecode:NolanDecode,
 
 	SendToTG:SendToTG
+}
+
+//将
+function ToEasyCopy(imtype,title,msg){
+	if(imtype=="pgm")
+		return "**"+title+"**\n`"+msg+"`"
+	else if(imtype=="tg")
+		return "*"+title+"*\n`"+msg+"`"
+	else
+		return  "【" + title + "】\n"+msg
 }
 
 //获取imtype平台用户uid所绑定的京东账号pin

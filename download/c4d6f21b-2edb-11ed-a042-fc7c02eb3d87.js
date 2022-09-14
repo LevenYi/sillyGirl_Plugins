@@ -741,7 +741,7 @@ function Env_Listen(envs) {
 			for (let j = 0; j < trans.length; j++) {
 				if (envs[i].name == trans[j].ori) {
 					envs[i].name = trans[j].redi
-					Notify("变量自动转换：export " + envs[i].name + "=\"" + envs[i].value + "\"")
+					Notify(st.ToEasyCopy(s.getPlatform(),"变量自动转换：","export " + envs[i].name + "=\"" + envs[i].value + "\""))
 				}
 			}
 		}
@@ -895,12 +895,7 @@ function Urls_Decode(urls) {//console.log(urls)
 		}
 		else {
 			for (let i = 0; i < spy.length; i++) {
-				if(s.getPlatform()=="pgm")
-					notify += "**" + spy[i].act + "**\n`export " + spy[i].name + "=\"" + spy[i].value + "\"`\n"
-				else if(s.getPlatform()=="tg")
-					notify += "*" + spy[i].act + "*\n`export " + spy[i].name + "=\"" + spy[i].value + "\"`\n"
-				else
-					notify += "【" + spy[i].act + "】\n export " + spy[i].name + "=\"" + spy[i].value + "\"\n"
+				notify=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")
 				envs.push(spy[i])
 			}
 		}
@@ -995,7 +990,8 @@ function Que_Manager(QLS) {
 		}
 		if (done) {
 			db.set("spy_locked", false)//开锁
-			Notify("已完成所有任务")
+			if(NotifyMode)
+				Notify("已完成所有任务")
 			break
 		}
 		else {
