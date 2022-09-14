@@ -730,7 +730,7 @@ function Recovery_qlspy() {
 }
 
 function Env_Listen(envs) {
-	//console.log(JSON.stringify(envs))
+	console.log(JSON.stringify(envs))
 	if (envs.length == 0)
 		return
 	// 	检查变量名是否为用户配置的需要转换的变量名，是则先转换
@@ -790,7 +790,7 @@ function Env_Listen(envs) {
 						find = true
 						//console.log(JSON.stringify(envs[j])+"\n\n"+JSON.stringify(Listens[i].DONE))
 						if (IsIn(envs[j], Listens[i].TODO) || IsIn(envs[j], Listens[i].DONE)) {
-							notify += "【" + envs[j].value + "】重复的变量，已忽略\n"
+							notify += "【 " + envs[j].value + " 】重复的变量，已忽略\n"
 							continue
 						}
 						else {
@@ -811,7 +811,7 @@ function Env_Listen(envs) {
 			}
 
 			if (que.length != 0) {
-				//console.log(JSON.stringify(que))
+				console.log("监控任务任务"+(i+1)+JSON.stringify(que))
 				if (Listens[i].Disable)
 					notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】任务已禁用，已忽略\n"
 				else {
@@ -837,14 +837,14 @@ function Env_Listen(envs) {
 		if (find) {
 			//if(NotifyMode)
 				Notify(notify)
-			if (flag) {
+			/*if (flag) {
 				db.set("env_listens_new", JSON.stringify(Listens))
 				if (db.get("spy_locked") == "false") {
 					db.set("spy_locked", true)
 					Que_Manager(QLS)
 					return
 				}
-			}
+			}*/
 		}
 		else {
 			//if(NotifyMode)
@@ -893,9 +893,9 @@ function Urls_Decode(urls) {//console.log(urls)
 		if (spy.length == 0) {
 			notify += "未解析到变量\n可使用\"监控管理\"命令自行添加\n"
 		}
-		else {
+		else {//console.log(JSON.stringify(spy))
 			for (let i = 0; i < spy.length; i++) {
-				notify=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")
+				notify+=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
 				envs.push(spy[i])
 			}
 		}
@@ -1500,14 +1500,14 @@ var DefaultUrlDecode =
 			}]
 		},
 
-		{
-			keyword: "https://lzkjdz-isv.isvjcloud.com/wxCollectCard",
-			name: "M集卡抽奖",
-			trans: [{
-				ori: -1,
-				redi: "M_WX_COLLECT_CARD_URL"//wall
-			}]
-		},
+		// {
+		// 	keyword: "https://lzkjdz-isv.isvjcloud.com/wxCollectCard",
+		// 	name: "M集卡抽奖",
+		// 	trans: [{
+		// 		ori: -1,
+		// 		redi: "M_WX_COLLECT_CARD_URL"//wall
+		// 	}]
+		// },
 		{
 			keyword: "https://lzkjdz-isv.isvjcloud.com/wxCollectCard",
 			name: "LZ集卡抽奖",
@@ -1518,14 +1518,14 @@ var DefaultUrlDecode =
 		},
 
 
-		{
-			keyword: "wxCollectionActivity/activity",
-			name: "M加购有礼",
-			trans: [{
-				ori: "-1",
-				redi: "M_WX_ADD_CART_URL"//wall
-			}]
-		},
+		// {
+		// 	keyword: "wxCollectionActivity/activity",
+		// 	name: "M加购有礼",
+		// 	trans: [{
+		// 		ori: "-1",
+		// 		redi: "M_WX_ADD_CART_URL"//wall
+		// 	}]
+		// },
 		{
 			keyword: "wxCollectionActivity/activity",
 			name: "加购有礼",
@@ -1568,22 +1568,22 @@ var DefaultUrlDecode =
 				redi: "LUCK_DRAW_URL"//kr
 			}]
 		},
-		{
-			keyword: "wxDrawActivity/activity",
-			name: "幸运抽奖",
-			trans: [{
-				ori: "-1",
-				redi: "M_WX_LUCK_DRAW_URL"//wall
-			}]
-		},
-		{
-			keyword: "https://lzkj-isv.isvjcloud.com/lzclient",
-			name: "幸运抽奖",
-			trans: [{
-				ori: "-1",
-				redi: "M_WX_LUCK_DRAW_URL"//wall
-			}]
-		},
+		// {
+		// 	keyword: "wxDrawActivity/activity",
+		// 	name: "幸运抽奖",
+		// 	trans: [{
+		// 		ori: "-1",
+		// 		redi: "M_WX_LUCK_DRAW_URL"//wall
+		// 	}]
+		// },
+		// {
+		// 	keyword: "https://lzkj-isv.isvjcloud.com/lzclient",
+		// 	name: "幸运抽奖",
+		// 	trans: [{
+		// 		ori: "-1",
+		// 		redi: "M_WX_LUCK_DRAW_URL"//wall
+		// 	}]
+		// },
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/lzclient/",
 			name: "LZ幸运抽奖",
@@ -1610,14 +1610,14 @@ var DefaultUrlDecode =
 			}]
 		},
 
-		{
-			keyword: "https://lzkjdz-isv.isvjcloud.com/wxSecond",
-			name: "M读秒手速",
-			trans: [{
-				ori: "-1",
-				redi: "M_WX_SECOND_DRAW_URL"
-			}]
-		},
+		// {
+		// 	keyword: "https://lzkjdz-isv.isvjcloud.com/wxSecond",
+		// 	name: "M读秒手速",
+		// 	trans: [{
+		// 		ori: "-1",
+		// 		redi: "M_WX_SECOND_DRAW_URL"
+		// 	}]
+		// },
 		{
 			keyword: "https://lzkjdz-isv.isvjcloud.com/wxSecond",
 			name: "LZ读秒拼手速",
@@ -1662,14 +1662,14 @@ var DefaultUrlDecode =
 			}]
 		},
 		
-		{
-			keyword: "https://cjhy-isv.isvjcloud.com/wxShopFollowActivity/activity",
-			name: "M关注抽奖",
-			trans: [{
-				ori: "-1",
-				redi: "M_WX_FOLLOW_DRAW_URL"
-			}]
-		},
+		// {
+		// 	keyword: "https://cjhy-isv.isvjcloud.com/wxShopFollowActivity/activity",
+		// 	name: "M关注抽奖",
+		// 	trans: [{
+		// 		ori: "-1",
+		// 		redi: "M_WX_FOLLOW_DRAW_URL"
+		// 	}]
+		// },
 
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/drawCenter",
@@ -1679,14 +1679,14 @@ var DefaultUrlDecode =
 				redi: "jd_drawCenter_activityId"
 			}]
 		},
-		{
-			keyword: "https://lzkj-isv.isvjcloud.com/drawCenter",
-			name: "M老虎机抽奖",
-			trans: [{
-				ori: "-1",
-				redi: "M_WX_CENTER_DRAW_URL"
-			}]
-		},
+		// {
+		// 	keyword: "https://lzkj-isv.isvjcloud.com/drawCenter",
+		// 	name: "M老虎机抽奖",
+		// 	trans: [{
+		// 		ori: "-1",
+		// 		redi: "M_WX_CENTER_DRAW_URL"
+		// 	}]
+		// },
 
 		{
 			keyword: "https://lzkjdz-isv.isvjcloud.com/wxFansInterActionActivity",
