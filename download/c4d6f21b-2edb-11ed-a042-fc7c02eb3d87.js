@@ -837,14 +837,14 @@ function Env_Listen(envs) {
 		if (find) {
 			//if(NotifyMode)
 				Notify(notify)
-			/*if (flag) {
+			if (flag) {
 				db.set("env_listens_new", JSON.stringify(Listens))
 				if (db.get("spy_locked") == "false") {
 					db.set("spy_locked", true)
 					Que_Manager(QLS)
 					return
 				}
-			}*/
+			}
 		}
 		else {
 			//if(NotifyMode)
