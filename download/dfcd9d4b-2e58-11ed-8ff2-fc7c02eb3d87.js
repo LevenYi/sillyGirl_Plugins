@@ -1,7 +1,7 @@
 /*
 * @author https://t.me/sillyGirl_Plugin
 * @create_at 2022-09-07 18:30:34
-* @description 需自行填写相关配置
+* @description 需填写相关配置,须安装somethong与qinglong模块
 * @title 青龙变量顺序自动调整
 * @platform qq wx tg pgm sxg
 * @rule 动一动

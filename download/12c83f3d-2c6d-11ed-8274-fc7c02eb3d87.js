@@ -1,7 +1,7 @@
 /*
 * @author https://t.me/sillyGirl_Plugin
 * @create_at 2022-09-07 18:24:50
-* @description 芝士功能补全
+* @description 芝士功能补全，须安装somethong与qinglong模块
 * @title 芝士plus
 * @platform qq wx tg pgm sxg
 * @rule 交换\s\d+\s\d+
@@ -377,6 +377,7 @@ function Recovery_qlEnv(QLS){
 			
 		let envs=ql.Get_QL_Envs(ql_host,ql_token)
 		for(let j=0;j<backup[i].envs.length;j++){
+			//if(envs.findIndex(env=>env.name==backup[i].envs[j].name&&(env.valu==backup[i].envs[j].value)))
 			if(EnvExist(envs,backup[i].envs[j])){//跳过已存在变量，防止重复
 				continue
 			}

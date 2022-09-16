@@ -1,13 +1,11 @@
 /*
 * @author https://t.me/sillyGirl_Plugin
 * @create_at 2022-09-07 18:35:08
-* @description 口令解析、链接解析、变量转换、变量监控多合一
+* @description 口令解析、链接解析、变量转换、变量监控多合一，须安装somethong与qinglong模块
 * @title 白眼
 * @platform qq wx tg pgm sxg
 * @rule [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
-* @rule [\s\S]*https://\S+\.isvjcloud\.com/\S+[\s\S]*
-* @rule [\s\S]*https://\S+\.isvjd\.com/\S+[\s\S]*
-* @rule [\s\S]*https://[\s\S]{2,}\.jd.com[\s\S]*
+* @rule [\s\S]*(https?:\/\/(.{2,}?\.)(isvjcloud|isvjd|jd)\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
 * @rule [\s\S]*export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
 * @rule 迁移ql spy
 * @rule 恢复ql spy
@@ -19,7 +17,7 @@
 * @rule 清空监控记录
 * @rule 清空白眼数据
  * @public false
-* @version v1.2.5
+* @version v1.2.6
 */
 
 
@@ -55,23 +53,27 @@
 插件中可能需要区分的名称：监控任务名称，自定义变量转换名称，自定义链接解析名称，青龙任务名称、以及内置的链接解析的名称
 插件最后为内置解析规则，同自定义解析规则，可自行添加
 */
-//0不通知口令与链接解析以及加入队列
-const NotifyMode=0
-//2022-8-27 v1.0.0 
-//2022-8-27 v1.0.1 修复人形傻妞与tg机器人位于同一个对话时不停互相丢链接的问题，可能修复监控偶尔报错的问题
-//2022-8-29 v1.0.2 修复最新版傻妞重复迁移ql spy导致备份数据丢失的问题,修复多容器报错问题
-//2022-8-30 v1.1.0 修改任务处理为锁机制，导入配置时默认使用所有非禁用容器,添加一键清除白眼所有数据命令(卸载白眼可用)
-//2022-8-30 v1.1.1 紧急修复，人形与机器人位于同一会话，且监控消息含链接且变量为链接时的死循环问题
-//2022-8-31 v1.1.2 解决处理队列过程中遭遇不正常退出导致的队列不不处理问题（不完美，也可手动使用"清空监控队列"命令进行重置)，以及监控任务配置时未使用唯一性关键词导致启动青龙多个含相同关键词任务的问题
-//2022-8-31 v1.1.3 修复未找到青龙任务时，陷入死循环的问题，以及其他恢复ql spy失败问题
-//2022-8-31 v1.1.4 修复监控任务含多变量出现的奇奇怪怪问题
-//2022-9-1 v1.1.5 监控的不运行问题应该有所缓解，增加了对配置有问题的容错性，修复了不存在监控任务时第一次导入配置时無默认容器的问题
-//2022-9-1 v1.1.6 修复多变量任务只修改一个变量的问题，修复青龙配置文件变量值为空值时导致的另外新建变量，修改队列处理最大间隔为1分钟及其修正方式
-//2022-9-1 v1.2.0 修复多容器报错，并添加监控任务无容器提醒
-//2022-9-5 v1.2.1 适配最新傻妞,修复自定义链接解析无法去重的问题
-//2022-9-8 v1.2.2 修复已知bug
-//2022-9-9 v1.2.3 修复链接解析问题，支持解析链接型变量
-//2022-9-12 v1.2.5 模块化
+//
+const NotifyMode=true
+//监控黑名单
+const BlackList=["162726413"]
+/*
+2022-8-27 v1.0.0 
+2022-8-27 v1.0.1 修复人形傻妞与tg机器人位于同一个对话时不停互相丢链接的问题，可能修复监控偶尔报错的问题
+2022-8-29 v1.0.2 修复最新版傻妞重复迁移ql spy导致备份数据丢失的问题,修复多容器报错问题
+2022-8-30 v1.1.0 修改任务处理为锁机制，导入配置时默认使用所有非禁用容器,添加一键清除白眼所有数据命令(卸载白眼可用)
+2022-8-30 v1.1.1 人形与机器人位于同一会话，且监控消息含链接且变量为链接时的死循环问题
+2022-8-31 v1.1.2 解决处理队列过程中遭遇不正常退出导致的队列不不处理问题（不完美，也可手动使用"清空监控队列"命令进行重置)，以及监控任务配置时未使用唯一性关键词导致启动青龙多个含相同关键词任务的问题
+2022-8-31 v1.1.3 修复未找到青龙任务时，陷入死循环的问题，以及其他恢复ql spy失败问题
+2022-8-31 v1.1.4 修复监控任务含多变量出现的奇奇怪怪问题
+2022-9-1 v1.1.5 监控的不运行问题应该有所缓解，增加了对配置有问题的容错性，修复了不存在监控任务时第一次导入配置时無默认容器的问题
+2022-9-1 v1.1.6 修复多变量任务只修改一个变量的问题，修复青龙配置文件变量值为空值时导致的另外新建变量，修改队列处理最大间隔为1分钟及其修正方式
+2022-9-1 v1.2.0 修复多容器报错，并添加监控任务无容器提醒
+2022-9-5 v1.2.1 适配最新傻妞,修复自定义链接解析无法去重的问题
+2022-9-8 v1.2.2 修复已知bug
+2022-9-9 v1.2.3 修复链接解析问题，支持解析链接型变量
+2022-9-12 v1.2.5 模块化
+2022-9-16 v1.2.6 队列任务对应青龙任务处于空闲状态，不受监控任务间隔限制立即执行
 
 
 
@@ -272,10 +274,14 @@ function Spy_Manager() {
 		}
 
 		else if (inp == "a") {
-			if (silent == "true")
-				silent = "false"
-			else
+			if (silent != "true"){
 				silent = "true"
+				s.reply("已开启静默")
+			}
+			else{
+				silent = "false"
+				s.reply("已关闭静默")
+			}
 		}
 
 		else if (inp == "b") {
@@ -626,7 +632,7 @@ function Spy_Status() {
 			notify = "☆已完成所有任务☆\n"
 		else
 			notify = "★正在处理队列★\n"
-		notify += "任务名 剩余任务 已完成任务 上次任务时间\n------------------------------\n"
+		notify += "冷却 队列 已完成 任务 上次执行\n------------------------------\n"
 		let Listens = JSON.parse(data)
 		for (let i = 0; i < Listens.length; i++) {
 			time = 0
@@ -640,7 +646,7 @@ function Spy_Status() {
 			}
 			else
 				notify += "☆"
-			notify += Listens[i].Name + " 【" + Listens[i].TODO.length + "】【 " + Listens[i].DONE.length + "】 " + time + "\n"
+			notify +=  Listens[i].TODO.length + " " + Listens[i].DONE.length + " " + Listens[i].Name + "  " +time + "\n"
 
 		}
 		Notify(notify)
@@ -741,7 +747,7 @@ function Env_Listen(envs) {
 			for (let j = 0; j < trans.length; j++) {
 				if (envs[i].name == trans[j].ori) {
 					envs[i].name = trans[j].redi
-					Notify(st.ToEasyCopy(s.getPlatform(),"变量自动转换：","export " + envs[i].name + "=\"" + envs[i].value + "\""))
+					Notify(st.ToEasyCopy(s.getPlatform(),"变量转换","export " + envs[i].name + "=\"" + envs[i].value + "\""))
 				}
 			}
 		}
@@ -798,10 +804,10 @@ function Env_Listen(envs) {
 							if(que.length==0)
 								que.push([envs[j]])
 							else{
-								if(que[que.length-1].findIndex((value,index,array)=>value.name==envs[j].name)
+								if(que[que.length-1].findIndex((value,index,array)=>value.name==envs[j].name)//队列最后一个任务已存在相同变量，为新任务
 								!=-1)
 									que.push([envs[j]])
-								else
+								else//否则该任务为多变量，将该变量加入最后一个任务队列
 									que[que.length-1].push(envs[j])
 								
 							}
@@ -811,7 +817,7 @@ function Env_Listen(envs) {
 			}
 
 			if (que.length != 0) {
-				console.log("监控任务任务"+(i+1)+JSON.stringify(que))
+				//console.log("监控任务"+(i+1)+JSON.stringify(que))
 				if (Listens[i].Disable)
 					notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】任务已禁用，已忽略\n"
 				else {
@@ -825,10 +831,11 @@ function Env_Listen(envs) {
 							
 						))
 							notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】配置的容器中存在不属于傻妞所对接容器的容器，请尽快前往‘监控管理’修改该任务的作用容器\n"
-					
-						flag = true
-						notify += "发现" + que.length + "个洞察变量，【" + Listens[i].Name + "】加入任务队列\n"
-						Listens[i].TODO = que.concat(Listens[i].TODO)
+						else{
+							flag = true
+							notify += "发现" + que.length + "个洞察变量，【" + Listens[i].Name + "】加入任务队列\n"
+							Listens[i].TODO = que.concat(Listens[i].TODO)
+						}
 					}
 				}
 			}
@@ -877,7 +884,7 @@ function JDCODE_Decode(JDCODE) {
 }
 
 function Urls_Decode(urls) {//console.log(urls)
-	let notify = "", tgpush = ""
+	let notify = ""
 	let envs = []//记录urls中提取的变量
 	for (let i = 0; i < urls.length; i++) {
 		let spy = []
@@ -887,13 +894,16 @@ function Urls_Decode(urls) {//console.log(urls)
 			let urldecodes = JSON.parse(data)
 			spy = DecodeUrl(urls[i], urldecodes)
 		}
-		if (spy.length == 0) {//未能根据自定义解析规则解析出变量，使用内置解析规则
+		if(spy.length==0){//未能根据自定义解析规则解析出变量，使用内置解析规则
 			spy = DecodeUrl(urls[i], DefaultUrlDecode)
 		}
+		else
+			notify+="使用自定义链接解析规则\n"
 		if (spy.length == 0) {
 			notify += "未解析到变量\n可使用\"监控管理\"命令自行添加\n"
 		}
 		else {//console.log(JSON.stringify(spy))
+			notify+="使用内置解析规则\n"
 			for (let i = 0; i < spy.length; i++) {
 				notify+=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
 				envs.push(spy[i])
@@ -967,14 +977,13 @@ function Import_Spy(data) {
 /**************工具函数**************/
 //处理任务队列 
 function Que_Manager(QLS) {
-	//	Notify("处理任务队列")
-	let count = 0
+	console.log("处理任务队列")
 	let limit = 100//死循环保险，防止陷入死循环
 	//处理队列任务
 	while (true) {
 		let now = (new Date()).getTime()
-		if (limit-- < 0) {
-			Notify("『白眼』\n死循环了，自动退出")
+		if (--limit < 0) {
+			s.reply("『白眼』\n死循环了，自动退出")
 			Spy_Clear()
 			break
 		}
@@ -1003,36 +1012,14 @@ function Que_Manager(QLS) {
 		for (i = 0; i < QLS.length; i++) {
 			QLS[i]["envs"] = []	//容器配置文件需要修改的变量
 			QLS[i]["keywords"] = []	//容器需要执行的任务的关键词
-			QLS[i]["listenIndex"]=[]	//记录keywords对应的监听任务,便于未能顺利执行时撤回
 		}
 
-		//执行任务
-		let t = 60 * 1000//距离所有任务中最近的下一次任务的时间
-		let record = []//记录将要执行的监控任务,用于执行失败时恢复
+		//记录各个容器中需要修改的变量与需要执行的任务关键词*/
 		for (let i = 0; i < Listens.length; i++) {
-			//分析距离上次任务时间是否达到执行间隔
-			let todo = false
-			if (Listens[i].LastTime != 0 && Listens[i].LastTime != null) {
-				let last = (new Date(Listens[i].LastTime)).getTime()
-				temp = last + Listens[i].Interval * 60 * 1000 - now
-				if (temp < 0) {
-					todo = true
-				}
-
-			}
-			else
-				todo = true
-
-			/*			if(Listens[i].TODO.length>0)
-			//			s.reply(Listens[i].Name+":\n"+!Listens[i].Disable+"\n"+todo+"\n"+Listens[i].TODO.length)
-					
-						//记录各个容器中需要修改的变量与需要执行的任务关键词*/
-			if (todo && Listens[i].TODO.length != 0) {
-				//if(Listens[i].TODO.length!=0){
-				for (let j = 0; j < Listens[i].Clients.length; j++) {//记录各个容器需要修改的变量与执行的任务的关键词
+			if (Listens[i].TODO.length != 0) {
+				for (let j = 0; j < Listens[i].Clients.length; j++) {
 					for (k = 0; k < QLS.length; k++) {
 						if (Listens[i].Clients[j] == QLS[k].client_id) {
-							//							Notify("将要执行"+JSON.stringify(Listens[i].TODO))
 							for (m = 0; m < Listens[i].TODO[0].length; m++) {
 								QLS[k]["envs"].push(Listens[i].TODO[0][m])
 							}
@@ -1040,23 +1027,14 @@ function Que_Manager(QLS) {
 						}
 					}
 				}
-				record.push(Listens[i])
-				Listens[i].LastTime = now
-				Listens[i].DONE.push(Listens[i].TODO[0])
-				if (Listens[i].DONE.length > 50)//默认最多保存50个监控记录
-					Listens[i].DONE.splice(0, 20)
-				Listens[i].TODO.shift()
-				//Notify(Listens[i].Name+"任务间隔"+Listens.Interval)
-				if (Listens[i].Interval != 0 && Listens[i].Interval * 60 * 1000 < t)
-					t = Listens[i].Interval * 60 * 1000
 			}
 		}
-		//		Notify("距离下一次任务时间:"+t)
 		//对各个容器执行任务
-		let suss = false
 		let notify = ""
+		let t=1
+		let save=false
 		for (let i = 0; i < QLS.length; i++) {
-			//			s.reply(JSON.stringify(QLS[i].envs)+"\n\n"+QLS[i].keywords)
+			console.log(JSON.stringify(QLS[i].envs)+"\n\n"+QLS[i].keywords)
 			if (QLS[i].envs.length == 0) {//该容器无任务,未监控该容器或者该容器已禁用
 				//				notify+=QLS[i].name+"无任务，跳过\n"
 				continue
@@ -1076,61 +1054,62 @@ function Que_Manager(QLS) {
 				notify += QLS[i].name + "获取青龙任务失败，跳过\n"
 				continue
 			}
-			let ids = [], names = []//记录需要执行的青龙任务
-			/*for(j==0;j<QLS[i].keywords.length;j++){
+			let todo=[]//记录将要执行的青龙任务
+			let tostop=false//是否达到任务间隔需要强制停止任务
+			for(j=0;j<QLS[i].keywords.length;j++){
 				for(k=0;k<crons.length;k++){
-					if(crons[k].name.indexOf(QLS[i].keywords[j]!=-1)||crons[k].command.indexOf(QLS[i].keywords[j]!=-1)){
-						if(crons[k].pid==""){//找到了任务但该任务还在执行,将对应监控任务队列
-							Listens[QLS[i].listenIndex[j]].TODO.push(Listens[QLS[i].listenIndex[j]].DONE[Listens[QLS[i].listenIndex[j]].DONE.length-1])
+					if(crons[k].name.indexOf(QLS[i].keywords[j])!=-1||crons[k].command.indexOf(QLS[i].keywords[j])!=-1){//找到需要执行的青龙任务
+						let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
+						if(crons[k].pid==""){
+							todo.push(crons[k])
+							Listens[index].LastTime=now
+							Listens[index].DONE.push(Listens[index].TODO[0])
+							Listens[index].TODO.shift()
 						}
+						else{//任务正在执行，即上次任务尚未执行完
+							if(now-(new Date(Listens[index].LastTime)).getTime()>Listens[index].Interval*60*1000){//超过监控任务设置的执行时间间隔，强制停止并执行下一个任务
+								tostop=true
+								todo.push(crons[k])
+								Listens[index].LastTime=now
+								Listens[index].DONE.push(Listens[index].TODO[0])
+								Listens[index].TODO.shift()
+							}
+							if(Listens[index].Interval<t)
+								t=Listens[index].Interval
+						}
+						break
 					}
 				}
-			}*/
-			for (j = 0; j < crons.length; j++) {
-				for (k = 0; k < QLS[i].keywords.length; k++) {
-					if (crons[j].command.indexOf(QLS[i].keywords[k]) != -1 || crons[j].name.indexOf(QLS[i].keywords[k]) != -1) {
-						//if(crons[j].pid==""){
-							if (crons[j].id)
-								ids.push(crons[j].id)
-							else
-								ids.push(crons[j]._id)
-							names.push(crons[j].name)
-							QLS[i].keywords.splice(k, 1)//删除以避免执行容器内具有相同关键词的任务
-						//}
-					}
-				}
 			}
-			if (ids.length == 0) {
-				notify += QLS[i].name + "容器未找到任务:" + QLS[i].keywords.toString() + "请检查是否监控任务配置有误\n"
+			if (todo.length == 0) {
+				notify += QLS[i].name + "容器未找到任务「" + QLS[i].keywords.toString() + "」请检查是否监控任务配置有误\n"
+				continue
 			}
-			if (!ql.Stop_QL_Crons(QLS[i].host, token, ids)) {
-				//				Notify(QLS[i].name+":\n"+names.toString()+"\n停止失败")		
+			let ids=todo.map(value=>{
+				if(value.id)
+					return value.id
+				else
+					return value._id
+			})
+			let names=todo.map(value=>value.name)
+			if(tostop){
+				console.log("停止任务:"+names+"\n"+ql.Stop_QL_Crons(QLS[i].host, token, ids))
+				sleep(1000)
 			}
-			sleep(1000)
 			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) {
 			//if(true){
-				notify += "容器【" + QLS[i].name + "】:执行〔" + names.toString() + "〕执行成功"
-				suss = true
+				notify += "容器【" + QLS[i].name + "】「" + names.toString() + "」执行成功"
+				save=true
 			}
-			//			else
-			//				Notify(QLS[i].name+":\n"+names.toString()+"\n执行失败")
+			else
+				console.log(QLS[i].name+":\n"+names.toString()+"\n执行失败")
 		}
-
-		/*		if(!suss){//没有成功执行，将移入已完成队列的任务移出
-					for(let i=0;i<Listens[i].length;i++)
-						for(j=0;j<record.length;j++)
-							if(Listens[i].Name==record[j])
-								Listens[i].DONE.pop()
-				}	*/
-		db.set("env_listens_new", JSON.stringify(Listens))
+		if(save)
+			db.set("env_listens_new", JSON.stringify(Listens))
 		if(notify!="")
 			Notify(notify)
-		/*		count++
-		//		if(t>0){
-					s.reply("第"+count+"次循环,等待时长:"+t)
-					sleep(10000)
-		//		}*/
-		sleep(t)
+		//console.log((limit+1)+"循环,等待(分):"+t)
+		sleep(t*60*1000)
 	}
 }
 
@@ -1254,10 +1233,10 @@ function Notify(msg) {//s.reply("通知")
 			from += "群(" + s.getChatId() + ")"
 		}
 		if (s.getUsername() != "")
-			from += "(" + s.getUsername() + ")"
+			from += "「" + s.getUsername() + "」"
 		else
-			from += "(" + s.getUserId() + ")"
-		from += "的消息\n---------------------\n【" + message.slice(0, 50) + "......】\n---------------------\n";
+			from += "「" + s.getUserId() + "」uubd"
+		from += "的消息\n---------------------\n【" + message.slice(0, 50) + " ......】\n---------------------\n\n";
 //		tgmsg=(from + tgmsg).replace(/(?<!\\)_/g,"\\_")
 		st.NotifyMainKey("SpyNotify", false, from + msg + "\n--『白眼』")
 		st.NotifyMainKey("SpyGroupNotify", true, from + msg + "\n--『白眼』")
@@ -1288,7 +1267,9 @@ function ClearHistory(Listens) {
 function IsTarget() {
 	try {
 		let uid = s.getUserId(), cid = s.getChatId()
-		let tgbotid=(new Bucket("tg")).get("token").split(":")[0]//不解析来自机器人的消息
+		if(BlackList.indexOf(uid)!=-1||BlackList.indexOf(cid)!=-1)
+			return false
+		let tgbotid=(new Bucket("tg")).get("token").split(":")[0]//不解析来自机器人的消息,防止tg人形与机器人互相解析
 		let targets = JSON.parse(db.get("spy_targets_new"))
 		for (let i = 0; i < targets.length; i++){
 			if (targets[i].id == uid )
@@ -1358,10 +1339,10 @@ function Print_SpyMenu(Listens, silent, targets) {
 			notify += (i + 1) + "、" + name + "\n"
 	}
 
-	if (silent == "true")
-		notify += "a、关闭静默\n"
-	else
+	if (silent != "true")
 		notify += "a、开启静默\n"
+	else
+		notify += "a、关闭静默\n"
 	notify += "b、变量自动转换\n"
 	notify += "c、链接自动解析\n"
 	notify += "d、监听目标:"
@@ -1568,6 +1549,14 @@ var DefaultUrlDecode =
 				redi: "LUCK_DRAW_URL"//kr
 			}]
 		},
+		{
+			keyword: "https://lzkj-isv.isvjd.com/lzclient",
+			name: "幸运抽奖",
+			trans: [{
+				ori: "-1",
+				redi: "LUCK_DRAW_URL"//kr
+			}]
+		},
 		// {
 		// 	keyword: "wxDrawActivity/activity",
 		// 	name: "幸运抽奖",
@@ -1734,7 +1723,7 @@ var DefaultUrlDecode =
 
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/sign/signActivity",
-			name: "超级店铺无线签到",
+			name: "CJ超级店铺无线签到",
 			trans: [{
 				ori: "activityId",
 				redi: "CJHY_SIGN"
@@ -1742,7 +1731,7 @@ var DefaultUrlDecode =
 		},
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/sign/sevenDay/signActivity",
-			name: "超级店铺无线签到",
+			name: "CJ超级店铺无线签到",
 			trans: [{
 				ori: "activityId",
 				redi: "CJHY_SEVENDAY"
@@ -1750,7 +1739,15 @@ var DefaultUrlDecode =
 		},
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/sign/signActivity2",
-			name: "超级店铺无线签到",
+			name: "LZ超级店铺无线签到",
+			trans: [{
+				ori: "activityId",
+				redi: "LZKJ_SIGN"
+			}]
+		},
+		{
+			keyword: "https://lzkj-isv.isvjd.com/sign/signActivity",
+			name: "LZ超级店铺无线签到",
 			trans: [{
 				ori: "activityId",
 				redi: "LZKJ_SIGN"
@@ -1758,7 +1755,7 @@ var DefaultUrlDecode =
 		},
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/sign/sevenDay/signActivity",
-			name: "超级店铺无线签到",
+			name: "LZ超级店铺无线签到",
 			trans: [{
 				ori: "activityId",
 				redi: "LZKJ_SEVENDAY"
@@ -1830,6 +1827,41 @@ var DefaultUrlDecode =
 				redi: "M_WX_BUILD_DRAW_URL"
 			}]
 		},
+
+		{
+			keyword: "https://lzkj-isv.isvjcloud.com/wxKnowledgeActivity/activity",
+			name: "LZ知识超人",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_wxKnowledgeActivity_activityId"//环保
+			}]
+		},
+		{
+			keyword: "https://lzkj-isv.isvjcloud.com/wxKnowledgeActivity/activity",
+			name: "LZ知识超人",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_wxKnowledgeActivity_activityId"//KR
+			}]
+		},
+
+		{
+			keyword: "https://cjhy-isv.isvjcloud.com/wxKnowledgeActivity/activity",
+			name: "CJ知识超人",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_cjhy_wxKnowledgeActivity_activityId"//环保
+			}]
+		},
+		{
+			keyword: "https://cjhy-isv.isvjcloud.com/wxKnowledgeActivity/activity",
+			name: "CJ知识超人",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_cjwxKnowledgeActivity_activityId"//kr
+			}]
+		},
+
 
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/wxShopGift/activity",

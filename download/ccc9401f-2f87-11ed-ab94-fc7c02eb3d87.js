@@ -1,12 +1,12 @@
 /**
 * @author https://t.me/sillyGirl_Plugin
 * @create_at 2022-09-10 12:49:37
-* @description 默认过期资产价值超过3元即通知
+* @description 默认过期资产价值超过3元即通知，须安装qinglong与something模块
 * @version v1.0.1
 * @title 京东资产过期提醒
 * @platform qq wx tg pgm web cron
 * @rule 提醒资产过期
-* @cron 43 17 * * *
+* @cron 43 10 * * *
  * @public false
 * @admin true
 */
