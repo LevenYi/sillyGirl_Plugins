@@ -5,12 +5,12 @@
 * @description 青龙模块
 * @version v1.0.0
 * @title qinglong
- * @public false
+* @public false
 */
 
 
 
-module.exports = {
+module.exports = { 
 	Get_QL_Token:Get_QL_Token,
 
 	Get_QL_Envs:Get_QL_Envs,
