@@ -902,12 +902,12 @@ function Urls_Decode(urls) {//console.log(urls)
 			spy = DecodeUrl(urls[i], DefaultUrlDecode)
 		}
 		else
-			tip="\n--使用自定义链接解析规则\n"
+			tip="--使用自定义链接解析规则\n"
 		if (spy.length == 0) {
 			notify += "未解析到变量\n可使用\"监控管理\"命令自行添加\n"
 		}
 		else {//console.log(JSON.stringify(spy))
-			tip+="\n--使用内置解析规则\n"
+			tip+="--使用内置解析规则\n"
 			for (let i = 0; i < spy.length; i++) {
 				notify=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
 				envs.push(spy[i])
@@ -941,10 +941,13 @@ function Export_Spy() {
 		return
 	}
 	while (n + num < spys.length) {
-		let temp = ClearHistory(spys.slice(n, n += num))
-
-		if (typeof(s.reply("ImportWhiteEye=" + JSON.stringify(temp)))=="")
+		let temp = ClearHistory(spys.slice(n, n + num))
+		//console.log(n+num)
+		if (s.reply("ImportWhiteEye=" + JSON.stringify(temp))==""){
 			s.reply("导出数量过多，导出失败,请重新导出并减少单次导出项数")
+			return
+		}
+		n+=num
 	}
 	if (n < spys.length)//导出末尾未截取到的部分
 		s.reply("ImportWhiteEye=" + JSON.stringify(ClearHistory(spys.slice(n))))
@@ -1194,7 +1197,7 @@ function Add_Spy(oldspy, newspy) {
 			}
 			if(newspy[i].Clients.length==0){//导入的任务无有效容器，将非禁用容器作为默认容器
 				for(j=0;j<QLS.length;j++)
-					if(!QLS.disable)
+					if(!QLS[j].disable)
 						newspy[i].Clients.push(QLS[j].client_id)
 			}
 			oldspy.push(newspy[i])
