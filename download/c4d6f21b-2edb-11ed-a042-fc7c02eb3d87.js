@@ -144,10 +144,10 @@ function main() {
 			let values = msg.match(/(?<=export[ ]+\w+[ ]*=[ ]*")[^"]+(?=")/g)
 			let envs = [],urls=[]
 			for (let i = 0; i < values.length; i++){
-				if(values[i].indexOf("https")!=-1){
-					urls.push(values[i])
-				}
-				else
+				// if(values[i].indexOf("https")!=-1){
+				// 	urls.push(values[i])
+				// }
+				// else
 					envs.push({ name: names[i], value: values[i] })
 			}
 			if(urls.length!=0)
