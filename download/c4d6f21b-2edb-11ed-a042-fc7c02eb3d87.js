@@ -7,7 +7,7 @@
 * @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
 * @rule raw [\s\S]*(https:\/\/(.{2,}\.)(isvjcloud|isvjd)\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
 * @rule raw [\s\S]*https://(prodev\.m|jdjoy)\.jd\.com[\s\S]*
-* @rule [\s\S]*export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
+* @rule raw [\s\S]*export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
 * @rule 迁移ql spy
 * @rule 恢复ql spy
 * @rule 监控管理
