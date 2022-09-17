@@ -5,7 +5,7 @@
 * @title 白眼
 * @platform qq wx tg pgm sxg
 * @rule [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
-* @rule [\s\S]*(https?:\/\/(.{2,}?\.)(isvjcloud|isvjd|jd)\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
+* @rule [\s\S]*(https?:\/\/(.{2,}\.)(isvjcloud|isvjd|jd)\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
 * @rule [\s\S]*export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
 * @rule 迁移ql spy
 * @rule 恢复ql spy
@@ -135,7 +135,7 @@ function main() {
 	var msg = s.getContent()
 	//			s.reply('start')
 	if (IsTarget() || s.isAdmin()) {//仅对监控目标和管理员消息监控
-		//		try{	
+	  try{	
 		//变量监控
 		if (msg.match(/export ([^"]+)="([^"]+)"/) != null) {//s.reply('spy')
 			let names = msg.match(/(?<=export[ ]+)\w+(?=[ ]*=[ ]*"[^"]+")/g)
@@ -163,11 +163,11 @@ function main() {
 			JDCODE_Decode(msg)
 			//			isspy=true	
 		}
-		/*		}
-				catch(err){
-					Notify("发生错误，请联系开发者\n"+err)
-					return
-				}*/
+	  }
+	  catch(err){
+			Notify("发生错误，请联系开发者\n"+err)
+			return
+	  }
 	}
 
 	if (!s.isAdmin()) {//其他命令为管理员命令
@@ -177,10 +177,10 @@ function main() {
 
 
 	if (msg == "迁移ql spy") {
-		ql.Migrate_qlspy()
+		Migrate_qlspy()
 	}
 	else if (msg == "恢复ql spy") {
-		ql.Recovery_qlspy()
+		Recovery_qlspy()
 	}
 
 	else if (msg == "导出白眼")
@@ -635,18 +635,20 @@ function Spy_Status() {
 		notify += "冷却 队列 已完成 任务 上次执行\n------------------------------\n"
 		let Listens = JSON.parse(data)
 		for (let i = 0; i < Listens.length; i++) {
-			time = 0
+			let time = 0
+			let temp=""
 			if (typeof (Listens[i].LastTime) == "number") {//根据上次执行时间获取任务状态
 				last = new Date(Listens[i].LastTime)
 				time = last.getHours() + ":" + last.getMinutes() + ":" + last.getSeconds()
 				if (now - last.getTime() < Listens[i].Interval * 60 * 1000 || now - last.getTime() < 60 * 1000 || Listens[i].TODO.length != 0)
-					notify += "★"
+					temp += "★"
 				else
-					notify += "☆"
+					temp += "☆"
 			}
 			else
-				notify += "☆"
-			notify +=  Listens[i].TODO.length + " " + Listens[i].DONE.length + " " + Listens[i].Name + "  " +time + "\n"
+				temp += "☆"
+			temp+=fmt.sprintf(" %-4v%-4v%-15v%v\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name,time)
+			notify+=temp
 
 		}
 		Notify(notify)
@@ -1235,7 +1237,7 @@ function Notify(msg) {//s.reply("通知")
 		if (s.getUsername() != "")
 			from += "「" + s.getUsername() + "」"
 		else
-			from += "「" + s.getUserId() + "」uubd"
+			from += "「" + s.getUserId() + "」"
 		from += "的消息\n---------------------\n【" + message.slice(0, 50) + " ......】\n---------------------\n\n";
 //		tgmsg=(from + tgmsg).replace(/(?<!\\)_/g,"\\_")
 		st.NotifyMainKey("SpyNotify", false, from + msg + "\n--『白眼』")
