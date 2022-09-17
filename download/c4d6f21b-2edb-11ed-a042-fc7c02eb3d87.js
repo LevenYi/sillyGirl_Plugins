@@ -1106,8 +1106,8 @@ function Que_Manager(QLS) {
 				console.log("停止任务:"+names+"\n"+ql.Stop_QL_Crons(QLS[i].host, token, ids))
 				sleep(1000)
 			}
-			//if (ql.Start_QL_Crons(QLS[i].host, token, ids)) {
-			if(true){
+			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) {
+			//if(true){
 				notify += "容器【" + QLS[i].name + "】\n「" + names.toString() + "」执行成功\n"
 				save=true
 			}
