@@ -1346,8 +1346,8 @@ function Print_SpyMenu(Listens, silent, targets) {
 		notify += "a、开启静默\n"
 	else
 		notify += "a、关闭静默\n"
-	notify += "b、变量自动转换\n"
-	notify += "c、链接自动解析\n"
+	notify += "b、变量转换\n"
+	notify += "c、链接解析\n"
 	notify += "d、监听目标:"
 	for (let i = 0; i < targets.length; i++) {
 		if (targets[i].name != "")
