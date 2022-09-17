@@ -16,6 +16,7 @@
 * @rule 清空监控队列
 * @rule 清空监控记录
 * @rule 清空白眼数据
+* @priority 10
  * @public false
 * @version v1.2.6
 */
