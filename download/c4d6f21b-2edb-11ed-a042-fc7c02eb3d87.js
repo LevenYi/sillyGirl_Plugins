@@ -19,7 +19,7 @@
 * @rule 清空白眼数据
 * @priority 10
  * @public false
-* @version v1.2.6
+* @version v1.2.7
 */
 
 
@@ -137,7 +137,7 @@ function main() {
 	var msg = s.getContent()
 	//			s.reply('start')
 	if (IsTarget() || s.isAdmin()) {//仅对监控目标和管理员消息监控
-	  try{	
+	  //try{	
 		//变量监控
 		if (msg.match(/export ([^"]+)="([^"]+)"/) != null) {//s.reply('spy')
 			let names = msg.match(/(?<=export[ ]+)\w+(?=[ ]*=[ ]*"[^"]+")/g)
@@ -165,11 +165,11 @@ function main() {
 			JDCODE_Decode(msg)
 			//			isspy=true	
 		}
-	  }
-	  catch(err){
-			Notify("发生错误，请联系开发者\n"+err)
-			return
-	  }
+	//   }
+	//   catch(err){
+	// 		Notify("发生错误，请联系开发者\n"+err)
+	// 		return
+	//   }
 	}
 
 	if (!s.isAdmin()) {//其他命令为管理员命令
