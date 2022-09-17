@@ -1024,7 +1024,17 @@ function Que_Manager(QLS) {
 		//记录各个容器中需要修改的变量与需要执行的任务关键词*/
 		for (let i = 0; i < Listens.length; i++) {
 			if (Listens[i].TODO.length != 0) {
-				for (let j = 0; j < Listens[i].Clients.length; j++) {
+				for(j=0;j<QLS.length;j++){
+					for(k=0;k<Listens[i].Clients.length;k++){
+						if(QLS[j].client_id==Listens[i].Clients[k]){
+							for(m=0;m<Listens[i].TODO[0].length;m++)
+								QLS[j].envs.push(Listens[i].TODO[0][m])
+							QLS[j].keywords.push(Listens[i].Keyword)
+							break
+						}
+					}
+				}
+				/*for (let j = 0; j < Listens[i].Clients.length; j++) {
 					for (k = 0; k < QLS.length; k++) {
 						if (Listens[i].Clients[j] == QLS[k].client_id) {
 							for (m = 0; m < Listens[i].TODO[0].length; m++) {
@@ -1033,7 +1043,7 @@ function Que_Manager(QLS) {
 							QLS[k]["keywords"].push(Listens[i].Keyword)
 						}
 					}
-				}
+				}*/
 			}
 		}
 		//对各个容器执行任务
