@@ -4,8 +4,9 @@
 * @description 口令解析、链接解析、变量转换、变量监控多合一，须安装somethong与qinglong模块
 * @title 白眼
 * @platform qq wx tg pgm sxg
-* @rule [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
-* @rule [\s\S]*(https?:\/\/(.{2,}\.)(isvjcloud|isvjd|jd)\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
+* @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
+* @rule raw [\s\S]*(https:\/\/(.{2,}\.)(isvjcloud|isvjd)\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
+* @rule raw [\s\S]*https://(prodev\.m|jdjoy)\.jd\.com[\s\S]*
 * @rule [\s\S]*export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
 * @rule 迁移ql spy
 * @rule 恢复ql spy
@@ -887,7 +888,7 @@ function JDCODE_Decode(JDCODE) {
 }
 
 function Urls_Decode(urls) {//console.log(urls)
-	let notify = ""
+	let notify = "",tip=""
 	let envs = []//记录urls中提取的变量
 	for (let i = 0; i < urls.length; i++) {
 		let spy = []
@@ -901,19 +902,19 @@ function Urls_Decode(urls) {//console.log(urls)
 			spy = DecodeUrl(urls[i], DefaultUrlDecode)
 		}
 		else
-			notify+="使用自定义链接解析规则\n"
+			tip="\n--使用自定义链接解析规则\n"
 		if (spy.length == 0) {
 			notify += "未解析到变量\n可使用\"监控管理\"命令自行添加\n"
 		}
 		else {//console.log(JSON.stringify(spy))
-			notify+="使用内置解析规则\n"
+			tip+="\n--使用内置解析规则\n"
 			for (let i = 0; i < spy.length; i++) {
-				notify+=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
+				notify=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
 				envs.push(spy[i])
 			}
 		}
 	}
-	Notify(notify)//变量解析通知，不需要自行注释
+	Notify(notify+tip)//变量解析通知，不需要自行注释
 	if (envs.length != 0)
 		Env_Listen(envs)
 }
