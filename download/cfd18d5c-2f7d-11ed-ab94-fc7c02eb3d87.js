@@ -5,7 +5,7 @@
 * @description 青龙模块
 * @version v1.0.0
 * @title qinglong
-* @public false
+ * @public false
 */
 
 

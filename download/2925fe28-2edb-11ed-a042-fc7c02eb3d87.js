@@ -4,7 +4,7 @@
 * @description 例：修改命令 $ql cron run ? $运行 ?
 * @title 命令重定向
 * @platform qq wx tg pgm sxg
-* @rule 修改命令 $[^$]+$[^$]+
+* @rule 修改命令 \$[^\$]+\$[^\$]+
 * @rule 查看命令
 * @rule 删除命令 ?
 * @rule [\s\S]+

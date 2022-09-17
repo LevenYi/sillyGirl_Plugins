@@ -142,15 +142,18 @@ function main() {
 		if (msg.match(/export ([^"]+)="([^"]+)"/) != null) {//s.reply('spy')
 			let names = msg.match(/(?<=export[ ]+)\w+(?=[ ]*=[ ]*"[^"]+")/g)
 			let values = msg.match(/(?<=export[ ]+\w+[ ]*=[ ]*")[^"]+(?=")/g)
-			let envs = []
+			let envs = [],urls=[]
 			for (let i = 0; i < values.length; i++){
-				/*if(values[i].indexOf("https")!=-1){
-					Urls_Decode([values[i]])
+				if(values[i].indexOf("https")!=-1){
+					urls.push(values[i])
 				}
-				else*/
+				else
 					envs.push({ name: names[i], value: values[i] })
 			}
-			Env_Listen(envs)
+			if(urls.length!=0)
+				Urls_Decode(urls)
+			else
+				Env_Listen(envs)
 			//			isspy=true	
 		}
 		//链接监控
@@ -821,7 +824,7 @@ function Env_Listen(envs) {
 			}
 
 			if (que.length != 0) {
-				//console.log("监控任务"+(i+1)+JSON.stringify(que))
+				console.log("监控任务"+(i+1)+JSON.stringify(que))
 				if (Listens[i].Disable)
 					notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】任务已禁用，已忽略\n"
 				else {
@@ -900,6 +903,7 @@ function Urls_Decode(urls) {//console.log(urls)
 		}
 		if(spy.length==0){//未能根据自定义解析规则解析出变量，使用内置解析规则
 			spy = DecodeUrl(urls[i], DefaultUrlDecode)
+			tip="--使用内置解析规则\n"
 		}
 		else
 			tip="--使用自定义链接解析规则\n"
@@ -907,9 +911,8 @@ function Urls_Decode(urls) {//console.log(urls)
 			notify += "未解析到变量\n可使用\"监控管理\"命令自行添加\n"
 		}
 		else {//console.log(JSON.stringify(spy))
-			tip+="--使用内置解析规则\n"
 			for (let i = 0; i < spy.length; i++) {
-				notify=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
+				notify+=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
 				envs.push(spy[i])
 			}
 		}
@@ -1067,7 +1070,7 @@ function Que_Manager(QLS) {
 				for(k=0;k<crons.length;k++){
 					if(crons[k].name.indexOf(QLS[i].keywords[j])!=-1||crons[k].command.indexOf(QLS[i].keywords[j])!=-1){//找到需要执行的青龙任务
 						let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
-						if(crons[k].pid==""){
+						if(typeof(crons[k]["pid"])!="number"){
 							todo.push(crons[k])
 							Listens[index].LastTime=now
 							Listens[index].DONE.push(Listens[index].TODO[0])
@@ -1103,9 +1106,9 @@ function Que_Manager(QLS) {
 				console.log("停止任务:"+names+"\n"+ql.Stop_QL_Crons(QLS[i].host, token, ids))
 				sleep(1000)
 			}
-			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) {
-			//if(true){
-				notify += "容器【" + QLS[i].name + "】「" + names.toString() + "」执行成功\n"
+			//if (ql.Start_QL_Crons(QLS[i].host, token, ids)) {
+			if(true){
+				notify += "容器【" + QLS[i].name + "】\n「" + names.toString() + "」执行成功\n"
 				save=true
 			}
 			else
