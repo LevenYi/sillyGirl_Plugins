@@ -1034,16 +1034,6 @@ function Que_Manager(QLS) {
 						}
 					}
 				}
-				/*for (let j = 0; j < Listens[i].Clients.length; j++) {
-					for (k = 0; k < QLS.length; k++) {
-						if (Listens[i].Clients[j] == QLS[k].client_id) {
-							for (m = 0; m < Listens[i].TODO[0].length; m++) {
-								QLS[k]["envs"].push(Listens[i].TODO[0][m])
-							}
-							QLS[k]["keywords"].push(Listens[i].Keyword)
-						}
-					}
-				}*/
 			}
 		}
 		//对各个容器执行任务
@@ -1115,7 +1105,7 @@ function Que_Manager(QLS) {
 			}
 			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) {
 			//if(true){
-				notify += "容器【" + QLS[i].name + "】「" + names.toString() + "」执行成功"
+				notify += "容器【" + QLS[i].name + "】「" + names.toString() + "」执行成功\n"
 				save=true
 			}
 			else
