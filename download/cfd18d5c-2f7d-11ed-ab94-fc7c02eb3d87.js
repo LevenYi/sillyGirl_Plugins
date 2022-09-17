@@ -4,13 +4,13 @@
 * @create_at 2022-09-09 16:30:33
 * @description 青龙模块
 * @version v1.0.0
-* @title qinglong
  * @public false
+* @title qinglong
 */
 
 
 
-module.exports = { 
+module.exports = {  
 	Get_QL_Token:Get_QL_Token,
 
 	Get_QL_Envs:Get_QL_Envs,
