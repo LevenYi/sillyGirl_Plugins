@@ -5,16 +5,12 @@
 * @description 青龙模块
 * @version v1.0.0
 * @title qinglong
- * @public false
+* @public false
 */
 
-module.exports.Test=function (){ return "qinglong"}
-function Test1(){
-	return "hello world"
-}
+
 
 module.exports = {
-	Test1:Test1,
 	Get_QL_Token:Get_QL_Token,
 
 	Get_QL_Envs:Get_QL_Envs,
