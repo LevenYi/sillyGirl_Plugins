@@ -133,16 +133,18 @@ const db = new Bucket("jd_cookie")
 
 
 function main() {
-	//	let isspy=false
 	var msg = s.getContent()
-	//			s.reply('start')
 	if (IsTarget() || s.isAdmin()) {//仅对监控目标和管理员消息监控
 	  //try{	
 		//变量监控
-		if (msg.match(/export ([^"]+)="([^"]+)"/) != null) {//s.reply('spy')
+		if (msg.match(/export ([^"]+)="([^"]+)"/) != null) {
 			let names = msg.match(/(?<=export[ ]+)\w+(?=[ ]*=[ ]*"[^"]+")/g)
 			let values = msg.match(/(?<=export[ ]+\w+[ ]*=[ ]*")[^"]+(?=")/g)
 			let envs = [],urls=[]
+			names.forEach((ele,index)=>{
+				if(ele.match(/^M_/)!=null)
+					urls.push(values[index])
+			})
 			for (let i = 0; i < values.length; i++){
 				// if(values[i].indexOf("https")!=-1){
 				// 	urls.push(values[i])
@@ -154,7 +156,6 @@ function main() {
 				Urls_Decode(urls)
 			else
 				Env_Listen(envs)
-			//			isspy=true	
 		}
 		//链接监控
 		else if (msg.indexOf("http") != -1) {
@@ -168,6 +169,7 @@ function main() {
 			JDCODE_Decode(msg)
 			//			isspy=true	
 		}
+		s.continue()
 	//   }
 	//   catch(err){
 	// 		Notify("发生错误，请联系开发者\n"+err)
@@ -803,7 +805,7 @@ function Env_Listen(envs) {
 						find = true
 						//console.log(JSON.stringify(envs[j])+"\n\n"+JSON.stringify(Listens[i].DONE))
 						if (IsIn(envs[j], Listens[i].TODO) || IsIn(envs[j], Listens[i].DONE)) {
-							notify += "【 " + envs[j].value + " 】重复的变量，已忽略\n"
+							notify +="发现洞察变量，监控任务"+(i+1)+"【" + Listens[i].Name + "】 -「 " + envs[j].value + " 」重复的变量，已忽略\n"
 							continue
 						}
 						else {
@@ -840,7 +842,7 @@ function Env_Listen(envs) {
 							notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】配置的容器中存在不属于傻妞所对接容器的容器，请尽快前往‘监控管理’修改该任务的作用容器\n"
 						else{
 							flag = true
-							notify += "发现" + que.length + "个洞察变量，【" + Listens[i].Name + "】加入任务队列\n"
+							notify += "发现洞察变量，【" + Listens[i].Name + "】加入任务队列\n"
 							Listens[i].TODO = que.concat(Listens[i].TODO)
 						}
 					}
@@ -890,7 +892,8 @@ function JDCODE_Decode(JDCODE) {
 	Urls_Decode([info.jumpUrl])
 }
 
-function Urls_Decode(urls) {//console.log(urls)
+function Urls_Decode(urls) {
+	console.log(urls)
 	let notify = "",tip=""
 	let envs = []//记录urls中提取的变量
 	for (let i = 0; i < urls.length; i++) {
@@ -1042,7 +1045,7 @@ function Que_Manager(QLS) {
 		//对各个容器执行任务
 		let notify = ""
 		let t=1
-		let save=false
+		let save=false,record=[]//成功执行的监控任务的关键词
 		for (let i = 0; i < QLS.length; i++) {
 			console.log(JSON.stringify(QLS[i].envs)+"\n\n"+QLS[i].keywords)
 			if (QLS[i].envs.length == 0) {//该容器无任务,未监控该容器或者该容器已禁用
@@ -1069,20 +1072,14 @@ function Que_Manager(QLS) {
 			for(j=0;j<QLS[i].keywords.length;j++){
 				for(k=0;k<crons.length;k++){
 					if(crons[k].name.indexOf(QLS[i].keywords[j])!=-1||crons[k].command.indexOf(QLS[i].keywords[j])!=-1){//找到需要执行的青龙任务
-						let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
+						//let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
 						if(typeof(crons[k]["pid"])!="number"){
 							todo.push(crons[k])
-							Listens[index].LastTime=now
-							Listens[index].DONE.push(Listens[index].TODO[0])
-							Listens[index].TODO.shift()
 						}
 						else{//任务正在执行，即上次任务尚未执行完
 							if(now-(new Date(Listens[index].LastTime)).getTime()>Listens[index].Interval*60*1000){//超过监控任务设置的执行时间间隔，强制停止并执行下一个任务
 								tostop=true
 								todo.push(crons[k])
-								Listens[index].LastTime=now
-								Listens[index].DONE.push(Listens[index].TODO[0])
-								Listens[index].TODO.shift()
 							}
 							if(Listens[index].Interval<t)
 								t=Listens[index].Interval
@@ -1108,14 +1105,24 @@ function Que_Manager(QLS) {
 			}
 			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) {
 			//if(true){
+				QLS[i].keywords.forEach(value=>{
+					if(record.indexOf(value)==-1)
+						record.push(value)
+				})
 				notify += "容器【" + QLS[i].name + "】\n「" + names.toString() + "」执行成功\n"
 				save=true
 			}
 			else
 				console.log(QLS[i].name+":\n"+names.toString()+"\n执行失败")
 		}
-		if(save)
+		if(save){
+			Listens.forEach(value=>{
+				if(record.indexOf(value.Keyword)!=-1)
+					value.DONE.push(value.TODO[0])
+					value.TODO.shift()
+			})
 			db.set("env_listens_new", JSON.stringify(Listens))
+		}
 		if(notify!="")
 			Notify(notify)
 		//console.log((limit+1)+"循环,等待(分):"+t)
