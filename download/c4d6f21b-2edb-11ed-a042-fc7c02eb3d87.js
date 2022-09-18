@@ -1104,7 +1104,7 @@ function Que_Manager(QLS) {
 				console.log("停止任务:"+names+"\n"+ql.Stop_QL_Crons(QLS[i].host, token, ids))
 				sleep(1000)
 			}
-			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) {
+			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) { 
 			//if(true){
 				QLS[i].keywords.forEach(value=>{
 					if(record.indexOf(value)==-1)
@@ -1116,14 +1116,16 @@ function Que_Manager(QLS) {
 			else
 				console.log(QLS[i].name+":\n"+names.toString()+"\n执行失败")
 		}
-		console.log("成功执行"+record)
+		//console.log("record\n"+record)
 		if(save){
-			Listens.forEach(value=>{
-				if(record.indexOf(value.Keyword)!=-1&&value.TODO.length!=0)
-					value.LastTime=now
-					value.DONE.push(value.TODO[0])
-					value.TODO.shift()
-			})
+			for(i=0;i<Listens.length;i++){
+				if(record.indexOf(Listens[i].Keyword)!=-1){
+					//console.log(Listens[i].Name+"历史记录"+JSON.stringify(Listens[i].TODO))
+					Listens[i].LastTime=now
+					Listens[i].DONE.push(Listens[i].TODO[0])
+					Listens[i].TODO.shift()
+				}
+			}
 			db.set("env_listens_new", JSON.stringify(Listens))
 		}
 		if(notify!="")
