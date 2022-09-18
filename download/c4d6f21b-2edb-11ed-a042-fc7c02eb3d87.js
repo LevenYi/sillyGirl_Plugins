@@ -12,7 +12,7 @@
 * @rule 恢复ql spy
 * @rule 监控管理
 * @rule 导出白眼
-* @rule ImportWhiteEye=\S+
+* @rule raw ImportWhiteEye=\S+
 * @rule 监控状态
 * @rule 清空监控队列
 * @rule 清空监控记录
@@ -1033,8 +1033,9 @@ function Que_Manager(QLS) {
 				for(j=0;j<QLS.length;j++){
 					for(k=0;k<Listens[i].Clients.length;k++){
 						if(QLS[j].client_id==Listens[i].Clients[k]){
-							for(m=0;m<Listens[i].TODO[0].length;m++)
-								QLS[j].envs.push(Listens[i].TODO[0][m])
+							Listens[i].TODO[0].forEach(value=>QLS[j].envs.push(value))
+							// for(m=0;m<Listens[i].TODO[0].length;m++)
+							// 	QLS[j].envs.push(Listens[i].TODO[0][m])
 							QLS[j].keywords.push(Listens[i].Keyword)
 							break
 						}
