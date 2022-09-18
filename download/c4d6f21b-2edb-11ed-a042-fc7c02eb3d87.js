@@ -19,7 +19,7 @@
 * @rule 清空白眼数据
 * @priority 10
  * @public false
-* @version v1.2.7
+* @version v1.2.8
 */
 
 
@@ -1119,6 +1119,7 @@ function Que_Manager(QLS) {
 		if(save){
 			Listens.forEach(value=>{
 				if(record.indexOf(value.Keyword)!=-1)
+					value.LastTime=now
 					value.DONE.push(value.TODO[0])
 					value.TODO.shift()
 			})
