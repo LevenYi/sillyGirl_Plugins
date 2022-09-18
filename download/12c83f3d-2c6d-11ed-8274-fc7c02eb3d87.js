@@ -4,18 +4,18 @@
 * @description 芝士功能补全，须安装somethong与qinglong模块
 * @title 芝士plus
 * @platform qq wx tg pgm sxg
-* @rule 交换\s\d+\s\d+
-* @rule \S+,JD_COOKIE已失效。
-* @rule 移动\s\S+\s\d+
+* @rule raw 交换\s\d+\s\d+
+* @rule raw \S+,JD_COOKIE已失效。
+* @rule raw 移动\s\S+\s\d+
 * @rule 备份青龙变量
 * @rule 恢复青龙变量
 * @rule 通知失效
 * @rule 删除失效
-* @rule 豆\d+
-* @rule 豆\s[\d]+\s[\d]+
+* @rule raw 豆\d+
+* @rule raw 豆\s[\d]+\s[\d]+
 * @rule 保存昵称
-* @rule 获取\S+昵称
-* @rule 查找\s\S+
+* @rule raw 获取\S+昵称
+* @rule raw 查找\s\S+
  * @public false
 * @admin true
 * @version v1.8.1

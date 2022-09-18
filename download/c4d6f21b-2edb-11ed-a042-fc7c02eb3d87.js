@@ -1116,9 +1116,10 @@ function Que_Manager(QLS) {
 			else
 				console.log(QLS[i].name+":\n"+names.toString()+"\n执行失败")
 		}
+		console.log("成功执行"+record)
 		if(save){
 			Listens.forEach(value=>{
-				if(record.indexOf(value.Keyword)!=-1)
+				if(record.indexOf(value.Keyword)!=-1&&value.TODO.length!=0)
 					value.LastTime=now
 					value.DONE.push(value.TODO[0])
 					value.TODO.shift()
