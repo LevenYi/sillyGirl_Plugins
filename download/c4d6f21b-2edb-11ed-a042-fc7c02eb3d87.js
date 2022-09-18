@@ -1072,7 +1072,7 @@ function Que_Manager(QLS) {
 			for(j=0;j<QLS[i].keywords.length;j++){
 				for(k=0;k<crons.length;k++){
 					if(crons[k].name.indexOf(QLS[i].keywords[j])!=-1||crons[k].command.indexOf(QLS[i].keywords[j])!=-1){//找到需要执行的青龙任务
-						//let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
+						let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
 						if(typeof(crons[k]["pid"])!="number"){
 							todo.push(crons[k])
 						}
