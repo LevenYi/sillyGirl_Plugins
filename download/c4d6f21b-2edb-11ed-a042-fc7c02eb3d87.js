@@ -805,7 +805,7 @@ function Env_Listen(envs) {
 						find = true
 						//console.log(JSON.stringify(envs[j])+"\n\n"+JSON.stringify(Listens[i].DONE))
 						if (IsIn(envs[j], Listens[i].TODO) || IsIn(envs[j], Listens[i].DONE)) {
-							notify +="发现洞察变量，监控任务"+(i+1)+"【" + Listens[i].Name + "】 -「 " + envs[j].value + " 」重复的变量，已忽略\n"
+							notify +="发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】 -「 " + envs[j].value + " 」重复的变量，已忽略\n"
 							continue
 						}
 						else {
