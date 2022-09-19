@@ -159,7 +159,7 @@ function main() {
 		}
 		//链接监控
 		else if (msg.indexOf("http") != -1) {
-			let urls = msg.match(/https:\/\/[0-9a-zA-Z-&?=\/\.\+]+/g)
+			let urls = msg.match(/https:\/\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*/g)
 			//			s.reply(urls.toString())
 			Urls_Decode(urls)
 			//			isspy=true	
@@ -916,7 +916,7 @@ function Urls_Decode(urls) {
 		else {//console.log(JSON.stringify(spy))
 			for (let i = 0; i < spy.length; i++) {
 				notify+=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
-				envs.push(spy[i])
+				envs.push({name:spy[i].name,value:spy[i].value})
 			}
 		}
 	}
@@ -1105,7 +1105,7 @@ function Que_Manager(QLS) {
 				sleep(1000)
 			}
 			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) { 
-			//if(true){
+			//if(true){ 
 				QLS[i].keywords.forEach(value=>{
 					if(record.indexOf(value)==-1)
 						record.push(value)
@@ -1151,8 +1151,8 @@ function DecodeUrl(url, urldecodes) {//console.log(url+"\n"+url.length)
 					spy.push(temp)
 				}
 				else {//提取参数作为变量
-					let reg = new RegExp("(?<=" + urldecodes[i].trans[j].ori + "=)\\w+")
-					//console.log("(?<=" + urldecodes[i].trans[j].ori + "=)\w+")
+					let reg = new RegExp("(?<=" + urldecodes[i].trans[j].ori + "=)[^&]+")
+					//console.log("(?<=" + urldecodes[i].trans[j].ori + "=)[^&]+")
 					let actid = url.match(reg);//console.log("提取参数"+actid)
 					if (actid != null) {
 						temp["value"] = actid[0]

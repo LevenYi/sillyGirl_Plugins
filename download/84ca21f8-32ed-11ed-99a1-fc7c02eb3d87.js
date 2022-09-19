@@ -193,7 +193,7 @@ function ToHyperLink(type,url,title){
 }
 
 //***************京东api********************/
-//获取ck对应账号的数据
+//获取ck对应账号的信息
 function JD_UserInfo(ck){
 	let resp=request({
       url: "https://me-api.jd.com/user_new/info/GetJDUserInfoUnion",
