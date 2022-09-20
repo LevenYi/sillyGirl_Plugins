@@ -8,11 +8,10 @@
 * @rule raw [\s\S]*(https:\/\/(.{2,}\.)(isvjcloud|isvjd)\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
 * @rule raw [\s\S]*https://(prodev\.m|jdjoy)\.jd\.com[\s\S]*
 * @rule raw [\s\S]*export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
-* @rule 迁移ql spy
 * @rule 恢复ql spy
 * @rule 监控管理
 * @rule 导出白眼
-* @rule raw ImportWhiteEye=\S+
+* @rule raw ImportWhiteEye=[\S\s]+
 * @rule 监控状态
 * @rule 清空监控队列
 * @rule 清空监控记录
@@ -194,7 +193,7 @@ function main() {
 		Export_Spy()
 
 	else if (msg.match(/^ImportWhiteEye=\S+/) != null)
-		s.reply(Import_Spy(msg.match(/(?<=ImportWhiteEye=)\S+/g)))
+		s.reply(Import_Spy(msg.match(/(?<=ImportWhiteEye=)[\s\S]+/g)[0]))
 
 	else if (msg == "监控管理")
 		Spy_Manager()
@@ -959,7 +958,7 @@ function Export_Spy() {
 		s.reply("ImportWhiteEye=" + JSON.stringify(ClearHistory(spys.slice(n))))
 }
 
-function Import_Spy(data) {
+function Import_Spy(data) {//console.log(data)
 	let notify = ""
 	let qldb = new Bucket("qinglong")
 	let data1 = qldb.get("QLS")
@@ -1070,26 +1069,28 @@ function Que_Manager(QLS) {
 			}
 			let todo=[]//记录将要执行的青龙任务
 			let tostop=false//是否达到任务间隔需要强制停止任务
+			let find=false
 			for(j=0;j<QLS[i].keywords.length;j++){
 				for(k=0;k<crons.length;k++){
-					if(crons[k].name.indexOf(QLS[i].keywords[j])!=-1||crons[k].command.indexOf(QLS[i].keywords[j])!=-1){//找到需要执行的青龙任务
-						let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
+					if((crons[k].name&&crons[k].name.indexOf(QLS[i].keywords[j])!=-1)||(crons[k].command&&crons[k].command.indexOf(QLS[i].keywords[j])!=-1)){//找到需要执行的青龙任务
+						find=true
 						if(typeof(crons[k]["pid"])!="number"){
 							todo.push(crons[k])
 						}
 						else{//任务正在执行，即上次任务尚未执行完
+							let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
 							if(now-(new Date(Listens[index].LastTime)).getTime()>Listens[index].Interval*60*1000){//超过监控任务设置的执行时间间隔，强制停止并执行下一个任务
 								tostop=true
 								todo.push(crons[k])
 							}
-							if(Listens[index].Interval<t)
+							//if(Listens[index].Interval<t)
 								t=Listens[index].Interval
 						}
 						break
 					}
 				}
 			}
-			if (todo.length == 0) {
+			if (!find) {
 				notify += QLS[i].name + "容器未找到任务「" + QLS[i].keywords.toString() + "」请检查是否监控任务配置有误\n"
 				continue
 			}
@@ -1149,7 +1150,7 @@ function DecodeUrl(url, urldecodes) {//console.log(url+"\n"+url.length)
 				if (urldecodes[i].trans[j].ori == -1) {//使用整段url作为变量
 					temp["value"] = url
 					spy.push(temp)
-				}
+				} 
 				else {//提取参数作为变量
 					let reg = new RegExp("(?<=" + urldecodes[i].trans[j].ori + "=)[^&]+")
 					//console.log("(?<=" + urldecodes[i].trans[j].ori + "=)[^&]+")
@@ -1753,6 +1754,14 @@ var DefaultUrlDecode =
 		},
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/sign/sevenDay/signActivity",
+			name: "CJ超级店铺无线签到",
+			trans: [{
+				ori: "activityId",
+				redi: "CJHY_SEVENDAY"
+			}]
+		},
+		{
+			keyword: "https://cjhy-isv.isvjd.com/sign/sevenDay/signActivity",
 			name: "CJ超级店铺无线签到",
 			trans: [{
 				ori: "activityId",
