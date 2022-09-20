@@ -105,7 +105,7 @@ function NotifyMasters(msg){
 
 //在totype平台的群cid中向绑定京东账号pin的用户通知msg
 function NotifyPinInGroup(totype,cid,pin,msg){
-	let uid=(new Bucket("pin"+imtype.toUpperCase())).get(pin)
+	let uid=(new Bucket("pin"+totype.toUpperCase())).get(pin)
 	if(uid!=""){
 		sillyGirl.push({
 			platform:totype,
