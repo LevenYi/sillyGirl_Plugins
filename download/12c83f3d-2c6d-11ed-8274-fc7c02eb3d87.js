@@ -553,7 +553,7 @@ function Notify_JDCK_disabled(QLS){
 									notify=notify+"★通知"+toType[k]+"群"+gid[l]+"成功\n"
 									sleep(Math.random()*5000+5000)
 								}
-								else notify=notify+"\n☆通知"+toType[k]+"群失败，该客户未绑定"+toType[k]
+								else notify=notify+"☆通知"+toType[k]+"群失败，该客户未绑定"+toType[k]
 						}
 					}
 				}

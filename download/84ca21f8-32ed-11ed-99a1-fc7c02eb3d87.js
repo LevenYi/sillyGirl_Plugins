@@ -52,11 +52,11 @@ function formatStringLen(strVal, len,padChar){
 //将
 function ToEasyCopy(imtype,title,msg){
 	if(imtype=="pgm")
-		return "**"+title+"**\n`"+msg+"`"
+		return "【**"+title+"**】`"+msg+"`"
 	else if(imtype=="tg")
-		return "*"+title+"*\n`"+msg+"`"
+		return "【*"+title+"*】`"+msg+"`"
 	else
-		return  "【" + title + "】\n"+msg
+		return  "【" + title + "】"+msg
 }
 
 //获取imtype平台用户uid所绑定的京东账号pin
@@ -104,7 +104,7 @@ function NotifyMasters(msg){
 }
 
 //在totype平台的群cid中向绑定京东账号pin的用户通知msg
-function NotifyPinInGroup(totype,cid,pin,msg){
+function NotifyPinInGroup(totype,cid,pin,msg){ 
 	let uid=(new Bucket("pin"+totype.toUpperCase())).get(pin)
 	if(uid!=""){
 		sillyGirl.push({

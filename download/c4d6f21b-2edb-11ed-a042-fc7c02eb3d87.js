@@ -142,7 +142,7 @@ function main() {
 			let values = msg.match(/(?<=export[ ]+\w+[ ]*=[ ]*")[^"]+(?=")/g)
 			let envs = [],urls=[]
 			names.forEach((ele,index)=>{
-				if(ele.match(/^M_/)!=null)
+				if(ele.match(/^M_[A-Z_]+?_URL/)!=null)
 					urls.push(values[index])
 			})
 			for (let i = 0; i < values.length; i++){
@@ -1084,7 +1084,7 @@ function Que_Manager(QLS) {
 								tostop=true
 								todo.push(crons[k])
 							}
-							//if(Listens[index].Interval<t)
+							if(Listens[index].Interval<t)
 								t=Listens[index].Interval
 						}
 						break
@@ -1108,7 +1108,7 @@ function Que_Manager(QLS) {
 			}
 			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) { 
 			//if(true){ 
-				QLS[i].keywords.forEach(value=>{
+				QLS[i].keywords.forEach(value=>{ 
 					if(record.indexOf(value)==-1)
 						record.push(value)
 				})
