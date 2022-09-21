@@ -4,10 +4,10 @@
 * @description 口令解析、链接解析、变量转换、变量监控多合一，须安装somethong与qinglong模块
 * @title 白眼
 * @platform qq wx tg pgm sxg
-* @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
-* @rule raw [\s\S]*(https:\/\/(.{2,}\.)(isvjcloud|isvjd)\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
-* @rule raw [\s\S]*https://(prodev\.m|jdjoy)\.jd\.com[\s\S]*
-* @rule raw [\s\S]*export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
+* @rule raw [\s\S]*?[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
+* @rule raw [\s\S]*?(https:\/\/(.{2,}\.)(isvjcloud|isvjd)\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
+* @rule raw [\s\S]*?https://(prodev\.m|jdjoy)\.jd\.com[\s\S]*
+* @rule raw [\s\S]*?export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
 * @rule 恢复ql spy
 * @rule 监控管理
 * @rule 导出白眼
@@ -1075,11 +1075,11 @@ function Que_Manager(QLS) {
 				for(k=0;k<crons.length;k++){
 					if((crons[k].name&&crons[k].name.indexOf(QLS[i].keywords[j])!=-1)||(crons[k].command&&crons[k].command.indexOf(QLS[i].keywords[j])!=-1)){//找到需要执行的青龙任务
 						find=true
-						console.log("进程id:"+crons[k]["pid"])
-						if(crons[k]["pid"]&&crons[k].pid==""){
+						if(!crons[k]["pid"]||crons[k].pid==""){
 							todo.push(crons[k])
 						}
 						else{//任务正在执行，即上次任务尚未执行完
+						console.log("进程id:"+crons[k]["pid"])
 							let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
 							if(now-(new Date(Listens[index].LastTime)).getTime()>Listens[index].Interval*60*1000){//超过监控任务设置的执行时间间隔，强制停止并执行下一个任务
 								tostop=true
