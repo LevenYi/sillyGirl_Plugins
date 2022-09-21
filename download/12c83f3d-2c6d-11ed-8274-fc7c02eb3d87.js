@@ -305,7 +305,12 @@ function Bean_Info(QLS,n,m){
 		if(InfoSum[i].amount>=10)
 			notify=InfoSum[i].amount+" "+InfoSum[i].eventMassage+"\n"+notify
 	}
-	return "-----【"+GetName(envs[m-1].value)+"】-----\n"+"✧今日收入【"+sum+"】京豆✧\n\n"+notify
+	let name=""
+	if(envs[m-1].remarks!="")
+		name=envs[m-1].remarks
+	else
+		name=GetName(envs[m-1].value)
+	return "-----【"+name+"】-----\n"+"✧今日收入【"+sum+"】京豆✧\n\n"+notify
 }
 
 function SaveJDUserName(QLS){

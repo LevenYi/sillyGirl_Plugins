@@ -76,7 +76,7 @@ const BlackList=["162726413"]
 2022-9-12 v1.2.5 模块化
 2022-9-16 v1.2.6 队列任务对应青龙任务处于空闲状态，不受监控任务间隔限制立即执行
 2022-9-20 v1.2.9 修复监控容器存在空任务时报错、部分链接识别错误以及监控任务设置时间隔后处理队列时的误报找不到青龙任务
-
+2022-9-21 v1.3.0 修复任务时间间隔失效问题
 
 
 
@@ -864,10 +864,10 @@ function Env_Listen(envs) {
 		}
 		else {
 			//if(NotifyMode)
-				Notify("未监控的变量，已忽略")
+				Notify("未监控该变量，已忽略")
 		}
 		if (unlock) {//用于某些特殊情况未能正常处理完队列导致锁未能打开时重新开锁
-			db.set("spy_locked", false)
+			//db.set("spy_locked", false)
 			//			Notify("开锁")
 		}
 	}
@@ -1075,7 +1075,8 @@ function Que_Manager(QLS) {
 				for(k=0;k<crons.length;k++){
 					if((crons[k].name&&crons[k].name.indexOf(QLS[i].keywords[j])!=-1)||(crons[k].command&&crons[k].command.indexOf(QLS[i].keywords[j])!=-1)){//找到需要执行的青龙任务
 						find=true
-						if(typeof(crons[k]["pid"])!="number"){
+						console.log("进程id:"+crons[k]["pid"])
+						if(crons[k]["pid"]&&crons[k].pid==""){
 							todo.push(crons[k])
 						}
 						else{//任务正在执行，即上次任务尚未执行完
@@ -1106,7 +1107,7 @@ function Que_Manager(QLS) {
 				console.log("停止任务:"+names+"\n"+ql.Stop_QL_Crons(QLS[i].host, token, ids))
 				sleep(1000)
 			}
-			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) { 
+			if (ids.length!=0&&ql.Start_QL_Crons(QLS[i].host, token, ids)) { 
 			//if(true){ 
 				QLS[i].keywords.forEach(value=>{ 
 					if(record.indexOf(value)==-1)
