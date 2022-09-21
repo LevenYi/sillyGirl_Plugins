@@ -306,7 +306,7 @@ function Bean_Info(QLS,n,m){
 			notify=InfoSum[i].amount+" "+InfoSum[i].eventMassage+"\n"+notify
 	}
 	let name=""
-	if(envs[m-1].remarks!="")
+	if(envs[m-1].remarks)
 		name=envs[m-1].remarks
 	else
 		name=GetName(envs[m-1].value)

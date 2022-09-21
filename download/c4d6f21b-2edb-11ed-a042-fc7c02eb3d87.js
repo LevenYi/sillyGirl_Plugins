@@ -1105,7 +1105,7 @@ function Que_Manager(QLS) {
 			let names=todo.map(value=>value.name)
 			if(tostop){
 				console.log("停止任务:"+names+"\n"+ql.Stop_QL_Crons(QLS[i].host, token, ids))
-				sleep(1000)
+				sleep(1000) 
 			}
 			if (ids.length!=0&&ql.Start_QL_Crons(QLS[i].host, token, ids)) { 
 			//if(true){ 
