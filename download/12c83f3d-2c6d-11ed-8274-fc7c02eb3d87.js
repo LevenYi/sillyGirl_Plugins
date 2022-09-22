@@ -306,7 +306,7 @@ function Bean_Info(QLS,n,m){
 			notify=InfoSum[i].amount+" "+InfoSum[i].eventMassage+"\n"+notify
 	}
 	let name=""
-	if(envs[m-1].remarks)
+	if(envs[m-1].remarks) 
 		name=envs[m-1].remarks
 	else
 		name=GetName(envs[m-1].value)
@@ -558,7 +558,7 @@ function Notify_JDCK_disabled(QLS){
 									notify=notify+"★通知"+toType[k]+"群"+gid[l]+"成功\n"
 									sleep(Math.random()*5000+5000)
 								}
-								else notify=notify+"☆通知"+toType[k]+"群失败，该客户未绑定"+toType[k]
+								else notify=notify+"☆通知"+toType[k]+"群失败，该客户未绑定"+toType[k]+"\n"
 						}
 					}
 				}

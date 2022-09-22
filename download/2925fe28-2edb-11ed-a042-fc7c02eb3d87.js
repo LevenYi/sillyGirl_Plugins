@@ -10,7 +10,7 @@
 * @rule raw [\s\S]+
  * @public false
 * @admin false
-* @version v2.1.5
+* @version v2.2.0
 */
 
 //修改命令样例：修改命令 $ql cron run ? $运行 ?
@@ -27,6 +27,7 @@
 //2022-8-14 v2.1.2 修复微信端无法使用的问题
 //2022-8-30 v2.1.3 适配最新傻妞
 //2022-9-4 v2.1.4 适配最新傻妞
+//2022-9-22 v2.2.0 更换触发傻妞方式
 
 var data=[{
 	ori:"",
@@ -34,7 +35,6 @@ var data=[{
 }]
 
 const s = sender
-const sillyGirl=new SillyGirl()
 const db= new Bucket("sillyGirl")
 
 function main(){
@@ -64,10 +64,17 @@ function main(){
 	
 	else{
 		let command=Redirect(msg)
-		if(command==false)//非重定向命令
+		if(command!=false){
+			s.setContent(command)
+			s.reply('重定向为【'+command+"】")
+		}
+		s.continue()
+
+		/*if(command==false)//非重定向命令
 			s.continue()
 		else {//命中，执行重定向
 			s.reply("执行命令:"+command+"\n"+sillyGirl.session(command)().message)
+			s.setContent(command)
 			let flag=0
 			while(!flag){
 				let sg=s.listen(25000)
@@ -77,7 +84,7 @@ function main(){
 				else
 					flag=1
 			}
-		}
+		}*/
 
 	}
 	return
@@ -232,16 +239,19 @@ notify+=(i+1)+"、"+data[i].redi+"\n"
 	else{//执行自定义命令
 		let command=Redirect(sg.getContent())
 		if(command!=false){//命中，执行重定向
-			s.reply("执行命令:"+command+"\n"+sillyGirl.session(command)().message)
-			let flag=0
-			while(!flag){
-				let im=s.listen(15000)
-				if(im!=null){
-					s.reply(sillyGirl.session(im.getContent())().message)
-				}
-				else
-					flag=1
-			}
+			s.setContent(command)
+			s.reply('执行命令'+command)
+			//s.reply("执行命令:"+command+"\n"+sillyGirl.session(command)().message)
+			// let flag=0
+			// while(!flag){
+			// 	let im=s.listen(15000)
+			// 	if(im!=null){
+			// 		s.reply(sillyGirl.session(im.getContent())().message)
+			// 	}
+			// 	else
+			// 		flag=1
+			// }
+			s.continue()
 		}
 		else
 			s.reply("执行失败，退出")

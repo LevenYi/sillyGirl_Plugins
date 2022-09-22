@@ -18,7 +18,7 @@
 * @rule 清空白眼数据
 * @priority 10
  * @public false
- * @version v1.0.0
+* @version v1.3.0
 */
 
 
@@ -1075,11 +1075,11 @@ function Que_Manager(QLS) {
 				for(k=0;k<crons.length;k++){
 					if((crons[k].name&&crons[k].name.indexOf(QLS[i].keywords[j])!=-1)||(crons[k].command&&crons[k].command.indexOf(QLS[i].keywords[j])!=-1)){//找到需要执行的青龙任务
 						find=true
-						if(!crons[k]["pid"]||crons[k].pid==""){
+						if(!crons[k].pid||crons[k].pid==""){
 							todo.push(crons[k])
 						}
 						else{//任务正在执行，即上次任务尚未执行完
-						console.log("进程id:"+crons[k]["pid"])
+							console.log("进程id:"+crons[k]["pid"])
 							let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
 							if(now-(new Date(Listens[index].LastTime)).getTime()>Listens[index].Interval*60*1000){//超过监控任务设置的执行时间间隔，强制停止并执行下一个任务
 								tostop=true
