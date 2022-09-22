@@ -195,18 +195,15 @@ function FindByOriginal(com,data){
 
 function GetAllRedirect(){
 	let notify=""
-//	let num=0
 	let storage=db.get("redirect")
-//	let msg_id
 	if(storage==""||storage=="[]"){
 		s.reply("不存在重定向命令")
 		return
 	}
 	let data=JSON.parse(storage)
-//		num=data.length
 		for(let i=0;i<data.length;i++)
 //			notify=notify+(i+1)+"、"+data[i].redi+"-->"+data[i].ori+"\n"
-notify+=(i+1)+"、"+data[i].redi+"\n"
+			notify+=(i+1)+"、"+data[i].redi+"\n"
 	
 	
 	s.reply("共"+data.length+"个重定向命令(\"-数字\"删除,输入命令执行,\"q\"退出)\n"+notify)
@@ -220,7 +217,6 @@ notify+=(i+1)+"、"+data[i].redi+"\n"
 		return	
 	}
 	//删除
-//	let n=sg.getContent().match(/(?<=-)\d+$/g)
 	else if(sg.getContent()<0){//删除自定义命令
 		let n=Math.abs(sg.getContent())
 		if(n>data.length){
