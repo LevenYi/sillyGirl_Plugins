@@ -1487,16 +1487,6 @@ var DefaultUrlDecode =
 			}]
 		},
 
-
-		{
-			keyword: "https://lzkjdz-isv.isvjcloud.com/wxShareActivity/activity",
-			name: "LZ分享有礼",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_wxShareActivity_activityId"
-			}]
-		},
-
 		{
 			keyword: "https://cjhydz-isv.isvjcloud.com/microDz/invite/activity",
 			name: "CJ微定制",
