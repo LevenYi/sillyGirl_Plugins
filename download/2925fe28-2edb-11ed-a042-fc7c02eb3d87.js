@@ -40,7 +40,7 @@ const db= new Bucket("sillyGirl")
 function main(){
 	let uid=s.getUserId()
 	if(!s.isAdmin()){
-		s.continue()
+		s.continue() 
 		return
 	}
 	let msg=s.getContent()
