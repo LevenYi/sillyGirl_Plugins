@@ -35,6 +35,7 @@ var data=[{
 }]
 
 const s = sender
+const sillyGirl=new SillyGirl()
 const db= new Bucket("sillyGirl")
 
 function main(){
@@ -64,27 +65,20 @@ function main(){
 	
 	else{
 		let command=Redirect(msg)
-		if(command!=false){
-			s.setContent(command)
-			s.reply('重定向为【'+command+"】")
-		}
-		s.continue()
+		// if(command!=false){
+		// 	s.setContent(command)
+		// 	s.reply('重定向为【'+command+"】")
+		// }
+		// s.continue()
 
-		/*if(command==false)//非重定向命令
+		if(command==false)//非重定向命令
 			s.continue()
 		else {//命中，执行重定向
 			s.reply("执行命令:"+command+"\n"+sillyGirl.session(command)().message)
 			s.setContent(command)
-			let flag=0
-			while(!flag){
-				let sg=s.listen(25000)
-				if(sg!=null){
-					s.reply(sillyGirl.session(sg.getContent())().message)
-				}
-				else
-					flag=1
-			}
-		}*/
+			while((sg=s.listen(25000))!=null)
+				s.reply(sillyGirl.session(sg.getContent())().message)
+		}
 
 	}
 	return

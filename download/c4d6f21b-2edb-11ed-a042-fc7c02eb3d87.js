@@ -744,7 +744,7 @@ function Recovery_qlspy() {
 }
 
 function Env_Listen(envs) {
-	console.log(JSON.stringify(envs))
+	//console.log(JSON.stringify(envs))
 	if (envs.length == 0)
 		return
 	// 	检查变量名是否为用户配置的需要转换的变量名，是则先转换
@@ -826,7 +826,7 @@ function Env_Listen(envs) {
 			}
 
 			if (que.length != 0) {
-				console.log("监控任务"+(i+1)+JSON.stringify(que))
+				//console.log("监控任务"+(i+1)+JSON.stringify(que))
 				if (Listens[i].Disable)
 					notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】任务已禁用，已忽略\n"
 				else {
@@ -893,7 +893,7 @@ function JDCODE_Decode(JDCODE) {
 }
 
 function Urls_Decode(urls) {
-	console.log(urls)
+	//console.log(urls)
 	let notify = "",tip=""
 	let envs = []//记录urls中提取的变量
 	for (let i = 0; i < urls.length; i++) {
@@ -990,7 +990,7 @@ function Import_Spy(data) {//console.log(data)
 /**************工具函数**************/
 //处理任务队列 
 function Que_Manager(QLS) {
-	console.log("处理任务队列")
+	//console.log("处理任务队列")
 	let limit = 100//死循环保险，防止陷入死循环
 	//处理队列任务
 	while (true) {
@@ -1048,7 +1048,7 @@ function Que_Manager(QLS) {
 		let t=1
 		let save=false,record=[]//成功执行的监控任务的关键词
 		for (let i = 0; i < QLS.length; i++) {
-			console.log(JSON.stringify(QLS[i].envs)+"\n\n"+QLS[i].keywords)
+			//console.log(JSON.stringify(QLS[i].envs)+"\n\n"+QLS[i].keywords)
 			if (QLS[i].envs.length == 0) {//该容器无任务,未监控该容器或者该容器已禁用
 				//				notify+=QLS[i].name+"无任务，跳过\n"
 				continue
@@ -1079,7 +1079,7 @@ function Que_Manager(QLS) {
 							todo.push(crons[k])
 						}
 						else{//任务正在执行，即上次任务尚未执行完
-							console.log("进程id:"+crons[k]["pid"])
+							//console.log("进程id:"+crons[k]["pid"])
 							let index=Listens.findIndex((value=>value.Keyword==QLS[i].keywords[j]))
 							if(now-(new Date(Listens[index].LastTime)).getTime()>Listens[index].Interval*60*1000){//超过监控任务设置的执行时间间隔，强制停止并执行下一个任务
 								tostop=true
@@ -1186,14 +1186,14 @@ function Add_Spy(oldspy, newspy) {
 	let QLS = JSON.parse(data)
 	//	console.log(JSON.stringify(oldspy)+"\n\n"+JSON.stringify(newspy))
 	let start = oldspy.length//保存导入结果数据中新添项开始的位置
-	console.log(newspy.length)
+	//console.log(newspy.length)
 	for (let i = 0; i < newspy.length; i++) {//导入监控配置与现存某项监控的变量相同则不导入此项监控配置
 		let find=function () {
 			for (let j = 0; j < oldspy.length; j++) {
 				for (k = 0; k < oldspy[j].Envs.length; k++) {
 					for (m = 0; m < newspy[i].Envs.length; m++) {
 						if (newspy[i].Envs[m] == oldspy[j].Envs[k]) {
-							console.log(newspy[i].Name + "的" + newspy[i].Envs[m] + "变量已存在于监控中，不导入\n")
+							//console.log(newspy[i].Name + "的" + newspy[i].Envs[m] + "变量已存在于监控中，不导入\n")
 							return true
 						}
 					}
@@ -1211,7 +1211,7 @@ function Add_Spy(oldspy, newspy) {
 					return false
 				}()
 				if(noclient){
-					console.log(`删除${newspy[i].Name}：${newspy[i].Clients[j]}`)
+					//console.log(`删除${newspy[i].Name}：${newspy[i].Clients[j]}`)
 					newspy[i].Clients.splice(j, 1)
 				}
 			}

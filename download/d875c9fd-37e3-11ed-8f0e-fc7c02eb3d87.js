@@ -32,23 +32,24 @@ function main(){
     //console.log(ck)
     if(s.getContent()=="查看下载"){
         let data=Get_AllTorr(host,ck)
-        let notify="序号 资源大小(GB) 下载进度 下载速率(KB/s) 任务名 状态\n----------------------------------\n"
+        let notify="序号 任务名 资源大小 下载进度 速率 任务名 状态\n----------------------------------\n"
         //console.log(JSON.stringify(data))
         data.forEach((session,index)=>{
             if(session.state=="checkingUP")
                 return
-            notify+=fmt.sprintf("%2v %-20v %-5v %5v%% %5v ",index+1,(session.size/1024/1024/1024).toString().substring(0,4),(session.progress*100).toString().substring(0,4),(session.dlspeed/1024).toString().substring(0,4),session.name.substring(0,8))
+            notify+=fmt.sprintf("%2v %-10v %5vGB %5v%% %5vKB/s ",index+1,session.name.substring(0,8),(session.size/1024/1024/1024).toString().substring(0,4),(session.progress*100).toString().substring(0,4),(session.dlspeed/1024).toString().substring(0,4))
             if(session.state=="pausedDL")
-                notify+=" 暂停\n"
+                notify+=" 暂停\n\n"
             else if(session.state=="queuedDL")
-                notify+="排队\n"
+                notify+="排队\n\n"
             else if(session.state=="stalledDL")
-                notify+="未连接\n"
+                notify+="未连接\n\n"
             else if(session.state=="metaDL")
-                notify+="下载种子\n"
+                notify+="获取种子\n\n"
             else if(session.state=="error")
-                notify+=" 错误\n"
-            // else
+                notify+=" 错误\n\n"
+             else
+                notify+="\n\n"
             //     notify+=session.name+ "其他状态\n"
         })
         notify+="----------------------------------\n[-删除] [!暂停] [#下载]"
