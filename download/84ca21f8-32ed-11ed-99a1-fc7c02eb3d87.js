@@ -54,7 +54,7 @@ function ToEasyCopy(imtype,title,msg){
 	if(imtype=="pgm")
 		return "【**"+title+"**】`"+msg+"`"
 	else if(imtype=="tg")
-		return "*"+title+"* :`"+msg+"`"
+		return "【*"+title+"*】`"+msg+"`"
 	else
 		return  "【" + title + "】"+msg
 }

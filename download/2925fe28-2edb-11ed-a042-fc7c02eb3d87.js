@@ -78,6 +78,7 @@ function main(){
 			s.setContent(command)
 			while((sg=s.listen(25000))!=null)
 				s.reply(sillyGirl.session(sg.getContent())().message)
+			console.log("重定向结束")
 		}
 
 	}
@@ -197,7 +198,7 @@ function GetAllRedirect(){
 	let data=JSON.parse(storage)
 		for(let i=0;i<data.length;i++)
 //			notify=notify+(i+1)+"、"+data[i].redi+"-->"+data[i].ori+"\n"
-			notify+=data[i].redi+"\n"
+			notify+=(i+1)+"、"+data[i].redi+"\n"
 	
 	
 	s.reply("共"+data.length+"个重定向命令(\"-数字\"删除,输入命令执行,\"q\"退出)\n"+notify)

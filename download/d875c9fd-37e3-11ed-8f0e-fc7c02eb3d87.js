@@ -2,7 +2,7 @@
 * @author https://t.me/sillyGirl_Plugin
 * @version v1.0.1
  * @create_at 2022-09-22 14:36:01
-* @description qbittorent远程下载,需填写qb地址及账户密码，使用命令例:下载 magnet:?xt=urn:btih:1AFACF07B8ZXCVCXZV
+* @description qbittorent远程下载,需填写qb地址及账户密码，使用命令:直接发送磁链
 * @title qbittorent
 * @rule raw (magnet:\?xt=urn:btih:)[0-9a-fA-F]{40}.*
 * @rule raw (bc://bt/)[0-9a-fA-F=]+
@@ -26,13 +26,13 @@ function main(){
     const s = sender
     let ck=Login(host,uname,pwd)
     if(ck==null){
-        s.reply("cookie获取失败")
+        s.reply("登陆失败")
         return
     }
     //console.log(ck)
     if(s.getContent()=="查看下载"){
         let data=Get_AllTorr(host,ck)
-        let notify="序号 任务名 资源大小 下载进度 速率 任务名 状态\n----------------------------------\n"
+        let notify="序号 任务名 资源大小 下载进度 速率 状态\n----------------------------------\n"
         //console.log(JSON.stringify(data))
         data.forEach((session,index)=>{
             if(session.state=="checkingUP")
@@ -52,12 +52,12 @@ function main(){
                 notify+="\n\n"
             //     notify+=session.name+ "其他状态\n"
         })
-        notify+="----------------------------------\n[-删除] [!暂停] [#下载]"
+        notify+="----------------------------------\n[-删除] [!暂停] [#开始]"
         s.reply(notify)
         let inp=s.listen(20*1000)
         if(inp==null)
             return
-        if(Number(inp.getContent())){//console.log(JSON.stringify(data[Math.abs(Number(inp.getContent()))-1]))
+        if(Number(inp.getContent())){
             let session=data[Math.abs(Number(inp.getContent()))-1].hash
             if(Del_Torr(host,ck,session,true))
                 s.reply("删除成功")
@@ -76,10 +76,19 @@ function main(){
                 s.reply("启动失败")
         }
         else if(inp.getContent().match(/^[！!]\d+$/)!=null){
-            if(Pause_Torr(host,ck,data[Number(inp.getContent().match(/\d+/)[0])-1].hash))
+            let n=inp.getContent().match(/\d+/)[0]
+            if(n==0)
+                hash="all"
+            else
+                hash=data[n-1].hash
+            if(Pause_Torr(host,ck,hash))
                 s.reply("停止成功")
             else
                 s.reply("停止失败")
+        }
+        else{
+            s.setContent(inp.getContent())
+            s.continue()
         }
     }
     else{
