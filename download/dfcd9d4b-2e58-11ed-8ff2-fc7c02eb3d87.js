@@ -188,7 +188,7 @@ function Recovery_NotMoveEnvOrder(notmove,backup,ql_host,ql_token){
 	for(let i=0;i<notmove.length;i++){
 		for(let j=notmove[i]-1;j<envs.length;j++){
 			if(envs[j].name==backup[notmove[i]-1].name&&envs[j].value==backup[notmove[i]-1].value&&j!=notmove[i]-1){
-				console.log(`恢复位置${envs[j].value}:${j}-->${notmove[i]-1}`)
+				//console.log(`恢复位置${envs[j].value}:${j}-->${notmove[i]-1}`)
 				if(envs[j].id){
 					if(ql.Move_QL_Env(ql_host,ql_token,envs[j].id,j,notmove[i]-1)==null)
 						notify+="变量"+backup[notmove[i]].name+":"+backup[notmove[i]].value+"恢复失败\n"					

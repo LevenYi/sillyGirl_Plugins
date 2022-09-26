@@ -37,7 +37,11 @@ function main(){
         data.forEach((session,index)=>{
             if(session.state=="checkingUP")
                 return
-            notify+=fmt.sprintf("%2v %-10v %5vGB %5v%% %5vKB/s ",index+1,session.name.substring(0,8),(session.size/1024/1024/1024).toString().substring(0,4),(session.progress*100).toString().substring(0,4),(session.dlspeed/1024).toString().substring(0,4))
+            let name=session.name.substring(0,8)
+            let size=(session.size/1024/1024/1024).toString().substring(0,4)
+            let progress=(session.progress*100).toString().substring(0,3)
+            let speed=(session.dlspeed/1024).toString().substring(0,4)
+            notify+=fmt.sprintf("%2v %-10v %5vGB %5v%% %5vKB/s ",index+1,name,size,progress,speed)
             if(session.state=="pausedDL")
                 notify+=" 暂停\n\n"
             else if(session.state=="queuedDL")
@@ -99,6 +103,30 @@ function main(){
         else
             s.reply("任务添加失败")
     } 
+}
+
+function TranSize(size){
+    let units=1024
+    let count=0
+    while(size/units>units){
+        size=size/units
+        count++
+    }
+    size=size.toString().substring(0,4)
+    if(count==0)
+        return size+"B"
+    else if(count==1)
+        return size+"KB"
+    else if(count==2)
+        return size+"MB"
+    else if(count==3)
+        return size+"GB"
+    else if(count==4)
+        return size+"TB"
+    else if(count==5)
+        return size+"PB"
+    else
+        return "too big or error"
 }
 
 function Login(host,name,password){
