@@ -69,7 +69,7 @@ function main(){
 					expirebean.forEach(value=>exbeans+=value.expireamount)
 					if(redpackets_data.expiredBalance=="")
 						redpackets_data.expiredBalance=0
-					console.log(envs[j].value+"\n"+redpackets_data.expiredBalance+"\n"+exbeans)
+					//console.log(envs[j].value+"\n"+redpackets_data.expiredBalance+"\n"+exbeans)
 					if(exbeans/100+Number(redpackets_data.expiredBalance)>=NUM){
 						let pin=envs[j].value.match(/(?<=pin=)[^;]+/)[0]
 						let tip="温馨提醒，您的账号【"+GetName(envs[j].value)+"】有"
@@ -89,11 +89,14 @@ function main(){
 			}
 		}
 	}
-	s.recallMessage(tipid)
-	if(record.length==0)
-		s.reply("无账号近期过期红包与京豆合计超过"+NUM+"元")
-	else
-		s.reply(notify)
+	if(s.getPlatform()!="cron"){
+		s.recallMessage(tipid)
+		if(record.length==0)
+			s.reply("无账号近期过期红包与京豆合计超过"+NUM+"元")
+		else
+			s.reply(notify)
+	}
+	else st.NotifyMasters(notify)
 }
 
 //获取ck对应账号通知时使用的称呼

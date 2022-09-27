@@ -2,7 +2,7 @@
 * @author https://t.me/sillyGirl_Plugin
 * @version v1.0.0
 * @create_at 2022-09-08 15:06:22
-* @description 查询本人绑定京东账户最近x天的收入详情，须安装somethong与qinglong模块，例:最近30天收入
+* @description 查询本人绑定京东账户最近x天的收入详情，须安装something与qinglong模块，例:最近30天收入
 * @title 京豆详情
 * @platform qq wx tg pgm sxg
 * @rule 最近\d+天收入
@@ -16,7 +16,7 @@ const st=require("something")
 
 function main(){
 	let notify=""
-    let days=Number(s.getContent().match(/\d+/g)[0]);//console.log(days)
+    let days=Number(s.getContent().match(/\d+/g)[0]);
 	let data=db.get("QLS")
 	if(data==""){
 		s.reply("查询失败，请联系管理员")//未对接青龙
@@ -28,7 +28,7 @@ function main(){
 		s.reply("获取绑定信息失败或您未绑定本平台")
 		return
 	}
-	let tipid=s.reply("正在查询,请稍等...");//console.log(tipid)
+	let tipid=s.reply("正在查询,请稍等...");
 	for(let i=0;i<QLS.length;i++){
 		let ql_host=QLS[i].host
 		let ql_client_id=QLS[i].client_id

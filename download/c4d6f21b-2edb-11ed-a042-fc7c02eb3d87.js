@@ -1,7 +1,7 @@
 /*
 * @author https://t.me/sillyGirl_Plugin
 * @create_at 2022-09-07 18:35:08
-* @description 口令解析、链接解析、变量转换、变量监控多合一，须安装somethong与qinglong模块
+* @description 口令解析、链接解析、变量转换、变量监控多合一，须安装something与qinglong模块
 * @title 白眼
 * @platform qq wx tg pgm sxg
 * @rule raw [\s\S]*?[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
@@ -142,7 +142,7 @@ function main() {
 			let values = msg.match(/(?<=export[ ]+\w+[ ]*=[ ]*")[^"]+(?=")/g)
 			let envs = [],urls=[]
 			names.forEach((ele,index)=>{
-				if(ele.match(/^M_[A-Z_]+?_URL/)!=null)
+				if(ele.match(/URL|Url/)!=null)
 					urls.push(values[index])
 			})
 			for (let i = 0; i < values.length; i++){
@@ -452,9 +452,8 @@ function Spy_Manager() {
 				DONE: []
 			}
 			try{
-			for (
-				let i = 0; i < QLS.length; i++)//默认监控非禁用容器
-					if(!QLS.disable)
+				for (let i = 0; i < QLS.length; i++)//默认监控非禁用容器
+					if(!QLS[i].disable)
 						spy.Clients.push(QLS[i].client_id)
 				s.reply("请输入监视任务名称：")
 				spy.Name = s.listen(WAIT).getContent()
@@ -639,23 +638,17 @@ function Spy_Status() {
 			notify = "☆已完成所有任务☆\n"
 		else
 			notify = "★正在处理队列★\n"
-		notify += "待冷却/秒 待执行 已完成 任务 \n------------------------------\n"
+		notify += "待执行 已完成 任务 冷却等待/秒 \n------------------------------\n"
 		let Listens = JSON.parse(data)
 		for (let i = 0; i < Listens.length; i++) {
-			let temp=""
-			if (Listens[i].LastTime!=undefined) {//根据上次执行时间获取任务状态
+			//if (Listens[i].LastTime!=undefined) {//根据上次执行时间获取任务状态
 				last = new Date(Listens[i].LastTime)
 				let towait=Listens[i].Interval*60-Math.floor((now-last)/1000)
 				if (towait > 0)
-					temp += fmt.sprintf("%-4v",towait.toString())
+					notify+=fmt.sprintf("★%-4v%-4v%-15v%4v\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name,towait)
 				else
-					temp += fmt.sprintf("%-4v","0")
-			}
-			else
-				temp+="----"
-			temp+=fmt.sprintf(" %-4v%-4v%-15v\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name)
-			notify+=temp
-
+					notify+=fmt.sprintf("☆%-4v%-4v%-15v  0\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name)
+			//}
 		}
 		Notify(notify)
 	}
@@ -804,8 +797,8 @@ function Env_Listen(envs) {
 						find = true
 						//console.log(JSON.stringify(envs[j])+"\n\n"+JSON.stringify(Listens[i].DONE))
 						if (IsIn(envs[j], Listens[i].TODO) || IsIn(envs[j], Listens[i].DONE)) {
-							//notify +="发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】 -「 " + envs[j].value + " 」重复的变量，已忽略\n"
-							notify+="重复的变量，已忽略\n"
+							notify +="「" + envs[j].value + "」重复的变量--任务"+(i+1)+"【" + Listens[i].Name + "】，已忽略\n"
+							//notify+="重复的变量，已忽略\n"
 							continue
 						}
 						else {
@@ -906,18 +899,18 @@ function Urls_Decode(urls) {
 		}
 		if(spy.length==0){//未能根据自定义解析规则解析出变量，使用内置解析规则
 			spy = DecodeUrl(urls[i], DefaultUrlDecode)
+			if(spy.length==0){
+				notify += "未解析到变量\n"
+				continue
+			}
+			else
+				tip="--使用内置解析规则\n"
 		}
 		else
 			tip="--使用自定义链接解析规则\n"
-		if (spy.length == 0) {
-			notify += "未解析到变量\n"
-		}
-		else {//console.log(JSON.stringify(spy))
-			tip="--使用内置解析规则\n"
-			for (let i = 0; i < spy.length; i++) {
-				notify+=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
-				envs.push({name:spy[i].name,value:spy[i].value})
-			}
+		for (let i = 0; i < spy.length; i++) {
+			notify+=st.ToEasyCopy(s.getPlatform(),spy[i].act,"export " + spy[i].name + "=\"" + spy[i].value + "\"")+"\n\n"
+			envs.push({name:spy[i].name,value:spy[i].value})
 		}
 	}
 	Notify(notify+tip)//变量解析通知，不需要自行注释
@@ -1003,24 +996,7 @@ function Que_Manager(QLS) {
 
 		//检查是否已完成所有任务，是则开锁并停止循环退出
 		let Listens = JSON.parse(db.get("env_listens_new"))
-		let done = true//检查是否已完成所有任务
-		for (let i = 0; i < Listens.length; i++) {
-			if (Listens[i].TODO.length != 0) {
-				done = false
-				break
-			}
-		}
-		if (done) {
-			db.set("spy_locked", false)//开锁
-			if(NotifyMode)
-				Notify("已完成所有任务")
-			break
-		}
-		else {
-			db.set("spy_locked", true)//防止不正常开锁		
-		}
-
-
+		
 
 		for (i = 0; i < QLS.length; i++) {
 			QLS[i]["envs"] = []	//容器配置文件需要修改的变量
@@ -1135,6 +1111,17 @@ function Que_Manager(QLS) {
 		}
 		if(notify!="")
 			Notify(notify)
+
+		if(Listens.every(listen=>listen.TODO.length==0)){
+			db.set("spy_locked", false)//开锁
+			if(NotifyMode)
+				Notify("已完成所有任务")
+			break
+		}
+		// else {
+		// 	db.set("spy_locked", true)//防止不正常开锁		
+		// }
+
 		//console.log((limit+1)+"循环,等待(分):"+t)
 		sleep(t*60*1000)
 	}
@@ -1206,7 +1193,7 @@ function Add_Spy(oldspy, newspy) {
 			for (let j = 0; j < newspy[i].Clients.length; j++) {//删除监控任务newspy[i]中指定容器非傻妞对接容器的容器
 				let noclient=function () {
 					for (k = 0; k = QLS.length; k++)
-						if (QLS.client_id == newspy[i].Clients[j])
+						if (QLS[i].client_id == newspy[i].Clients[j])
 							return true
 					return false
 				}()
@@ -1263,7 +1250,7 @@ function Notify(msg) {//s.reply("通知")
 			from += "「" + s.getUsername() + "」"
 		else
 			from += "「" + s.getUserId() + "」"
-		from += "的消息\n---------------------\n【" + message.slice(0, 50) + " ......】\n---------------------\n\n";
+		from += "的消息\n---------------------\n" + message.slice(0, 50) + " ......\n---------------------\n\n";
 //		tgmsg=(from + tgmsg).replace(/(?<!\\)_/g,"\\_")
 		st.NotifyMainKey("SpyNotify", false, from + msg + "\n--『白眼』")
 		st.NotifyMainKey("SpyGroupNotify", true, from + msg + "\n--『白眼』")
@@ -1755,7 +1742,6 @@ var DefaultUrlDecode =[
 			}]
 		},
 
-
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/wxKnowledgeActivity/activity",
 			name: "CJ知识超人",
@@ -1765,6 +1751,22 @@ var DefaultUrlDecode =[
 			}]
 		},
 
+		{
+			keyword: "https://lzkj-isv.isvjcloud.com/wxShopGift/activity",
+			name: "LZ特效店铺有礼",
+			trans: [{
+				ori: "-1",
+				redi: "jd_wxShopGift_activityUrl"//kr
+			}]
+		},
+		{
+			keyword: "https://cjhy-isv.isvjcloud.com/wxShopGift/activity",
+			name: "CJ特效店铺有礼",
+			trans: [{
+				ori: "-1",
+				redi: "jd_wxShopGift_activityUrl"//kr
+			}]
+		},
 
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/wxInviteActivity/openCard/invitee",

@@ -4,8 +4,8 @@
  * @create_at 2022-09-22 14:36:01
 * @description qbittorent远程下载,需填写qb地址及账户密码，使用命令:直接发送磁链
 * @title qbittorent
-* @rule raw (magnet:\?xt=urn:btih:)[0-9a-fA-F]{40}.*
-* @rule raw (bc://bt/)[0-9a-fA-F=]+
+* @rule raw .*(magnet:\?xt=urn:btih:)[0-9a-fA-F]{40}.*
+* @rule raw .*(bc://bt/)[0-9a-fA-F=]+.*
 * @rule 查看下载
  * @public false
 * @admin true
@@ -33,9 +33,10 @@ function main(){
     if(s.getContent()=="查看下载"){
         let data=Get_AllTorr(host,ck)
         let notify="序号 任务名 资源大小 下载进度 速率 状态\n----------------------------------\n"
+        let display_state=["downloading","pausedDL","queuedDL","stalledDL","metaDL","error"]
         //console.log(JSON.stringify(data))
         data.forEach((session,index)=>{
-            if(session.state=="checkingUP")
+            if(display_state.indexOf(session.state) == -1)
                 return
             let name=session.name.substring(0,8)
             let size=(session.size/1024/1024/1024).toString().substring(0,4)
