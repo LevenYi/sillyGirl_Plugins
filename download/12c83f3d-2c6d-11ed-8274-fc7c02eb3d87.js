@@ -533,7 +533,7 @@ function Notify_JDCK_disabled(QLS){
 		for(let i=0;i<envs.length;i++){
 			if(envs[i].name=="JD_COOKIE"&&envs[i].status==1){
 				dis_pin_num++//统计失效账号数量
-				let pin=envs[i].value.match(/(?<=pt_pin=)\S+(?=;)/g)
+				let pin=envs[i].value.match(/(?<=pt_pin=)\S+(?=;)/g)[0]
 				let name=GetName(envs[i].value)//获取通知应该使用的称呼					
 				if(record.indexOf(pin)==-1){//避免多容器重复通知
 					notify=notify+"\n变量"+(i+1)+"【"+pin+"】\n"

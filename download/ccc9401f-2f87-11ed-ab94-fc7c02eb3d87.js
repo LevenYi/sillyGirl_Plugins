@@ -89,14 +89,13 @@ function main(){
 			}
 		}
 	}
+	if(record.length==0)
+		notify="无账号近期过期红包与京豆合计超过"+NUM+"元"
 	if(s.getPlatform()!="cron"){
 		s.recallMessage(tipid)
-		if(record.length==0)
-			s.reply("无账号近期过期红包与京豆合计超过"+NUM+"元")
-		else
-			s.reply(notify)
+		s.reply(notify)
 	}
-	else st.NotifyMasters(notify)
+	else st.NotifyMasters(notify+"\n--资产过期通知")
 }
 
 //获取ck对应账号通知时使用的称呼

@@ -18,7 +18,7 @@
 * @rule 清空白眼数据
 * @priority 10
  * @public false
-* @version v1.3.0
+* @version v1.3.1
 */
 
 
@@ -55,9 +55,12 @@
 插件最后为内置解析规则，同自定义解析规则，可自行添加
 */
 //
-const NotifyMode=true
+const NotifyMode=false
 //监控黑名单
 const BlackList=["162726413"]
+//是否解析链接型变量
+const DecodeUrlEnv=false
+
 /*
 2022-8-27 v1.0.0 
 2022-8-27 v1.0.1 修复人形傻妞与tg机器人位于同一个对话时不停互相丢链接的问题，可能修复监控偶尔报错的问题
@@ -141,15 +144,13 @@ function main() {
 			let names = msg.match(/(?<=export[ ]+)\w+(?=[ ]*=[ ]*"[^"]+")/g)
 			let values = msg.match(/(?<=export[ ]+\w+[ ]*=[ ]*")[^"]+(?=")/g)
 			let envs = [],urls=[]
-			names.forEach((ele,index)=>{
+			if(DecodeUrlEnv){
+				names.forEach((ele,index)=>{
 				if(ele.match(/URL|Url/)!=null)
 					urls.push(values[index])
-			})
+				})
+			}
 			for (let i = 0; i < values.length; i++){
-				// if(values[i].indexOf("https")!=-1){
-				// 	urls.push(values[i])
-				// }
-				// else
 					envs.push({ name: names[i], value: values[i] })
 			}
 			if(urls.length!=0)
@@ -644,11 +645,14 @@ function Spy_Status() {
 			//if (Listens[i].LastTime!=undefined) {//根据上次执行时间获取任务状态
 				last = new Date(Listens[i].LastTime)
 				let towait=Listens[i].Interval*60-Math.floor((now-last)/1000)
-				if (towait > 0)
-					notify+=fmt.sprintf("★%-4v%-4v%-15v%4v\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name,towait)
+				if(towait<0)
+					towait=0
+				if (now-last<60*1000)
+					notify+="★"
 				else
-					notify+=fmt.sprintf("☆%-4v%-4v%-15v  0\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name)
-			//}
+					notify+="☆"
+				notify+=fmt.sprintf("%-4v%-4v%-15v%4v\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name,towait)
+				//}
 		}
 		Notify(notify)
 	}
@@ -778,7 +782,7 @@ function Env_Listen(envs) {
 			if (Listens[i]["DONE"] == undefined)
 				Listens[i]["DONE"] = []
 			//根据上次任务执行时间,分析处理队列过程中是否不正常退出导致队列没能处理完并开锁
-			if (Listens[i].LastTime != null && Listens[i].LastTime != 0) {
+			if (Listens[i].LastTime) {
 				let last = (new Date(Listens[i].LastTime)).getTime()
 				if (Listens[i].Interval != 0) {
 					if (now - last < Listens[i].Interval * 60 * 1000)
@@ -797,7 +801,7 @@ function Env_Listen(envs) {
 						find = true
 						//console.log(JSON.stringify(envs[j])+"\n\n"+JSON.stringify(Listens[i].DONE))
 						if (IsIn(envs[j], Listens[i].TODO) || IsIn(envs[j], Listens[i].DONE)) {
-							notify +="「" + envs[j].value + "」重复的变量--任务"+(i+1)+"【" + Listens[i].Name + "】，已忽略\n"
+							notify +="「" + envs[j].value + " 」重复的变量--任务"+(i+1)+"【" + Listens[i].Name + "】，已忽略\n"
 							//notify+="重复的变量，已忽略\n"
 							continue
 						}
@@ -820,7 +824,7 @@ function Env_Listen(envs) {
 
 			if (que.length != 0) {
 				//console.log("监控任务"+(i+1)+JSON.stringify(que))
-				if (Listens[i].Disable)
+				if (Listens[i].Disable&&!s.isAdmin())
 					notify += "发现洞察变量，检查到监控任务"+(i+1)+"【" + Listens[i].Name + "】任务已禁用，已忽略\n"
 				else {
 					//检查监控任务填写容器是否错误
@@ -848,7 +852,7 @@ function Env_Listen(envs) {
 				Notify(notify)
 			if (flag) {
 				db.set("env_listens_new", JSON.stringify(Listens))
-				if (db.get("spy_locked") == "false") {
+				if (db.get("spy_locked") == "false"||unlock) {
 					db.set("spy_locked", true)
 					Que_Manager(QLS)
 					return
@@ -1072,6 +1076,10 @@ function Que_Manager(QLS) {
 				notify += QLS[i].name + "容器未找到任务「" + QLS[i].keywords.toString() + "」请检查是否监控任务配置有误\n"
 				continue
 			}
+			if(!todo.length){
+				//console.log("未到执行时间")
+				continue
+			}
 			let ids=todo.map(value=>{
 				if(value.id)
 					return value.id
@@ -1083,7 +1091,7 @@ function Que_Manager(QLS) {
 				console.log("停止任务:"+names+"\n"+ql.Stop_QL_Crons(QLS[i].host, token, ids))
 				sleep(1000) 
 			}
-			if (ids.length!=0&&ql.Start_QL_Crons(QLS[i].host, token, ids)) { 
+			if (ql.Start_QL_Crons(QLS[i].host, token, ids)) { 
 			//if(true){ 
 				QLS[i].keywords.forEach(value=>{ 
 					if(record.indexOf(value)==-1)
@@ -1102,7 +1110,7 @@ function Que_Manager(QLS) {
 					//console.log(Listens[i].Name+"历史记录"+JSON.stringify(Listens[i].TODO))
 					Listens[i].LastTime=now
 					Listens[i].DONE.push(Listens[i].TODO[0])
-					if(Listens[i].DONE>50)
+					if(Listens[i].DONE.length>50)
 						LastTime[i].DONE.splice(0,20)
 					Listens[i].TODO.shift()
 				}
@@ -1413,15 +1421,10 @@ function Print_SpyItem(spy, QLS) {
 	notify += "3、洞察变量：" + spy.Envs.toString() + "\n"
 	notify += "4、指定容器："
 	for (let i = 0; i < spy.Clients.length; i++) {
-		let find = false
-		for (j = 0; j < QLS.length; j++)
-			if (spy.Clients[i] == QLS[j].client_id) {
-				find = true
-				notify += "【" + QLS[j].name + "】"
-				break
-			}
-
-		if (!find)
+		let ql=QLS.find(ql=>ql.client_id==spy.Clients[i])
+		if(ql)
+			notify += "【" + ql.name + "】"
+		else
 			notify += "[" + spy.Clients[i] + "]"
 	}
 	notify += "\n"
@@ -1555,19 +1558,11 @@ var DefaultUrlDecode =[
 		},
 
 		{
-			keyword: "https://lzkj-isv.isvjd.com/wxShopFollowActivity",
-			name: "LZ店铺关注抽奖",
+			keyword: "wxShopFollowActivity",
+			name: "店铺关注有礼",
 			trans: [{
-				ori: "activityId",
-				redi: "jd_wxShopFollowActivity_activityId"//kr 环保
-			}]
-		},
-		{
-			keyword: "https://lzkj-isv.isvjcloud.com/wxShopFollowActivity",
-			name: "LZ店铺关注抽奖",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_wxShopFollowActivity_activityId"//kr 环保
+				ori: "-1",
+				redi: "jd_wxShopFollowActivity_activityUrl"
 			}]
 		},
 
@@ -1684,7 +1679,7 @@ var DefaultUrlDecode =[
 		},
 
 		{
-			keyword: "https://lzkjdz-isv.isvjcloud.com/wxUnPackingActivity/activity/activity",
+			keyword: "https://lzkjdz-isv.isvjcloud.com/wxUnPackingActivity/activity/",
 			name: "LZ让福袋飞",
 			trans: [{
 				ori: "activityId",
@@ -1760,6 +1755,14 @@ var DefaultUrlDecode =[
 			}]
 		},
 		{
+			keyword: "https://lzkj-isv.isvjd.com/wxShopGift/activity",
+			name: "LZ特效店铺有礼",
+			trans: [{
+				ori: "-1",
+				redi: "jd_wxShopGift_activityUrl"//kr
+			}]
+		},
+		{
 			keyword: "https://cjhy-isv.isvjcloud.com/wxShopGift/activity",
 			name: "CJ特效店铺有礼",
 			trans: [{
@@ -1796,6 +1799,23 @@ var DefaultUrlDecode =[
 		},
 	
 	/*******************环境保护库********************** */	
+		{
+			keyword: "https://lzkj-isv.isvjd.com/wxShopFollowActivity",
+			name: "LZ店铺关注抽奖",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_wxShopFollowActivity_activityId"//kr 环保
+			}]
+		},
+		{
+			keyword: "https://lzkj-isv.isvjcloud.com/wxShopFollowActivity",
+			name: "LZ店铺关注抽奖",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_wxShopFollowActivity_activityId"//kr 环保
+			}]
+		},
+
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/wxCollectionActivity/activity2",
 			name: "LZ加购有礼",
