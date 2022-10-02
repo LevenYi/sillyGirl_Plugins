@@ -1111,7 +1111,7 @@ function Que_Manager(QLS) {
 					Listens[i].LastTime=now
 					Listens[i].DONE.push(Listens[i].TODO[0])
 					if(Listens[i].DONE.length>50)
-						LastTime[i].DONE.splice(0,20)
+						Listens[i].DONE.splice(0,20)
 					Listens[i].TODO.shift()
 				}
 			}
