@@ -6,7 +6,7 @@
 * @title 频道监控
 * @platform qq wx tg pgm sxg
 * @rule ?
-* @public false
+ * @public false
 */
 
 const Config=[

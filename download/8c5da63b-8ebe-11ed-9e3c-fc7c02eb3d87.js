@@ -4,7 +4,7 @@
 * @create_at 2022-09-09 16:30:33
 * @description 青龙模块，本模块不适用最新版青龙，可能仅适用2.10.x
 * @version v1.0.3
-* @public false
+ * @public false
 * @title qinglong
 */
 

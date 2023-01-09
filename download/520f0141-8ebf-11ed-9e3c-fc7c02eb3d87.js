@@ -5,7 +5,7 @@
 * @description 一些通用函数和网络接口以及数据
 * @version v1.0.4
 * @title something
-* @public false
+ * @public false
 */
 
 module.exports={

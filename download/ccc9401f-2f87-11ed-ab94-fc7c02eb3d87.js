@@ -7,7 +7,7 @@
 * @platform qq wx tg pgm web cron
 * @rule 提醒资产过期
 * @cron 43 10 * * *
-* @public false
+ * @public false
 * @admin true
 */
 

@@ -6,7 +6,7 @@
 * @title 京豆详情
 * @platform qq wx tg pgm sxg
 * @rule 最近\d+天收入
-* @public false
+ * @public false
 */
 
 const s = sender

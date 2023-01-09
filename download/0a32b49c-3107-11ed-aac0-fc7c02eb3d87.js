@@ -7,7 +7,7 @@
 * @platform qq wx tg pgm sxg
 * @rule raw jx [\s\S]*
 * @priority 100
-* @public false
+ * @public false
 * @admin true
 */
 

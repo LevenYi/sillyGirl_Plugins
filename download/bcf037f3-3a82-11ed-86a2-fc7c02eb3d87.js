@@ -13,11 +13,12 @@
 * @rule raw ImportWhiteEye=[\S\s]+
 * @rule 天王盖地虎
 * @rule 监控状态
+* @rule 监控自检
 * @rule 清空监控队列
 * @rule 清空监控记录
 * @rule 清空白眼数据
 * @priority 10
-* @public false
+ * @public false
 * @disable false
 * @version v1.4.0
 */
@@ -47,7 +48,11 @@
 监控状态：
 查看监控任务的未完成任务数量、已完成任务数量、以及上次任务时间
 
+监控自检：
+检查监控任务是否存在非对接容器、监控脚本是否存在、以及监控变量是否与其他任务相同
+
 其他：出现奇奇怪怪的不运行的情况可以使用‘清空监控队列’或者‘清空监控记录’命令进行重置
+批量修改监控容器方式：导出白眼，然后使用命令delete jd_cookie env_listens_new删除数据，再导入即可（导入监控任务时会自动将所有非禁用容器作为监控容器)
 
 插件中可能需要区分的名称：监控任务名称，自定义变量转换规则名称，自定义链接解析规则名称，青龙任务名称、以及内置的链接解析规则的名称
 插件最后为内置解析规则，自定义解析规则类似(残废，仅可添加简单规则)
@@ -83,7 +88,7 @@ const NotifyMode=false
 const BlackList=["162726413","5036494307"]
 
 //口令关键词黑名单,用于屏蔽某些不想监控的口令，仅对非管理员起效
-const JDCodeBlackList=["炸年兽","年夜饭","队","助"]
+const JDCodeBlackList=["炸年兽","年夜饭","队","助","红包"]
 /************************************************/
 
 /*
@@ -114,6 +119,7 @@ const JDCodeBlackList=["炸年兽","年夜饭","队","助"]
 2023-1-3 v1.3.8 更新非管理员的口令黑名单机制以及解析规则是否仅管理员可用
 2023-1-5 v1.3.9 推送排版优化
 2023-1-6 v1.4.0 排队及队列处理逻辑优化
+2023-1-9 v1.4.1 增加监控自检功能
 
 
 /*****************数据存储******************/
@@ -285,6 +291,9 @@ function main() {
 
 	else if (msg == "监控状态")
 		Spy_Status()
+	
+	else if(msg=="监控自检")
+		Spy_Check()
 
 	else if (msg == "清空白眼数据") {
 		SaveData("", "", "", "", "")
@@ -296,27 +305,15 @@ function main() {
 
 function Spy_Manager() {
 
-	let data1 = db.get("env_listens_new")
 	let silent = db.get("spy_silent_new")
-	let data2 = db.get("spy_targets_new")
-	let data3 = db.get("spy_envtrans_new")
-	let data4 = db.get("spy_urldecode_new")
-	if (data1 == "")
-		Listens = []
-	else
-		Listens = JSON.parse(data1)
-	if (data2 == "")
-		targets = []
-	else
-		targets = JSON.parse(data2)
-	if (data3 == "")
-		trans = []
-	else
-		trans = JSON.parse(data3)
-	if (data4 == "")
-		urldecodes = []
-	else
-		urldecodes = JSON.parse(data4)
+	let data = db.get("env_listens_new")
+	let Listens = data?JSON.parse(data):[]
+	data = db.get("spy_targets_new")
+	let targets = data?JSON.parse(data):[]
+	data = db.get("spy_envtrans_new")
+	let trans = data?JSON.parse(data):[]
+	data = db.get("spy_urldecode_new")
+	let urldecodes = data?JSON.parse(data):[]
 
 	let limit = LIMIT
 	let inp = 1//随便什么值，非null即可
@@ -439,33 +436,59 @@ function Spy_Manager() {
 	}
 }
 
-function Spy_Status() {
+function Spy_Check(){
+	let notify=""
 	let data = db.get("env_listens_new")
-	if (data != "") {
-		let now = (new Date()).getTime()
-		if (db.get("spy_locked") != "true")
-			notify = "☆已完成所有任务☆\n"
-		else
-			notify = "★正在处理队列★\n"
-		notify += "待执行 已完成 任务 冷却等待/秒 \n------------------------------\n"
-		let Listens = JSON.parse(data)
-		for (let i = 0; i < Listens.length; i++) {
-			if (Listens[i].LastTime!=undefined) {//根据上次执行时间获取任务状态
-				last = new Date(Listens[i].LastTime)
-				let towait=Listens[i].Interval*60-Math.floor((now-last)/1000)
-				if(towait<0)
-					towait=0
-				if (towait>0)
-					notify+="★"
-				else
-					notify+="☆"
-				notify+=fmt.sprintf("%-4v%-4v%-15v%4v\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name,towait)
+	let Listens = data?JSON.parse(data):[]
+	Notify("自检中,请稍候...")
+	Listens.forEach((listen,i)=>{
+		listen.Clients.forEach(client_id=>{
+			let QL=QLS.find(QL=>QL.client_id==client_id)
+			if(!QL)
+				notify+="监控任务"+(i+1)+listen.Name+"的监控容器【"+client_id+"】未对接\n"
+			else{
+				let crons=ql.Get_QL_Crons(QL.host,QL.token)
+				if(!crons.find(cron=>cron.command.indexOf(listen.Keyword)!=-1||cron.name.indexOf(listen.Keyword)!=-1))
+					notify+="监控任务"+(i+1)+"【"+listen.Name+"】的监控容器【"+QL.name+"】不存在定时任务【"+listen.Keyword+"】\n"
 			}
-		}
+			listen.Envs.forEach(env=>{
+				for(let j=i+1;j<Listens.length;j++){
+					if(Listens[j].Envs.indexOf(env)!=-1)
+						notify+="监控任务"+(i+1)+"【"+Listens[i].Name+"】与监控任务"+(j+1)+"【"+Listens[j].Name+"】存在同一监控变量"+env+"\n"
+				}
+			})
+		})
+	})
+	if(notify)
 		Notify(notify)
-	}
 	else
-		Notify("未配置监控任务，请先前往‘监控管理’添加")
+		Notify("所有监控任务配置正常")
+}
+
+function Spy_Status() {
+	let notify=""
+	let data = db.get("env_listens_new")
+	let Listens = data?JSON.parse(data):[]
+	let now = (new Date()).getTime()
+	if (db.get("spy_locked") != "true")
+		notify = "☆已完成所有任务☆\n"
+	else
+		notify = "★正在处理队列★\n"
+	notify += "待执行 已完成 任务 冷却等待/秒 \n------------------------------\n"
+	for (let i = 0; i < Listens.length; i++) {
+		if (Listens[i].LastTime!=undefined) {//根据上次执行时间获取任务状态
+			last = new Date(Listens[i].LastTime)
+			let towait=Listens[i].Interval*60-Math.floor((now-last)/1000)
+			if(towait<0)
+				towait=0
+			if (towait>0)
+				notify+="★"
+			else
+				notify+="☆"
+			notify+=fmt.sprintf("%-4v%-4v%-15v%4v\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name,towait)
+		}
+	}
+	Notify(notify)
 }
 
 function Spy_Clear() {
@@ -549,7 +572,7 @@ function Recovery_qlspy() {
 }
 
 function Env_Listen(envs) {
-	console.log(JSON.stringify(envs))
+//	console.log(JSON.stringify(envs))
 	if(!envs.length)//不监控
 		return false
 	// 	检查变量名是否为用户配置的需要转换的变量名，是则先转换

@@ -5,7 +5,7 @@
 * @description openAI人工智障，需设置token
 * @title openAI
 * @rule ai ?
-* @public false
+ * @public false
 */
 
 //请在openAI官网登陆完成后，点击右上角头像-View API keys创建token，并使用命令'set otto openAI_token ?'设置token
