@@ -7,20 +7,20 @@
 * @rule raw [\s\S]*https:\/\/(.{2,}\.isvj(clou)?d\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
 * @rule raw [\s\S]*https:\/\/([\w\.]*[^u]\.jd\.com)[\s\S]*
 * @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+"[\s\S]*
+* @rule raw ImportWhiteEye=[\S\s]+
+* @rule 导出白眼
 * @rule 恢复ql spy
 * @rule 监控管理
-* @rule 导出白眼
-* @rule raw ImportWhiteEye=[\S\s]+
-* @rule 天王盖地虎
 * @rule 监控状态
 * @rule 监控自检
 * @rule 清空监控队列
 * @rule 清空监控记录
 * @rule 清空白眼数据
+* @rule 天王盖地虎
 * @priority 10
  * @public false
 * @disable false
-* @version v1.4.0
+* @version v1.4.1
 */
 
 
@@ -43,7 +43,8 @@
 
 导入白眼数据：
 将导出的信息发送给机器人即可，会默认仅添加自己没有监控的变量的任务
-并把傻妞所绑定的所有非禁用容器作为作用容器
+并把所对接的所有非禁用容器作为作用容器
+导入任务后请使用"监控自检"命令检查导入的任务是否存在适用于自身
 
 监控状态：
 查看监控任务的未完成任务数量、已完成任务数量、以及上次任务时间
@@ -89,6 +90,9 @@ const BlackList=["162726413","5036494307"]
 
 //口令关键词黑名单,用于屏蔽某些不想监控的口令，仅对非管理员起效
 const JDCodeBlackList=["炸年兽","年夜饭","队","助","红包"]
+
+//如果跟返利冲突，是否干掉返利
+const FuckRebate=true
 /************************************************/
 
 /*
@@ -187,7 +191,9 @@ const LIMIT = 40	//循环次数限制，防止意外死循环
 const WAIT = 60 * 1000	//输入等待时间
 
 function main() {
-	var msg = s.getContent()
+	let msg = s.getContent()
+	if(!FuckRebate)
+		s.continue()
 	if(!QLS.length && SPY){	
 		QLS=ql.QLS()
 		if(!QLS){
@@ -232,7 +238,6 @@ function main() {
 			//console.log("口令")
 			JDCODE_Decode(msg)
 		}
-		s.continue()
 	//   }
 	//   catch(err){
 	// 		Notify("发生错误，请联系开发者\n"+err)
@@ -241,7 +246,6 @@ function main() {
 	}
 
 	if (!s.isAdmin()) {//其他命令为管理员命令
-		s.continue()
 		return
 	}
 
@@ -440,15 +444,22 @@ function Spy_Check(){
 	let notify=""
 	let data = db.get("env_listens_new")
 	let Listens = data?JSON.parse(data):[]
+	let QLS_crons=[]	//{client_id:client_id,crons:crons}
+	QLS.forEach(QL=>QLS_crons.push({
+		client_id:QL.client_id,
+		crons:ql.Get_QL_Crons(QL.host,QL.token)
+	}))
 	Notify("自检中,请稍候...")
 	Listens.forEach((listen,i)=>{
 		listen.Clients.forEach(client_id=>{
 			let QL=QLS.find(QL=>QL.client_id==client_id)
 			if(!QL)
-				notify+="监控任务"+(i+1)+listen.Name+"的监控容器【"+client_id+"】未对接\n"
+				notify+="监控任务【"+(i+1)+listen.Name+"】的监控容器【"+client_id+"】未对接\n"
 			else{
-				let crons=ql.Get_QL_Crons(QL.host,QL.token)
-				if(!crons.find(cron=>cron.command.indexOf(listen.Keyword)!=-1||cron.name.indexOf(listen.Keyword)!=-1))
+				let crons=QLS_crons.find(ele=>ele.client_id==client_id).crons
+				if(!crons)
+					notify+="监控任务"+(i+1)+"【"+listen.Name+"】的监控容器【"+QL.name+"】无法获取定时任务，可能对接有误或者不支持该青龙版本\n"
+				else if(!crons.find(cron=>cron.command.indexOf(listen.Keyword)!=-1||cron.name.indexOf(listen.Keyword)!=-1))
 					notify+="监控任务"+(i+1)+"【"+listen.Name+"】的监控容器【"+QL.name+"】不存在定时任务【"+listen.Keyword+"】\n"
 			}
 			listen.Envs.forEach(env=>{

@@ -18,7 +18,7 @@ const Config=[
         repo:"KingRan",     //触发后需要执行的拉库任务
         startscript:"opencard", //拉库结束后需要自动执行的新增任务
         modify:{
-            suffix:" desi JD_COOKIE 1-200",  //对新增任务的执行命令添加后缀
+            suffix:"desi JD_COOKIE 1-200",  //对新增任务的执行命令添加后缀
             schedule:"2 2 29 2 *"   //对新增任务修改定时规则
         },
         otherscript:true,   //是否在频道消息中出现js py等脚本名时自动执行该脚本
@@ -33,7 +33,7 @@ const Config=[
         repo:"KingRan",     //触发后需要执行的拉库任务
         startscript:"opencard", //拉库结束后需要自动执行的新增任务
         modify:{
-            suffix:" desi JD_COOKIE 1-200",  //对新增任务的执行命令添加后缀
+            suffix:"desi JD_COOKIE 1-200",  //对新增任务的执行命令添加后缀
             schedule:"2 2 29 2 *"   //对新增任务修改定时规则
         },
         otherscript:true,   //是否在频道消息中出现js py等脚本名时自动执行该脚本
@@ -48,7 +48,7 @@ const Config=[
         repo:"feverrun",     //触发后需要执行的拉库任务
         startscript:"opencard", //拉库结束后需要自动执行的新增任务
         modify:{
-            suffix:" desi JD_COOKIE 1-200",  //对新增任务的执行命令添加后缀
+            suffix:"desi JD_COOKIE 1 200-2",  //对新增任务的执行命令添加后缀
             schedule:"2 2 29 2 *"   //对新增任务修改定时规则
         },
         otherscript:true,   //是否在频道消息中出现js py等脚本名时自动执行该脚本
