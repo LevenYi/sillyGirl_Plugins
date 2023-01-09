@@ -585,7 +585,7 @@ function Recovery_qlspy() {
 }
 
 function Env_Listen(envs) {
-//	console.log(JSON.stringify(envs))
+	console.log(JSON.stringify(envs))
 	if(!envs.length)//不监控
 		return false
 	// 	检查变量名是否为用户配置的需要转换的变量名，是则先转换
@@ -631,6 +631,7 @@ function Env_Listen(envs) {
 				else if (now - last < 3 * 60 * 1000)
 					unlock = false
 			}
+			console.log(JSON.stringify(Listens[i]))
 			if(Listens[i].Envs.find(value=>value==env.name)){	//该变量属于监控任务listen[i]的监控变量
 				notify+="\n【触发任务"+(i+1)+"】:" + Listens[i].Name+ "\n"
 				if (Listens[i].Disable&&!s.isAdmin()){
@@ -799,11 +800,12 @@ function Import_Spy(data) {//console.log(data)
 		return "接收信息有误，或者切换平台导入，或者在命令行交互模式导入"
 	}
 	let olddata = db.get("env_listens_new")
-	let oldspy = olddata?JSON.parse(olddata):[]
+	let oldspy = olddata?JSON.parse(olddata):new Array()
+	//console.log(JSON.stringify(olddata))
 	newspy.forEach(spy=>{
 		let index=oldspy.findIndex(listen=>spy.Envs.find(env=>listen.Envs.indexOf(env)!=-1))
 		if(index==-1){
-			notify+="【"+spy.Name+"导入成功\n"
+			notify+="★【"+spy.Name+"】导入成功\n"
 			QLS.forEach(QL=>{
 				if(!QL.disable)
 					spy.Clients.push(QL.client_id)
@@ -812,11 +814,11 @@ function Import_Spy(data) {//console.log(data)
 			count++
 		}
 		else{
-			notify+="【"+spy.Name+"】与监控任务"+(index+1)+"【"+oldspy[index].Name+"】存在相同变量，忽略\n"
+			notify+="☆【"+spy.Name+"】与监控任务"+(index+1)+"【"+oldspy[index].Name+"】存在相同变量，忽略\n"
 		}
 	})
 	if(count)
-		db.set("env_listens_new", JSON.stringify(olddata))
+		db.set("env_listens_new", JSON.stringify(oldspy))
 	return "共导入" + count + "个监控任务(请在导入结束后使用\"监控自检\"命令检查导入的任务是否存在问题)\n" + notify
 
 }

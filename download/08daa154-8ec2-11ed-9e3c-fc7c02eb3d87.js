@@ -63,10 +63,10 @@ const s = sender
 const sillyGirl=new SillyGirl()
 function main(){
     const WAIT=10000
+    s.continue()
     let notify=""
     let config=Config.find(config=>config.id==s.getChatId())
     if(!config||s.getContent().indexOf("export")!=-1){
-        s.continue()
         return
     }
     let scriptname=null
@@ -75,8 +75,7 @@ function main(){
     let tostop=config.stopword.some(word=>s.getContent().indexOf(word)!=-1)
     let tostart=s.getContent().match(config.keyword)!=null
     //console.log("tostart:"+tostart+"\ntostop"+tostop+"\nscript:"+scriptname)
-    if(!tostart && !scriptname &&!tostop){      
-        s.continue()
+    if(!tostart && !scriptname &&!tostop){ 
         return
     }
     let QLS=ql.QLS()
@@ -181,7 +180,6 @@ function main(){
     }
     //console.log(notify)
     sillyGirl.notifyMasters(notify)
-    s.continue()
     return
 }
 

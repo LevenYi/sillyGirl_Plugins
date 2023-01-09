@@ -40,9 +40,8 @@ const sillyGirl=new SillyGirl()
 const db= new Bucket("sillyGirl")
 
 function main(){
-	let uid=s.getUserId()
+	s.continue() 
 	if(!s.isAdmin()){
-		s.continue() 
 		return
 	}
 	let msg=s.getContent()
@@ -73,7 +72,6 @@ function main(){
 			s.setContent(command)
 			console.log("重定向为："+command)
 		}
-		s.continue()
 	}
 	return
 }
