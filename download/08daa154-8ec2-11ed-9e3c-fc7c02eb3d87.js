@@ -100,6 +100,10 @@ function main(){
                 console.log(QLS[i].name+"无拉库任务"+config.repo)
                 continue
             }
+            else if(repo.pid){
+                console.log("已经正在拉库")
+                return
+            }
             let id=repo.id?repo.id:repo._id
             if(ql.Start_QL_Crons(QLS[i].host,QLS[i].token,[id])){
                 while(true){
@@ -127,7 +131,7 @@ function main(){
                     let schedule=crons[j].schedule
                     let id=crons[j].id?crons[j].id:crons[j]._id
                     if(config.modify&&config.modify.suffix)
-                        command+=config.modify.suffix
+                        command+=" "+config.modify.suffix
                     if(config.modify&&config.modify.schedule)
                         schedule=config.modify.schedule
                     if(ql.Update_QL_Cron(QLS[i].host,QLS[i].token,id,crons[j].name,command,schedule)){
