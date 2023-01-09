@@ -8,7 +8,7 @@
 * @rule 查看命令
 * @rule 删除命令 ?
 * @rule raw [\s\S]+
- * @public false
+* @public false
 * @admin false
 * @version v2.2.0
 */

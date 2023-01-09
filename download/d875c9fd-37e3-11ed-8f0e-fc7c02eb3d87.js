@@ -7,7 +7,7 @@
 * @rule raw .*(magnet:\?xt=urn:btih:)[0-9a-fA-F]{40}.*
 * @rule raw .*(bc://bt/)[0-9a-fA-F=]+.*
 * @rule 查看下载
- * @public false
+* @public false
 * @admin true
 */
 

@@ -5,7 +5,7 @@
 * @description 一些通用函数和网络接口以及数据
 * @version v1.0.4
 * @title something
- * @public false
+* @public false
 */
 
 module.exports={
@@ -83,7 +83,7 @@ function NotifyMasters(msg){
     qqm.split("&").forEach(id=>{
 		sillyGirl.push({
              platform: "qq",
-             userId: ids[i],
+             userId: id,
              content: msg
         })
 		masters.push({imType: "qq", id: id })
@@ -91,7 +91,7 @@ function NotifyMasters(msg){
     tgm.split("&").forEach(id=>{
 		sillyGirl.push({
              platform: "qq",
-             userId: ids[i],
+             userId: id,
              content: msg
         })
 		masters.push({imType: "qq", id: id })
@@ -99,7 +99,7 @@ function NotifyMasters(msg){
 	wxm.split("&").forEach(id=>{
 		sillyGirl.push({
              platform: "qq",
-             userId: ids[i],
+             userId: id,
              content: msg
         })
 		masters.push({imType: "qq", id: id })

@@ -6,7 +6,7 @@
 * @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
 * @rule raw [\s\S]*https:\/\/(.{2,}\.isvj(clou)?d\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
 * @rule raw [\s\S]*https:\/\/([\w\.]*[^u]\.jd\.com)[\s\S]*
-* @rule raw [\s\S]*export \w+[ ]*=[ ]*"[^"]+"[\s\S]*
+* @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+"[\s\S]*
 * @rule 恢复ql spy
 * @rule 监控管理
 * @rule 导出白眼
@@ -17,7 +17,7 @@
 * @rule 清空监控记录
 * @rule 清空白眼数据
 * @priority 10
- * @public false
+* @public false
 * @disable false
 * @version v1.4.0
 */
@@ -195,13 +195,14 @@ function main() {
 	if (IsTarget() || s.isAdmin()) {//仅对监控目标和管理员消息监控
 	  //try{	
 		//变量监控
-		if (msg.match(/export ([^"]+)="([^"]+)"/) != null) {
-			let names = msg.match(/(?<=export[ ]+)\w+(?=[ ]*=[ ]*"[^"]+")/g)
-			let values = msg.match(/(?<=export[ ]+\w+[ ]*=[ ]*")[^"]+(?=")/g)
+		if (msg.match(/export\s+[^=]+=[ ]*"[^"]+"/g)!=null) {
+			let names = msg.match(/(?<=export[\s]+)[^=\s]+(?=[ ]*=[ ]*"[^"]+")/g)
+			let values = msg.match(/(?<=export\s[^=]+=[ ]*")[^"]+(?=")/g)
 			let envs = [],urls=[]
 			for (let i = 0; i < values.length; i++){
 					envs.push({ name: names[i], value: values[i] })
 			}
+			//console.log(JSON.stringify(envs))
 			if(!Env_Listen(envs)){
 				const NoDecode=["jd_zdjr_activityUrl","jd_cjhy_activityUrl","jd_wdz_activityUrl","jd_wdzfd_activityUrl"]//不解析的链接型变量
 				names.forEach((ele,index)=>{
@@ -217,7 +218,7 @@ function main() {
 		//链接监控
 		else if (msg.match(/.isvj(clou)?d/) || msg.match(/\.\jd\.com/) ) {
 			let urls = msg.match(/https:\/\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\*\+,%;\=]*/g).map(url=>decodeURIComponent(url))
-			//Notify(urls.toString())
+			//console.log(urls.toString())
 			Urls_Decode(urls)
 		}
 		//口令监控
@@ -240,7 +241,8 @@ function main() {
 
 
 	if (msg == "迁移ql spy") {
-		Migrate_qlspy()
+		s.reply("已废弃")
+		//Migrate_qlspy()
 	}
 	else if (msg == "恢复ql spy") {
 		Recovery_qlspy()
@@ -547,7 +549,7 @@ function Recovery_qlspy() {
 }
 
 function Env_Listen(envs) {
-	//console.log(JSON.stringify(envs))
+	console.log(JSON.stringify(envs))
 	if(!envs.length)//不监控
 		return false
 	// 	检查变量名是否为用户配置的需要转换的变量名，是则先转换
@@ -681,21 +683,22 @@ function Urls_Decode(urls) {
 	let envs = []//记录urls中提取的变量
 	for (let i = 0; i < urls.length; i++) {
 		let spy = []	//解析结果
-		let by=0	//解析方式
-		//let tip=""
 		//使用自定义解析规则尝试解析
 		let data = db.get("spy_urldecode_new")
 		if (data) {
 			let urldecodes = JSON.parse(data)
 			spy = DecodeUrl(urls[i], urldecodes)
 		}
-		if(spy.length)
-			by=1
+		if(spy.length){
+			notify+="【解析成功】：自定义规则\n"
+		}
 		else{//未能根据自定义解析规则解析出变量，使用内置解析规则
 			spy = DecodeUrl(urls[i], UrlDecodeRule)
 			if(spy.length){
-				by=2
+				notify+="【解析成功】：内置规则\n"
 			}
+			else
+				notify+="【解析失败】：无匹配规则\n"
 		}
 		spy.forEach(ele=>{
 			let temp=""
@@ -709,22 +712,15 @@ function Urls_Decode(urls) {
 				envs.push({name:ele.name,value:ele.value})
 			}
 		})
-		if(by==0)
-			notify += "未解析到变量\n"
-		else if(by==1)
-			notify+="--by自定义规则\n\n"
-		else if(by==2)
-			notify+="--by内置规则\n\n"
 	}
 	//console.log(JSON.stringify(envs))
-	if (envs.length ||s.isAdmin()){
+	Notify(notify)	//链接解析结果通知，不需要自行注释
+	if (envs.length){
 		Env_Listen(envs)
-		Notify(notify)	//链接解析结果通知，不需要自行注释
 	}
 }
 
 function Export_Spy() {
-	let notify = ""
 	let data = db.get("env_listens_new")
 	if (data == "")
 		return "不存在监控信息"
@@ -759,6 +755,7 @@ function Export_Spy() {
 
 function Import_Spy(data) {//console.log(data)
 	let notify = ""
+	let count=0
 	try {
 		var newspy = JSON.parse(data)
 	}
@@ -766,14 +763,25 @@ function Import_Spy(data) {//console.log(data)
 		return "接收信息有误，或者切换平台导入，或者在命令行交互模式导入"
 	}
 	let olddata = db.get("env_listens_new")
-	if (olddata == "") {//不存在监控信息
-		olddata = "[]"
-	}
-
-	let oldspy = JSON.parse(olddata)
-	let result = Add_Spy(oldspy, newspy)
-	db.set("env_listens_new", JSON.stringify(result.spys))
-	return "共导入" + (result.spys.length - result.addat) + "个监控任务\n" + notify
+	let oldspy = olddata?JSON.parse(olddata):[]
+	newspy.forEach(spy=>{
+		let index=oldspy.findIndex(listen=>spy.Envs.find(env=>listen.Envs.indexOf(env)!=-1))
+		if(index==-1){
+			notify+="【"+spy.Name+"导入成功\n"
+			QLS.forEach(QL=>{
+				if(!QL.disable)
+					spy.Clients.push(QL.client_id)
+			})
+			oldspy.push(spy)
+			count++
+		}
+		else{
+			notify+="【"+spy.Name+"】与监控任务"+(index+1)+"【"+oldspy[index].Name+"】存在相同变量，忽略\n"
+		}
+	})
+	if(count)
+		db.set("env_listens_new", JSON.stringify(olddata))
+	return "共导入" + count + "个监控任务\n" + notify
 
 }
 
@@ -976,53 +984,6 @@ function DecodeUrl(url, rules) {
 	return spy
 }
 
-//导入监控数据
-function Add_Spy(oldspy, newspy) {
-	let start = oldspy.length//保存导入结果数据中新添项开始的位置
-	for (let i = 0; i < newspy.length; i++) {//导入监控配置与现存某项监控的变量相同则不导入此项监控配置
-		let find=function () {
-			for (let j = 0; j < oldspy.length; j++) {
-				for (k = 0; k < oldspy[j].Envs.length; k++) {
-					for (m = 0; m < newspy[i].Envs.length; m++) {
-						if (newspy[i].Envs[m] == oldspy[j].Envs[k]) {
-							//console.log(newspy[i].Name + "的" + newspy[i].Envs[m] + "变量已存在于监控中，不导入\n")
-							return true
-						}
-					}
-				}
-			}
-			return false
-		}()
-		if(!find){
-			ClearHistory([newspy[i]])
-			for (let j = 0; j < newspy[i].Clients.length; j++) {//删除监控任务newspy[i]中指定容器非傻妞对接容器的容器
-				let noclient=function () {
-					for (k = 0; k = QLS.length; k++)
-						if (QLS[i].client_id == newspy[i].Clients[j])
-							return true
-					return false
-				}()
-				if(noclient){
-					//console.log(`删除${newspy[i].Name}：${newspy[i].Clients[j]}`)
-					newspy[i].Clients.splice(j, 1)
-				}
-			}
-			if(newspy[i].Clients.length==0){//导入的任务无有效容器，将非禁用容器作为默认容器
-				for(j=0;j<QLS.length;j++)
-					if(!QLS[j].disable)
-						newspy[i].Clients.push(QLS[j].client_id)
-			}
-			oldspy.push(newspy[i])
-//			console.log("成功导入【" + newspy[i].Name + "】\n")
-		}
-		else {
-			console.log(newspy[i].Name + "已存在")
-		}
-	}
-//	console.log(JSON.stringify(oldspy))
-	return { spys: oldspy, addat: start }
-}
-
 //发送msg消息
 function Notify(msg) {
 	if (db.get("spy_silent_new") != "true" || s.isAdmin()) {
@@ -1145,7 +1106,7 @@ function Menu(Listens, silent, targets) {
 		if (name == undefined)
 			name = Listens[i]["name"]//之前数据存储写错单词
 		if (Listens[i].Disable)
-			notify += (i + 1) + "、" + name + "-[禁用]\n"
+			notify += (i + 1) + "、" + name + "-[管理员]\n"
 		else
 			notify += (i + 1) + "、" + name + "\n"
 	}
@@ -1364,11 +1325,11 @@ function SpyItem(spy, QLS) {
 				else
 					notify += "[" + spy.Clients[i] + "]"
 			}
-			notify += "\n"
+			notify+="\n5、仅监控管理员："
 			if (spy.Disable)
-				notify += "5、关闭禁用\n"
+				notify += "是\n"
 			else
-				notify += "5、开启禁用\n"
+				notify += "否\n"
 			notify += "6、青龙任务限制时长：" + spy.Interval + "分钟\n"
 			notify+="------------------------\n"
 			notify+="[u返回][wq保存][q退出]"
@@ -1860,7 +1821,15 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /(lzkj(dz)?-isv\.isvj(clou)?d\.com\/prod\/cc\/interactsaas\/index\?activityType=(10006|10070))|(lorealjdcampaign-rc\.isvjcloud.com\/interact\/index\?activityType=10006)/,
+			keyword: /shop\.m\.jd.com\/shop\/lottery/,
+			name: "店铺刮刮乐",
+			trans: [{
+				ori: "-1",
+				redi: "jd_shopDraw_activityUrl"//kr
+			}]
+		},
+		{
+			keyword: /(interactsaas|interact)\/index\?activityType=(10006|10070)/,
 			name: "邀请入会有礼（lzkj_loreal）",
 			trans: [{
 				ori: "-1",
@@ -1868,11 +1837,27 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /shop\.m\.jd.com\/shop\/lottery/,
-			name: "店铺刮刮乐",
+			keyword: /interactsaas\/index\?activityType=(10020|10021|10026|10080)/,
+			name: "店铺抽奖（超级无线欧莱雅）",
 			trans: [{
 				ori: "-1",
-				redi: "jd_shopDraw_activityUrl"//kr
+				redi: "jd_lzkj_loreal_draw_url"//kr
+			}]
+		},
+		{
+			keyword: /(interactsaas|interact)\/index\?activityType=10024/,
+			name: "加购有礼（超级无线欧莱雅）",
+			trans: [{
+				ori: "-1",
+				redi: "jd_lzkj_loreal_cart_url"//kr
+			}]
+		},
+		{
+			keyword: /(interactsaas|interact)\/index\?activityType=10069/,
+			name: "关注店铺有礼（超级无线欧莱雅",
+			trans: [{
+				ori: "-1",
+				redi: "jd_lzkj_loreal_followShop_url"//kr
 			}]
 		},
 
@@ -2085,7 +2070,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /lorealjdcampaign-rc\.isvjcloud\.com\/interact\/index\?activityType=10006/,
+			keyword: /interact\/index\?activityType=10006/,
 			name: "loreal邀请入会有礼",
 			trans: [{
 				ori: "activityId",
@@ -2093,11 +2078,35 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /lzkj(dz)?-isv\.isvj(clou)?d\.com\/prod\/cc\/interactsaas\/index\?activityType=10006/,
+			keyword: /interactsaas\/index\?activityType=10006/,
 			name: "邀请入会有礼",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkj_interactsaas_yqrhyl_activityId"
+			}]
+		},
+		{
+			keyword: /interactsaas\/index\?activityType=10024/,
+			name: "lzkj_interactsaas加购有礼",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_jgyl_activityId"
+			}]
+		},
+		{
+			keyword: /interactsaas\/index\?activityType=10069/,
+			name: "lzkj_interactsaas关注店铺有礼",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_gzyl_activityId"
+			}]
+		},
+		{
+			keyword: /interactsaas\/index\?activityType=10053/,
+			name: "lzkj_interactsaas关注商品有礼",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_gzspyl_activityId"
 			}]
 		},
 

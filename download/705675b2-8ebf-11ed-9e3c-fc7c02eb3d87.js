@@ -7,7 +7,7 @@
 * @rule elm ?
 * @rule 饿了么
 * @priority 10
- * @public false
+* @public false
 */
 
 /***********配置************ */

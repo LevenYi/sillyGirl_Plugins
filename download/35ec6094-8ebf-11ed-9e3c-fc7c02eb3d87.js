@@ -18,7 +18,7 @@
 * @rule raw 查询\S+
 * @rule 查找 ?
 * @rule 查绑 ?
- * @public false
+* @public false
 * @admin true
 * @version v1.8.3
 */
