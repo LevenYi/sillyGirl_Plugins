@@ -192,8 +192,6 @@ const WAIT = 60 * 1000	//输入等待时间
 
 function main() {
 	let msg = s.getContent()
-	if(!FuckRebate)
-		s.continue()
 	if(!QLS.length && SPY){	
 		QLS=ql.QLS()
 		if(!QLS){
@@ -232,11 +230,15 @@ function main() {
 			let urls = msg.match(/https:\/\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\*\+,%;\=]*/g).map(url=>decodeURIComponent(url))
 			//console.log(urls.toString())
 			Urls_Decode(urls)
+			if(FuckRebate)
+				return
 		}
 		//口令监控
 		else if (msg.match(/[(|)|#|@|$|%|¥|￥|!|！][0-9a-zA-Z]{10,14}[(|)|#|@|$|%|¥|￥|!|！]/g) != null) {
 			//console.log("口令")
-			JDCODE_Decode(msg)
+			JDCODE_Decode(msg)			
+			if(FuckRebate)
+				return
 		}
 	//   }
 	//   catch(err){
@@ -244,7 +246,7 @@ function main() {
 	// 		return
 	//   }
 	}
-
+	s.continue()
 	if (!s.isAdmin()) {//其他命令为管理员命令
 		return
 	}
@@ -604,7 +606,7 @@ function Env_Listen(envs) {
 
 	data=db.get("env_listens_new")
 	if(!data){
-		Notify("无监控任务，请先添加或者导入监控任务")
+		Notify("无监控任务，请先添加或者导入监控任务,或者在插件内关闭监控开关")
 		return true
 	}
 	//分析变量是否为监控变量，是否为重复线报，变量对应监控任务是否禁用，以及加入任务队列后是否执行
@@ -815,7 +817,7 @@ function Import_Spy(data) {//console.log(data)
 	})
 	if(count)
 		db.set("env_listens_new", JSON.stringify(olddata))
-	return "共导入" + count + "个监控任务\n" + notify
+	return "共导入" + count + "个监控任务(请在导入结束后使用\"监控自检\"命令检查导入的任务是否存在问题)\n" + notify
 
 }
 
@@ -1299,7 +1301,7 @@ function SpyUrlDecode(decodes) {
 			return inp
 		else if (inp < 0) {
 			try {
-				urldecodes.splice(Math.abs(inp) - 1, 1)
+				decodes.splice(Math.abs(inp) - 1, 1)
 			}
 			catch (err) {
 				s.reply("输入有误，请重新选择")
@@ -1326,7 +1328,7 @@ function SpyUrlDecode(decodes) {
 				decode.trans[0].redi = s.listen(WAIT).getContent()
 				s.reply("请选择该解析规则是否仅管理员可用，输入“是”或“否”")
 				decode.admin=s.listen(WAIT).getContent()=="是"?true:false
-				urldecodes.push(decode)
+				decodes.push(decode)
 				s.reply("已添加" + decode.name + "(" + decode.keyword + " ):" + decode.trans[0].ori + "-->" + decode.trans[0].redi )					
 			}
 			catch(err){

@@ -772,7 +772,7 @@ function GetName(ck){
 				return userInfo.userInfo.baseInfo.nickname
 			else
 				console.log(pin+"用户信息获取失败")
-		sleep(time.random()*10000+3000)
+		sleep(Math.random()*10000+3000)
 	}
 	//未获取到昵称，使用pin通知
 	return decodeURI(pin) //中文pin
