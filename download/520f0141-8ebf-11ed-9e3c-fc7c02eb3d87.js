@@ -3,7 +3,7 @@
 * @module true
 * @create_at 2021-09-09 16:30:33
 * @description 一些通用函数和网络接口以及数据
-* @version v1.0.4
+* @version v1.0.5
 * @title something
  * @public false
 */
@@ -18,6 +18,7 @@ module.exports={
 	ToEasyCopy,
 	formatStringLen,
 
+	USER_AGENT,
 	JD_UserInfo,
 	JD_BeanInfo,
 	JD_ExpireBean,
@@ -163,7 +164,7 @@ function NotifyPin(pin,msg){
 
 
 //获取傻妞数据库mainkey下设置的通知渠道发送msg消息
-function NotifyMainKey(mainKey, isGroup, msg) {
+function NotifyMainKey(mainKey, isGroup, msg,token) {
 	const sillyGirl=new SillyGirl()
 	let record = []	//记录已通知[{imType:qq/tg/wx,id:ID}]
 	let NotifyTo = {
@@ -178,7 +179,7 @@ function NotifyMainKey(mainKey, isGroup, msg) {
 		let ids = dbn.get(toType[i]).split("&")
 		if(toType[i]=="tg"){
 			ids.forEach(id=>{
-				SendToTG(id,msg)
+				SendToTG(id,msg,"",token)
 				record.push({ imType: toType[i], id: id })
 			})
 		}
@@ -455,7 +456,8 @@ const USER_AGENTS = [
   'jdltapp;iPhone;3.7.0;14.4;network/4g;hasUPPay/0;pushNoticeIsOpen/0;lang/zh_CN;model/iPhone12,3;hasOCPay/0;appBuild/1017;supportBestPay/0;addressid/;pv/3.49;apprpd/MyJD_Main;ref/MyJdMTAManager;psq/7;ads/;psn/9e0e0ea9c6801dfd53f2e50ffaa7f84c7b40cd15|6;jdv/0|;adk/;app_device/IOS;pap/JA2020_3112531|3.7.0|IOS 14.4;Mozilla/5.0 (iPhone; CPU iPhone OS 14_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1',
   'jdltapp;iPad;3.7.0;14.4;network/wifi;hasUPPay/0;pushNoticeIsOpen/0;lang/zh_CN;model/iPad7,5;addressid/;hasOCPay/0;appBuild/1017;supportBestPay/0;pv/4.14;apprpd/MyJD_Main;ref/MyJdMTAManager;psq/3;ads/;psn/956c074c769cd2eeab2e36fca24ad4c9e469751a|8;jdv/0|;adk/;app_device/IOS;pap/JA2020_3112531|3.7.0|IOS 14.4;Mozilla/5.0 (iPad; CPU OS 14_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1',
 ]
-const USER_AGENT = function (){
+
+function USER_AGENT(){
 	return USER_AGENTS[Math.floor(Math.random()*USER_AGENTS.length)]
 }
 
@@ -532,18 +534,22 @@ function NolanDecode(code) {
 
 
 /****************tg bot API*********************/
-function SendToTG(id, msg) {
-	let resp=request({
-		url: "https://api.telegram.org/bot" + (new Bucket("tg")).get("token") + "/sendMessage",
+function SendToTG(id, msg,reply_markup,token) {
+	let bot_token=token?token:(new Bucket("tg")).get("token")
+	let option={
+		url: "https://api.telegram.org/bot" + bot_token + "/sendMessage",
 		method: "post",
 		body: {
 			"chat_id": id,
 			"parse_mode": "markdown",
 			"text": msg
 		}
-	})
+	}
+	if(reply_markup)
+		option.body["reply_markup"]=reply_markup
 	try{
-		//console.log(resp.body)
+		let resp=request(option)
+		console.log(resp.body)
 		return JSON.parse(resp.body).ok
 	}
 	catch(err){

@@ -1,7 +1,7 @@
 /*
 * @author https://t.me/sillyGirl_Plugin
 * @create_at 2022-09-07 18:35:08
-* @description 口令解析、链接解析、变量转换、变量监控多合一，须安装something与qinglong模块，若无芝士，需在配置项填入容器信息
+* @description 口令解析、链接解析、变量转换、变量监控多合一，须安装something与qinglong模块，安装之后务必查看插件内详细说明与配置
 * @title 白眼
 * @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
 * @rule raw [\s\S]*https:\/\/(.{2,}\.isvj(clou)?d\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
@@ -25,12 +25,15 @@
 
 
 /*****************************详细说明***********************
+本插件有概率会导致跟返利或者其他插件冲突导致他们无法使用，解决方法是提高其他冲突插件的权限或者将白眼配置项的FuckRebate值设置为false
+
 监控目标:
 除设置的对象外，默认监控管理员消息
 注：若要正常监控，除设置监控目标外，还需傻妞监听该目标（在傻妞后台-群组管理，添加监听目标群或者频道）
 
 静默：开启后傻妞将会静默处理监控消息，不会在当前会话发出通知
 静默推送：即开启静默模式，但又使用过命令"set SpyNotify qq/tg/wx 用户id"或者"set SpyGroupNotify qq/tg/wx 群id"设置过通知渠道，傻妞将会在当前会话静默，但是会将监控处理情况推送到设置的渠道，将命令中的set改为delete即为取消设置
+如需推送到与傻妞对接的tg机器人不同的机器人，可使用命令"set jd_cookie spy_notify_tg_token 机器人token"设置推送机器人的token，默认使用傻妞对接的tg机器人推送
 
 迁移ql spy（已移除本功能）:
 将会将ql spy任务备份至jd_cookie env_listens_backup(使用命令get jd_cookie env_listens_backup可以获取，不过数据过多部分平台可能获取失败，可以前往命令行傻妞交互模式或者数据管理web端查看)
@@ -124,6 +127,7 @@ const FuckRebate=true
 2023-1-5 v1.3.9 推送排版优化
 2023-1-6 v1.4.0 排队及队列处理逻辑优化
 2023-1-9 v1.4.1 增加监控自检功能
+2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防小白触发,删除关闭监控后仅解析时的无用推送
 
 
 /*****************数据存储******************/
@@ -187,7 +191,7 @@ const st=require("something")
 
 const s = sender
 const db = new Bucket("jd_cookie")
-const LIMIT = 40	//循环次数限制，防止意外死循环
+const LIMIT = 60	//循环次数限制，防止意外死循环
 const WAIT = 60 * 1000	//输入等待时间
 
 function main() {
@@ -205,15 +209,25 @@ function main() {
 	if (IsTarget() || s.isAdmin()) {//仅对监控目标和管理员消息监控
 	  //try{	
 		//变量监控
-		if (msg.match(/export\s+[^=]+=[ ]*"[^"]+"/g)!=null) {
-			let names = msg.match(/(?<=export[\s]+)[^=\s]+(?=[ ]*=[ ]*"[^"]+")/g)
-			let values = msg.match(/(?<=export\s[^=]+=[ ]*")[^"]+(?=")/g)
+		if (msg.match(/export\s+[^=]+=[ ]*"[^"]+"/g)) {
+			// 变量转换
+			let data = db.get("spy_envtrans_new")
+			let trans =data? JSON.parse(data):[]
+			let names = msg.match(/(?<=export[\s]+)[^=\s]+(?=[ ]*=[ ]*"[^"]+")/g)	//变量名
+			let values = msg.match(/(?<=export\s[^=]+=[ ]*")[^"]+(?=")/g)	//变量值
 			let envs = [],urls=[]
-			for (let i = 0; i < values.length; i++){
-					envs.push({ name: names[i], value: values[i] })
+			for (let i = 0; i < names.length; i++){	//变量转换
+				for (let j = 0; j < trans.length; j++) {
+					if (names[i] == trans[j].ori) {
+						names[i] = trans[j].redi
+						Notify(st.ToEasyCopy(s.getPlatform(),"变量转换：\n"+trans[j].name,"export " + names[i] + "=\"" + values[i] + "\""))
+						break
+					}
+				}
+				envs.push({ name: names[i], value: values[i] })
 			}
 			//console.log(JSON.stringify(envs))
-			if(!Env_Listen(envs)){
+			if(!SPY||!Env_Listen(envs)){	//无需监控或者监控失败进行解析
 				const NoDecode=["jd_zdjr_activityUrl","jd_cjhy_activityUrl","jd_wdz_activityUrl","jd_wdzfd_activityUrl"]//不解析的链接型变量
 				names.forEach((ele,index)=>{
 					if(ele.match(/URL|Url/) && NoDecode.indexOf(ele)==-1)
@@ -433,7 +447,7 @@ function Spy_Manager() {
 		}
 
 		else if (inp > 0 && inp <= Listens.length) {
-			let temp=SpyItem(Listens[inp-1],QLS)
+			let temp=SpyItem(Listens[inp-1])
 			if(exit(temp))
 				return
 			else
@@ -585,31 +599,16 @@ function Recovery_qlspy() {
 }
 
 function Env_Listen(envs) {
-	console.log(JSON.stringify(envs))
-	if(!envs.length)//不监控
-		return false
-	// 	检查变量名是否为用户配置的需要转换的变量名，是则先转换
-	let data = db.get("spy_envtrans_new")
-	if (data) {
-		let trans = JSON.parse(data)
-		for (let i = 0; i < envs.length; i++) {
-			for (let j = 0; j < trans.length; j++) {
-				if (envs[i].name == trans[j].ori) {
-					envs[i].name = trans[j].redi
-					Notify(st.ToEasyCopy(s.getPlatform(),"变量转换：\n"+trans[j].name,"export " + envs[i].name + "=\"" + envs[i].value + "\""))
-				}
-			}
-		}
-	}
-	if(!SPY)//不监控
+	//console.log(JSON.stringify(envs))
+	if(!envs.length||!SPY)//不监控
 		return false
 
-	data=db.get("env_listens_new")
+	let data=db.get("env_listens_new")
 	if(!data){
 		Notify("无监控任务，请先添加或者导入监控任务,或者在插件内关闭监控开关")
 		return true
 	}
-	//分析变量是否为监控变量，是否为重复线报，变量对应监控任务是否禁用，以及加入任务队列后是否执行
+	//分析变量是否为监控变量，是否为重复线报，变量对应监控任务是否仅管理员可用，以及加入任务队列后是否执行
 	let notify = ""
 	let flag=false	//是否有任务加入队列
 	let unlock = true//是否解锁处理任务队列
@@ -631,11 +630,11 @@ function Env_Listen(envs) {
 				else if (now - last < 3 * 60 * 1000)
 					unlock = false
 			}
-			console.log(JSON.stringify(Listens[i]))
+			//console.log(JSON.stringify(Listens[i]))
 			if(Listens[i].Envs.find(value=>value==env.name)){	//该变量属于监控任务listen[i]的监控变量
 				notify+="\n【触发任务"+(i+1)+"】:" + Listens[i].Name+ "\n"
 				if (Listens[i].Disable&&!s.isAdmin()){
-					notify+="【监控结果】:禁用任务，忽略\n"
+					notify+="【监控结果】:管理员任务，忽略\n"
 					return
 				}
 				else if(!Listens[i].Clients.length){
@@ -1050,8 +1049,8 @@ function Notify(msg) {
 		}
 		temp+="【来源】"+gname+"("+s.getPlatform().toUpperCase()+")\n"
 		let from=temp+"--------------------\n\n"
-		st.NotifyMainKey("SpyNotify", false, from + msg + "\n--『白眼』")
-		st.NotifyMainKey("SpyGroupNotify", true, from + msg + "\n--『白眼』")
+		st.NotifyMainKey("SpyNotify", false, from + msg + "\n--『白眼』",db,get("spy_notify_tg_token"))
+		st.NotifyMainKey("SpyGroupNotify", true, from + msg + "\n--『白眼』",db.get("spy_notify_tg_token"))
 	}
 }
 
@@ -1342,7 +1341,7 @@ function SpyUrlDecode(decodes) {
 }
 
 //主菜单-监控任务管理
-function SpyItem(spy, QLS) {
+function SpyItem(spy) {
 	let inp = 1
 	let limit = LIMIT
 	while (true) {

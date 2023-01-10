@@ -71,7 +71,7 @@ function main(){
     }
     let scriptname=null
     if(config.otherscript)
-        scriptname=s.getContent().match(/\w+\.(js|py)/)
+        scriptname=s.getContent().match(/\w+\.(js|py)/g)
     let tostop=config.stopword.some(word=>s.getContent().indexOf(word)!=-1)
     let tostart=s.getContent().match(config.keyword)!=null
     //console.log("tostart:"+tostart+"\ntostop"+tostop+"\nscript:"+scriptname)
@@ -83,7 +83,8 @@ function main(){
         console.log("未对接青龙")
         return
     }
-    notify+=config.name+"触发监控\n"
+    notify+=config.name+"触发监控\n-------------------\n"
+    notify+=s.getContent()+"\n---------------------\n"
     for(let i=0;i<QLS.length;i++){
         if(config.container.indexOf(i+1)==-1)
             continue
@@ -109,9 +110,11 @@ function main(){
                     sleep(WAIT)
                     crons=ql.Get_QL_Crons(QLS[i].host,QLS[i].token)
                     repo=crons.find(cron=>cron.command.indexOf(config.repo)!=-1 &&cron.command.indexOf("repo")!=-1)
-                    console.log("拉库状态\n"+JSON.stringify(repo))
-                    if(!repo.pid)
+                    //console.log("拉库状态\n"+JSON.stringify(repo))
+                    if(!repo.pid){
+                        console.log("拉库完成")
                         break
+                    }
                     else{
                         console.log("等待拉库结束")
                     }
@@ -147,17 +150,19 @@ function main(){
                 }
             }
             else if(scriptname){
-                notify+="消息中含脚本名【"+scriptname[0]+"】，可能为线报\n"
-                let cron=crons.find(cron=>cron.command.indexOf(scriptname[0])!=-1)
-                if(cron){
-                    let id=cron.id?cron.id:cron._id
-                    if(ids.indexOf(id)==-1){
-                        ids.push(id)
-                        names.push(cron.name)
+                notify+="消息中含脚本名【"+scriptname.toString()+"】，可能为线报\n"
+                scriptname.forEach(script=>{
+                    let cron=crons.find(cron=>cron.command.indexOf(script)!=-1)
+                    if(cron){
+                        let id=cron.id?cron.id:cron._id
+                        if(ids.indexOf(id)==-1){
+                            ids.push(id)
+                            names.push(cron.name)
+                        }
                     }
-                }
-                else
-                    notify+="未找到该脚本\n"
+                    else
+                        notify+="未找到脚本"+script+"\n"
+                })
             }
             if(ids.length){
                 if(ql.Start_QL_Crons(QLS[i].host,QLS[i].token,ids))

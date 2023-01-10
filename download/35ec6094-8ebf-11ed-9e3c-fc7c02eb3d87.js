@@ -15,7 +15,7 @@
 * @rule raw 豆\s[\d]+\s[\d]+
 * @rule 保存昵称
 * @rule ck去重
-* @rule raw 查询\S+
+* @rule 查询\S+
 * @rule 查找 ?
 * @rule 查绑 ?
  * @public false
@@ -60,6 +60,8 @@
 查找京东昵称对应账号pin值及其所在容器位置
 例：查找 张三
 
+查询某人所绑定的京东账号（根据id）
+例：查绑 12341
 */
 
 

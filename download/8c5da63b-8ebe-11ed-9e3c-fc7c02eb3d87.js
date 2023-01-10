@@ -144,12 +144,16 @@ function Async_QL_Envs(from_host,from_token,to_host,to_token,name,value_keyword)
 		}
 		else
 			index=to_envs.findIndex(env=>env.name==from_envs[i].name)
+		let id=to_envs[index]._id?to_envs[index]._id:to_envs[index].id
 		if(index!=-1){
 			to_envs[index].value=from_envs[i].value
-			return Update_QL_Env(to_host,to_token,to_envs[index]._id?to_envs[index]._id:to_envs[index].id,to_envs[index].name,to_envs[index].value,to_envs[index].remarks)
+			if(!Update_QL_Env(to_host,to_token,id,to_envs[index].name,to_envs[index].value,to_envs[index].remarks))
+				console.log(from_envs[i].name+"\n"+from_envs[i].value+"async update failed")
 		}
-		else
-			return Add_QL_Envs(to_host,to_token,from_envs[i].name,[from_envs[i]])
+		else{
+			if(!Add_QL_Envs(to_host,to_token,from_envs[i].name,[from_envs[i]]))
+				console.log(from_envs[i].name+"\n"+from_envs[i].value+"async add failed")
+		}
 	}
 }
 

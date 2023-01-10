@@ -46,9 +46,9 @@ function main(){
         return
     }
     else if(!Host || !CilentID || !CilentSecret){
-        let tip="请使用命令'set elm ql_host ip:端口'设置提交饿了么ck与查询饿了么收入的青龙面板地址"
-        tip+="请使用命令'set elm ql_client_id 应用id'设置青龙面板的应用id"
-        tip+="请使用命令'set elm ql_client_secret 应用密钥'设置青龙面板的应用密钥 "
+        let tip="请使用命令'set elm ql_host ip:端口'设置提交饿了么ck与查询饿了么收入的青龙面板地址\n"
+        tip+="请使用命令'set elm ql_client_id 应用id'设置青龙面板的应用id\n"
+        tip+="请使用命令'set elm ql_client_secret 应用密钥'设置青龙面板的应用密钥\n"
         s.reply(tip)
         return
     }
