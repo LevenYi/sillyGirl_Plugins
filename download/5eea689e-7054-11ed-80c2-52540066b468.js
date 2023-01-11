@@ -23,10 +23,12 @@ let token = tg.get("token")// 🧧设置Tgbot token指令：set tg token ? ，�
 let token2 = tg.get("token2")
 let url = tg.get("url", "https://api.telegram.org")// 🧧设置代理地址指令：set tg url ? 默认直连官方服务器
 let offset = tg.get("offset")
-if(token2)
-    token=token2
 tg.watch("token", function (old, now, key) {
     token = now
+})
+tg.watch("token2", function (old, now, key) {
+    token2 = now
+
 })
 
 tg.watch("url", function (old, now, key) {
