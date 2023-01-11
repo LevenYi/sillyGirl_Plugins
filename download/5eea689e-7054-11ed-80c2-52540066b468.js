@@ -37,6 +37,41 @@ const addr = function () {
     return `${url}/bot${token}`
 }
 
+function CQ2Items(text) {
+    var reg = new RegExp("\\[CQ:([a-zA-Z0-9]+),([^\\[\\]]*)\\]")
+    var msgs = []
+    var values = text.match(reg)
+    if (!values) {
+        text = text.trim()
+        return [{ type: "text", value: text }]
+    }
+    var [item, type, value] = values
+    var obj = { type }
+    for (var kv of value.split(",")) {
+        kv = strings.split(kv, "=", 2)
+        if (kv.length == 2) {
+            obj[kv[0]] = kv[1]
+        }
+    }
+    if (type == "image" || type == "video") {
+        obj["value"] = obj["url"] ? obj["url"] : obj["file"]
+    }
+    const [text1, text2] = strings.split(text, item, 2)
+    msgs.push(obj)
+    var items = CQ2Items(text1).concat(msgs).concat(CQ2Items(text2))
+    var res = []
+    for (var item_ of items) {
+        if (item_.type == "text") {
+            if (!item_.value || item_.value.match(/^\s+$/)) {
+                continue
+            }
+        }
+        res.push(item_)
+    }
+    return res
+}
+
+
 tgbot.recall(function (message_id) {
 //    return
     console.log("tg撤回\n"+message_id)
@@ -82,7 +117,7 @@ tgbot.send(function (msg) {
     //let [a, reply_to_message_id] = msg.message_id.split(".")
     //console.log("tg发送\n"+JSON.stringify(msg))
     let body = {}
-    let items = cq.toItems(msg.content)
+    let items = CQ2Items(msg.content)
     let contents = []
     let images = []
     let videos = []
