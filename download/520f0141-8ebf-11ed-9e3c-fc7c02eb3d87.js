@@ -29,7 +29,8 @@ module.exports={
 	WindfggDecode,
 	NolanDecode,
 
-	SendToTG
+	SendToTG,
+	GetFile
 }
 
 
@@ -549,8 +550,31 @@ function SendToTG(id, msg,reply_markup,token) {
 		option.body["reply_markup"]=reply_markup
 	try{
 		let resp=request(option)
-		console.log(resp.body)
+		//console.log(resp.body)
 		return JSON.parse(resp.body).ok
+	}
+	catch(err){
+		return false
+	}
+}
+
+function GetFile(id,token){
+	let bot_token=token?token:(new Bucket("tg")).get("token")
+	let resp=request({
+		url: "https://api.telegram.org/bot" + bot_token + "/getFile",
+		method: "post",
+		body: {
+			"file_id": id
+		}
+	})
+	console.log(id+"\n"+bot_token)
+	try{
+		let temp=JSON.parse(resp.body)
+		console.log(resp.body)
+		if(temp.ok){
+			resp=request("https://api.telegram.org/file/bot" + bot_token + temp.result.file_path)
+			return resp.body
+		}
 	}
 	catch(err){
 		return false

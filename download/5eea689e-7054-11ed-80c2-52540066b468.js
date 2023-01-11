@@ -1,24 +1,30 @@
 /**
- * @title Telegram Bot
- * @origin 傻妞官方
+ * @title Telegram Bot(魔改版)
  * @on_start true
  * @create_at 2020-11-30 22:47:06
- * @description 官方魔改版
+ * @description 魔改版，与官方版不可共存，需安装something模块
  * @author https://t.me/sillyGirl_Plugin
- * @version v1.1.6
+ * @version v1.0.1
  * @public false
  * @icon https://core.telegram.org/img/website_icon.svg?4
  * @disable false
  */
 
+/****************************
+ * 魔改自官方tg bot插件
+ * 
+ * 
+ * ************************ */
+
 const tg = new Bucket("tg")
 const tgbot = new Sender("tg")
-const cq = require("CQ码")
 const st=require("something")
-let token = tg.get("token")// 🧧设置Tgbot token指令：set tg token ?
+let token = tg.get("token")// 🧧设置Tgbot token指令：set tg token ? ，如需与官方版共存，set tg token2 ？
+let token2 = tg.get("token2")
 let url = tg.get("url", "https://api.telegram.org")// 🧧设置代理地址指令：set tg url ? 默认直连官方服务器
 let offset = tg.get("offset")
-
+if(token2)
+    token=token2
 tg.watch("token", function (old, now, key) {
     token = now
 })
@@ -125,8 +131,9 @@ tgbot.send(function (msg) {
             method: "post",
             body: {
                 //reply_to_message_id,
-                chat_id,
+                chat_id:chat_id,
                 text: contents.join("\n"),
+			    parse_mode: "markdown",
             },
             json: true,
         }
@@ -167,6 +174,7 @@ tgbot.request(running, {
 
     }
     if (body && body["result"] && body["result"].length) {
+        //console.log(JSON.stringify(body))
         for (let record of body["result"]) {
             if (record.update_id >= offset) {
                 offset = record.update_id + 1
@@ -178,8 +186,10 @@ tgbot.request(running, {
                     user_name: record.message.from.username,
                     user_id: record.message.from.id,
                     chat_id: record.message.chat.type != "private" ? record.message.chat.id : 0,
-                    content: record.message.text,
+                    content: record.message.text?record.message.text:record.message.caption
                 })
+                if(record.message.document)
+                    st.GetFile(record.message.file_id)
             }
             else{
                 console.log("something wrong!"+JSON.stringify(body))

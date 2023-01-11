@@ -17,7 +17,6 @@
 * @rule 清空监控记录
 * @rule 清空白眼数据
 * @rule 天王盖地虎
-* @priority 10
  * @public false
 * @disable false
 * @version v1.4.1
@@ -31,8 +30,8 @@
 除设置的对象外，默认监控管理员消息
 注：若要正常监控，除设置监控目标外，还需傻妞监听该目标（在傻妞后台-群组管理，添加监听目标群或者频道）
 
-静默：开启后傻妞将会静默处理监控消息，不会在当前会话发出通知
-静默推送：即开启静默模式，但又使用过命令"set SpyNotify qq/tg/wx 用户id"或者"set SpyGroupNotify qq/tg/wx 群id"设置过通知渠道，傻妞将会在当前会话静默，但是会将监控处理情况推送到设置的渠道，将命令中的set改为delete即为取消设置
+静默：是否针对非管理员静默
+静默推送：开启静默后，使用过命令"set SpyNotify qq/tg/wx 用户id"或者"set SpyGroupNotify qq/tg/wx 群id"设置推送渠道，傻妞将会对非管理员线报保持静默，并将监控处理情况推送到设置的渠道，将命令中的set改为delete即为取消设置
 如需推送到与傻妞对接的tg机器人不同的机器人，可使用命令"set jd_cookie spy_notify_tg_token 机器人token"设置推送机器人的token，默认使用傻妞对接的tg机器人推送
 
 迁移ql spy（已移除本功能）:
@@ -127,7 +126,7 @@ const FuckRebate=true
 2023-1-5 v1.3.9 推送排版优化
 2023-1-6 v1.4.0 排队及队列处理逻辑优化
 2023-1-9 v1.4.1 增加监控自检功能
-2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防小白触发,删除关闭监控后仅解析时的无用推送
+2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防捣乱，存在同一个监控类型时单一线报防多任务
 
 
 /*****************数据存储******************/
@@ -154,7 +153,7 @@ const FuckRebate=true
 
 jd_cookie spy_locked:任务锁，防止多进程同时处理队列
 
-jd_cookie spy_silent_new：bool,是否静默监控
+jd_cookie spy_silent_new：bool,针对非管理员线报是否保持静默
 
 jd_cookie spy_targets_new：监控目标
 [{name:监控目标备注名,id:监控目标id}]
@@ -220,14 +219,14 @@ function main() {
 				for (let j = 0; j < trans.length; j++) {
 					if (names[i] == trans[j].ori) {
 						names[i] = trans[j].redi
-						Notify(st.ToEasyCopy(s.getPlatform(),"变量转换：\n"+trans[j].name,"export " + names[i] + "=\"" + values[i] + "\""))
+						Notify(st.ToEasyCopy(s.getPlatform(),"转换•\n"+trans[j].name,"export " + names[i] + "=\"" + values[i] + "\""))
 						break
 					}
 				}
 				envs.push({ name: names[i], value: values[i] })
 			}
 			//console.log(JSON.stringify(envs))
-			if(!SPY||!Env_Listen(envs)){	//无需监控或者监控失败进行解析
+			if(!SPY||!Env_Listen(envs)){	//无需监控或者监控失败,尝试解析
 				const NoDecode=["jd_zdjr_activityUrl","jd_cjhy_activityUrl","jd_wdz_activityUrl","jd_wdzfd_activityUrl"]//不解析的链接型变量
 				names.forEach((ele,index)=>{
 					if(ele.match(/URL|Url/) && NoDecode.indexOf(ele)==-1)
@@ -420,7 +419,7 @@ function Spy_Manager() {
 				for (let i = 0; i < QLS.length; i++)//默认监控非禁用容器
 					if(!QLS[i].disable)
 						spy.Clients.push(QLS[i].client_id)
-				s.reply("请输入监视任务名称：")
+				s.reply("请输入监控任务名称：")
 				spy.Name = s.listen(WAIT).getContent()
 				s.reply("请输入脚本关键词：")
 				spy.Keyword = s.listen(WAIT).getContent()
@@ -428,7 +427,7 @@ function Spy_Manager() {
 				spy.Envs.push(s.listen(WAIT).getContent())
 				s.reply("请输入运行间隔时间(分钟):")
 				spy.Interval = s.listen(WAIT).getContent()
-				s.reply("已添加监视任务，默认作用所有容器，如需修改请在下面主菜单选择编辑")
+				s.reply("已添加监控任务，默认作用所有容器，如需修改请在下面主菜单选择编辑")
 				Listens.push(spy)
 			}
 			catch(err){
@@ -457,6 +456,7 @@ function Spy_Manager() {
 }
 
 function Spy_Check(){
+	let tip_id=s.reply("自检中...")
 	let notify=""
 	let data = db.get("env_listens_new")
 	let Listens = data?JSON.parse(data):[]
@@ -465,7 +465,6 @@ function Spy_Check(){
 		client_id:QL.client_id,
 		crons:ql.Get_QL_Crons(QL.host,QL.token)
 	}))
-	Notify("自检中,请稍候...")
 	Listens.forEach((listen,i)=>{
 		listen.Clients.forEach(client_id=>{
 			let QL=QLS.find(QL=>QL.client_id==client_id)
@@ -475,7 +474,12 @@ function Spy_Check(){
 				let crons=QLS_crons.find(ele=>ele.client_id==client_id).crons
 				if(!crons)
 					notify+="监控任务"+(i+1)+"【"+listen.Name+"】的监控容器【"+QL.name+"】无法获取定时任务，可能对接有误或者不支持该青龙版本\n"
-				else if(!crons.find(cron=>cron.command.indexOf(listen.Keyword)!=-1||cron.name.indexOf(listen.Keyword)!=-1))
+				else if(!crons.find(cron=>{
+					if(!cron.name||!cron.command)
+						console.log("监控任务"+(i+1)+"【"+listen.Name+"】的监控容器【"+QL.name+"】的定时任务"+JSON.stringify(cron)+"空名或者空执行命令")
+					else
+						return cron.command.indexOf(listen.Keyword)!=-1||cron.name.indexOf(listen.Keyword)!=-1
+				}))
 					notify+="监控任务"+(i+1)+"【"+listen.Name+"】的监控容器【"+QL.name+"】不存在定时任务【"+listen.Keyword+"】\n"
 			}
 			listen.Envs.forEach(env=>{
@@ -486,6 +490,7 @@ function Spy_Check(){
 			})
 		})
 	})
+	s.recallMessage(tip_id)
 	if(notify)
 		Notify(notify)
 	else
@@ -598,7 +603,7 @@ function Recovery_qlspy() {
 	}
 }
 
-function Env_Listen(envs) {
+function Env_Listen(envs,only_one) {
 	//console.log(JSON.stringify(envs))
 	if(!envs.length||!SPY)//不监控
 		return false
@@ -611,10 +616,17 @@ function Env_Listen(envs) {
 	//分析变量是否为监控变量，是否为重复线报，变量对应监控任务是否仅管理员可用，以及加入任务队列后是否执行
 	let notify = ""
 	let flag=false	//是否有任务加入队列
-	let unlock = true//是否解锁处理任务队列
+	let unlock = true	//是否解锁处理任务队列
+	let enough=false	//用于判断是否继续匹配，注：当only_one为true时，envs中的变量为同一个活动解析得到的不同变量，只在监控任务中匹配其一
 	let now = (new Date()).getTime()
 	let Listens = JSON.parse(data)
 	envs.forEach(env=>{
+		if(enough)
+			return
+		if(env.value.match(/^(\w)\1+$/)){
+			notify+=st.ToEasyCopy(s.getPlatform(),"监控结果",env.value)+"疑似错误变量，忽略\n"
+			return
+		}
 		for (let i = 0; i < Listens.length; i++) {
 			if (!Listens[i]["TODO"])
 				Listens[i]["TODO"] = []
@@ -656,6 +668,8 @@ function Env_Listen(envs) {
 				}
 				else{	//将变量env加入任务Listen[i]的任务队列
 					flag=true
+					if(only_one)
+						enough=true
 					notify+="【监控结果】:加入队列\n"
 					if(Listens[i].TODO.length){
 						//队列第一个任务已存在相同变量名，直接将变量加入队列，否则可能该监控任务可能需多变量，将变量加入前一个任务
@@ -688,6 +702,8 @@ function Env_Listen(envs) {
 			Que_Manager(QLS)
 			return true
 		}
+		else
+			console.log("已存在其他进程处理队列,由对方处理")
 	}
 	return true
 }
@@ -752,7 +768,10 @@ function Urls_Decode(urls) {
 	//console.log(JSON.stringify(envs))
 	Notify(notify)	//链接解析结果通知，不需要自行注释
 	if (envs.length){
-		Env_Listen(envs)
+		let only_one=false
+		if(urls.length==1)	//如果在一个链接中解析出多个变量，后续监控处理择一加入队列
+			only_one=true
+		Env_Listen(envs,only_one)
 	}
 }
 
@@ -826,7 +845,7 @@ function Import_Spy(data) {//console.log(data)
 /**************工具函数**************/
 //处理任务队列 
 function Que_Manager(QLS) {
-	console.log("进入队列处理进程")
+	console.log("进行队列处理")
 	let limit = 100//死循环保险，防止陷入死循环
 	//处理队列任务
 	while (true) {
@@ -863,7 +882,7 @@ function Que_Manager(QLS) {
 		let update=false
 		let record=[]	//记录处于冷却状态等待下一次执行的任务
 		for (let i = 0; i < QLS.length; i++) {
-			console.log("青龙执行\n"+JSON.stringify(QLS[i].envs)+"\n\n"+QLS[i].keywords)
+			console.log(QLS[i].name+":执行\n"+JSON.stringify(QLS[i].envs)+"\n\n"+QLS[i].keywords)
 			if (!QLS[i].token) {
 				notify += "【执行结果】:失败" 
 				notify += "【故障原因】:"+QLS[i].name + "token获取失败\n"
@@ -883,7 +902,7 @@ function Que_Manager(QLS) {
 			//在各个容器找到需要执行的任务并执行
 			let todo=[]//记录将要执行的青龙任务
 			for(let j=0;j<QLS[i].keywords.length;j++){
-				let cron=crons.find(cron=>cron.name.indexOf(QLS[i].keywords[j])!=-1||cron.command.indexOf(QLS[i].keywords[j])!=-1)
+				let cron=crons.find(cron=>(cron.name&&cron.name.indexOf(QLS[i].keywords[j])!=-1)||(cron.command&& cron.command.indexOf(QLS[i].keywords[j])!=-1))
 				if(cron){//找到需要执行的青龙任务
 					if(!cron.pid)
 						todo.push(cron)
@@ -1049,7 +1068,7 @@ function Notify(msg) {
 		}
 		temp+="【来源】"+gname+"("+s.getPlatform().toUpperCase()+")\n"
 		let from=temp+"--------------------\n\n"
-		st.NotifyMainKey("SpyNotify", false, from + msg + "\n--『白眼』",db,get("spy_notify_tg_token"))
+		st.NotifyMainKey("SpyNotify", false, from + msg + "\n--『白眼』",db.get("spy_notify_tg_token"))
 		st.NotifyMainKey("SpyGroupNotify", true, from + msg + "\n--『白眼』",db.get("spy_notify_tg_token"))
 	}
 }
@@ -1351,7 +1370,7 @@ function SpyItem(spy) {
 		}
 		if (inp){
 			let notify = "请选择要编辑的属性:\n"
-			notify += "1、监视任务名称：" + spy.Name + "\n"
+			notify += "1、监控任务名称：" + spy.Name + "\n"
 			notify += "2、脚本关键词：" + spy.Keyword + "\n"
 			notify += "3、洞察变量：" + spy.Envs.toString() + "\n"
 			notify += "4、指定容器："
