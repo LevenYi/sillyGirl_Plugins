@@ -44,8 +44,8 @@
 导出白眼：选择一次性导出项数过多时可能会导出失败，建议选择10项左右
 
 导入白眼数据：
-将导出的信息发送给机器人即可，会默认仅添加自己没有监控的变量的任务
-并把所对接的所有非禁用容器作为作用容器
+将导出的配置或者其他人分享的配置发送给机器人即可(最好不要在QQ导入，可能会导致导入的信息有误)，
+导入之后会默认仅添加自己没有监控的变量的任务,并把所对接的所有非禁用容器作为作用容器
 导入任务后请使用"监控自检"命令检查导入的任务是否存在适用于自身
 
 监控状态：
@@ -58,7 +58,7 @@
 批量修改监控容器方式：导出白眼，然后使用命令delete jd_cookie env_listens_new删除数据，再导入即可（导入监控任务时会自动将所有非禁用容器作为监控容器)
 
 插件中可能需要区分的名称：监控任务名称，自定义变量转换规则名称，自定义链接解析规则名称，青龙任务名称、以及内置的链接解析规则的名称
-插件最后为内置解析规则，自定义解析规则类似(残废，仅可添加简单规则)
+插件最后为内置解析规则，自定义解析规则(残废，仅可添加简单规则)类似
 */
 
 /*****************配置***************************/
@@ -126,8 +126,7 @@ const FuckRebate=true
 2023-1-5 v1.3.9 推送排版优化
 2023-1-6 v1.4.0 排队及队列处理逻辑优化
 2023-1-9 v1.4.1 增加监控自检功能
-2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防捣乱，存在同一个监控类型时单一线报防多任务
-2023-1-10 v1.4.3 
+2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防捣乱(错误变量)，修改单一线报触发多个监控任务时仅触发其中一个任务
 
 
 /*****************数据存储******************/
@@ -462,10 +461,17 @@ function Spy_Check(){
 	let data = db.get("env_listens_new")
 	let Listens = data?JSON.parse(data):[]
 	let QLS_crons=[]	//{client_id:client_id,crons:crons}
-	QLS.forEach(QL=>QLS_crons.push({
-		client_id:QL.client_id,
-		crons:ql.Get_QL_Crons(QL.host,QL.token)
-	}))
+	QLS.forEach((QL,i)=>{
+		QLS_crons.push({
+			client_id:QL.client_id,
+			crons:ql.Get_QL_Crons(QL.host,QL.token)
+		})
+		for(let j=i+1;j<QLS.length;j++){
+			if(QLS[j].client_id==QLS[i].client_id){
+				notify+="容器【"+QLS[i].name+"】与容器【"+QLS[j].name+"】应用id相同,请前往容器重新创建应用并在与傻妞对接容器信息中修改"
+			}
+		}
+	})
 	Listens.forEach((listen,i)=>{
 		listen.Clients.forEach(client_id=>{
 			let QL=QLS.find(QL=>QL.client_id==client_id)
@@ -890,18 +896,18 @@ function Que_Manager(QLS) {
 			}
 			if (!QLS[i].token) {
 				notify += "【执行结果】:失败" 
-				notify += "【故障原因】:"+QLS[i].name + "token获取失败\n"
+				notify += "【故障原因】:"+QLS[i].name + "token获取失败,可能容器挂了或者未支持该青龙版本\n"
 				continue
 			}
 			else if (!ql.Modify_QL_Config(QLS[i].host, QLS[i].token, QLS[i].envs)) {
 				notify += "【执行结果】:失败" 
-				notify += "【故障原因】:"+QLS[i].name + "配置文件变量修改失败\n"
+				notify += "【故障原因】:"+QLS[i].name + "配置文件变量修改失败,可能容器挂了或者未支持该青龙版本\n"
 				continue
 			}
 			let crons = ql.Get_QL_Crons(QLS[i].host, QLS[i].token)
 			if (!crons ) {					
 				notify += "【执行结果】:失败" 
-				notify += "【故障原因】:"+QLS[i].name + "获取青龙任务失败\n"
+				notify += "【故障原因】:"+QLS[i].name + "获取青龙任务失败,可能容器挂了或者未支持该青龙版本\n"
 				continue
 			}
 			//在各个容器找到需要执行的任务并执行
@@ -931,7 +937,7 @@ function Que_Manager(QLS) {
 				}
 				else{
 					notify += "【执行结果】:【"+QLS[i].name + "】未找到任务" +QLS[i].keywords[j]+"\n" 
-					notify += "【故障原因】:监控任务配置有误,或者未支持该青龙版本\n"
+					notify += "【故障原因】:可能监控任务配置有误(请使用\"监控自检\"命令自检),或青龙挂了，或未支持该青龙版本\n"
 				}
 			}
 			//console.log("待冷却任务：\n"+JSON.stringify(record))

@@ -105,7 +105,7 @@ function main(){
 		s.recallMessage(tipid)
 		s.reply(notify)
 	}
-	else s.notifyMasters(notify+"\n--资产过期通知")
+	else sillyGirl.notifyMasters(notify+"\n--资产过期通知")
 }
 
 //获取ck对应账号通知时使用的称呼

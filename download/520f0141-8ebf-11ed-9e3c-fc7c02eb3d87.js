@@ -3,7 +3,7 @@
 * @module true
 * @create_at 2021-09-09 16:30:33
 * @description 一些通用函数和网络接口以及数据
-* @version v1.0.5
+* @version v1.0.6
 * @title something
  * @public false
 */
@@ -535,10 +535,14 @@ function NolanDecode(code) {
 
 
 /****************tg bot API*********************/
+
+const tg_url = (new Bucket("tg")).get("url", "https://api.telegram.org")// 🧧设置代理地址指令：set tg url ? 默认直连官方服务器
+
+//让tg机器人给在对话id中发送msg(markdown,markdown语法错误会导致发送失败),reply_markup为高级功能，见tg官方文档,无token时使用傻妞所对接的机器人发送
 function SendToTG(id, msg,reply_markup,token) {
 	let bot_token=token?token:(new Bucket("tg")).get("token")
 	let option={
-		url: "https://api.telegram.org/bot" + bot_token + "/sendMessage",
+		url: tg_url+"/bot" + bot_token + "/sendMessage",
 		method: "post",
 		body: {
 			"chat_id": id,
@@ -561,7 +565,7 @@ function SendToTG(id, msg,reply_markup,token) {
 function GetFile(id,token){
 	let bot_token=token?token:(new Bucket("tg")).get("token")
 	let resp=request({
-		url: "https://api.telegram.org/bot" + bot_token + "/getFile",
+		url: tg_url+"/bot"  + bot_token + "/getFile",
 		method: "post",
 		body: {
 			"file_id": id
@@ -572,7 +576,7 @@ function GetFile(id,token){
 		let temp=JSON.parse(resp.body)
 		console.log(resp.body)
 		if(temp.ok){
-			resp=request("https://api.telegram.org/file/bot" + bot_token + temp.result.file_path)
+			resp=request(tg_url+"/file/bot" + bot_token + temp.result.file_path)
 			return resp.body
 		}
 	}
