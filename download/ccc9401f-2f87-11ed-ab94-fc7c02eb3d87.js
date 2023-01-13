@@ -63,35 +63,39 @@ function main(){
 							overdue+=redpackets[k].balance
 					}console.log(overdue)*/
 					
-					let exbeans=0//过期京豆统计
-					if(expirebean)
-						expirebean.forEach(value=>exbeans+=Number(value.expireamount))
-					else
-						console.log(pin+"过期京豆数据获取失败")
+				let exbeans=0//过期京豆统计
+				if(expirebean){
+					expirebean.forEach(value=>exbeans+=Number(value.expireamount))
+					console.log("【"+pin+"】过期京豆:"+exbeans)
+				}
+				else{
+					notify+="【"+pin+"】:过期京豆数据获取失败\n"
+				}
 					
-					let exredpacket=0
-					if(redpackets_data){
-						if(redpackets_data.expiredBalance)
-							exredpacket=Number(redpackets_data.expiredBalance)
-						else
-							exredpacket=0
+				let exredpacket=0
+				if(redpackets_data){
+					if(redpackets_data.expiredBalance)
+						exredpacket=Number(redpackets_data.expiredBalance)
+					else
+						exredpacket=0
+					console.log("【"+pin+"】过期红包:"+exredpacket)
+				}
+				else{
+					notify+="【"+pin+"】:过期红包数据获取失败\n"
+				}
+				//console.log(envs[j].value+"\n"+redpackets_data.expiredBalance+"\n"+exbeans)
+				if(exbeans/100+exredpacket>=NUM){
+					let tip="温馨提醒，您的账号【"+GetName(envs[j].value)+"】有"
+					tip+=redpackets_data.expiredBalance+"元红包与"+exbeans+"京豆将于近期过期"
+					//console.log(pin+tip)
+					if(record.indexOf(pin)==-1){
+						st.NotifyPin(pin,tip)
+						notify+="【"+pin+"】:\n红包:"+redpackets_data.expiredBalance+"\t京豆:"+exbeans+"\n"
+						record.push(pin)
+						sleep(Math.random()*10000+10000)
 					}
-					else{
-						console.log(pin+"过期红包数据获取失败")
-					}
-					//console.log(envs[j].value+"\n"+redpackets_data.expiredBalance+"\n"+exbeans)
-					if(exbeans/100+exredpacket>=NUM){
-						let tip="温馨提醒，您的账号【"+GetName(envs[j].value)+"】有"
-						tip+=redpackets_data.expiredBalance+"元红包与"+exbeans+"京豆将于近期过期"
-						console.log(pin+tip)
-						if(record.indexOf(pin)==-1){
-							st.NotifyPin(pin,tip)
-							notify+="【"+pin+"】:\n红包:"+redpackets_data.expiredBalance+"\t京豆:"+exbeans+"\n"
-							record.push(pin)
-							sleep(Math.random()*10000+10000)
-						}
-					}
-				sleep(Math.random() * 1000+5000)
+				}
+				sleep(Math.random() * 10000+15000)
 			}
 		}
 	}
@@ -101,7 +105,7 @@ function main(){
 		s.recallMessage(tipid)
 		s.reply(notify)
 	}
-	else st.NotifyMasters(notify+"\n--资产过期通知")
+	else s.notifyMasters(notify+"\n--资产过期通知")
 }
 
 //获取ck对应账号通知时使用的称呼

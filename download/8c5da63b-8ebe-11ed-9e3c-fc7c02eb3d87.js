@@ -170,7 +170,7 @@ function Modify_QL_Config(host, token, envs) {
 			else
 				Config =Config.replace(reg, envs[i].value)
 		}
-		return ql.Update_QL_Config(host, token, "config.sh", Config)
+		return Update_QL_Config(host, token, "config.sh", Config)
 	}
 	else return false
 }

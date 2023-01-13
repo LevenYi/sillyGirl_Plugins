@@ -19,7 +19,7 @@
 * @rule 天王盖地虎
  * @public false
 * @disable false
-* @version v1.4.1
+* @version v1.4.2
 */
 
 
@@ -127,6 +127,7 @@ const FuckRebate=true
 2023-1-6 v1.4.0 排队及队列处理逻辑优化
 2023-1-9 v1.4.1 增加监控自检功能
 2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防捣乱，存在同一个监控类型时单一线报防多任务
+2023-1-10 v1.4.3 
 
 
 /*****************数据存储******************/
@@ -243,7 +244,7 @@ function main() {
 			let urls = msg.match(/https:\/\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\*\+,%;\=]*/g).map(url=>decodeURIComponent(url))
 			//console.log(urls.toString())
 			Urls_Decode(urls)
-			if(FuckRebate)
+			if(FuckRebate&&s.getUserId()!=s.getChatId())
 				return
 		}
 		//口令监控
@@ -867,12 +868,12 @@ function Que_Manager(QLS) {
 			if(QL.disable)
 				return
 			Listens.forEach(listen=>{
-				if(listen.Clients.indexOf(QL.client_id)!=-1){
+				if(listen.Clients.indexOf(QL.client_id)!=-1&&listen.TODO.length){
 					//console.log(listen.Name+"\n"+JSON.stringify(listen.TODO)+"\n加入容器:"+QL.name)
-					if(listen.TODO.length && listen.TODO[0].length){
+					//if(listen.TODO.length && listen.TODO[0].length){
 						listen.TODO[0].forEach(env=>QLS[i].envs.push(env))
 						QLS[i].keywords.push(listen.Keyword)
-					}
+					//}
 				}
 			})
 		})
@@ -883,6 +884,10 @@ function Que_Manager(QLS) {
 		let record=[]	//记录处于冷却状态等待下一次执行的任务
 		for (let i = 0; i < QLS.length; i++) {
 			console.log(QLS[i].name+":执行\n"+JSON.stringify(QLS[i].envs)+"\n\n"+QLS[i].keywords)
+			if(!QLS[i].envs.length){
+				console.log(QLS[i].name+"无任务")
+				continue
+			}
 			if (!QLS[i].token) {
 				notify += "【执行结果】:失败" 
 				notify += "【故障原因】:"+QLS[i].name + "token获取失败\n"
