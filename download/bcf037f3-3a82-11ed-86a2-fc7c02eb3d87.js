@@ -129,7 +129,7 @@ const FuckRebate=true
 2023-1-6 v1.4.0 排队及队列处理逻辑优化
 2023-1-9 v1.4.1 增加监控自检功能
 2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防捣乱(错误变量)，修改单一线报触发多个监控任务时仅触发其中一个任务
-2023-1-9 v1.4.3 增加监控排序与移动功能
+2023-1-17 v1.4.3 增加监控排序与移动功能,更新部分内置规则
 
 
 /*****************数据存储******************/
@@ -214,21 +214,14 @@ function main() {
 		if (msg.match(/export\s+[^=]+=[ ]*"[^"]+"/g)) {
 			let names = msg.match(/(?<=export[\s]+)[^=\s]+(?=[ ]*=[ ]*"[^"]+")/g)	//变量名
 			let values = msg.match(/(?<=export\s[^=]+=[ ]*")[^"]+(?=")/g)	//变量值
-			let envs = [],urls=[]
+			let envs = names.map((name,i)=>{
+					return	{name:names[i],value:values[i]}
+				})	
+			let urls=[]	//链接
 			// 变量转换
-			let data = db.get("spy_envtrans_new")
-			let trans =data? JSON.parse(data):[]
-			for (let i = 0; i < names.length; i++){	//变量转换
-				for (let j = 0; j < trans.length; j++) {
-					if (names[i] == trans[j].ori) {
-						names[i] = trans[j].redi
-						Notify(st.ToEasyCopy(s.getPlatform(),"转换•\n"+trans[j].name,"export " + names[i] + "=\"" + values[i] + "\""))
-						break
-					}
-				}
-				envs.push({ name: names[i], value: values[i] })
-			}
+			envs=EnvsTran(envs)
 			//console.log(JSON.stringify(envs))
+			//监控
 			if(!SPY||!Env_Listen(envs)){	//无需监控或者监控失败,尝试解析
 				const NoDecode=["jd_zdjr_activityUrl","jd_cjhy_activityUrl","jd_wdz_activityUrl","jd_wdzfd_activityUrl"]//不解析的链接型变量
 				names.forEach((ele,index)=>{
@@ -848,6 +841,7 @@ function Urls_Decode(urls) {
 		let only_one=false
 		if(urls.length==1)	//如果在一个链接中解析出多个变量，后续监控处理择一加入队列
 			only_one=true
+		envs=EnvsTran(envs)	//变量转换
 		Env_Listen(envs,only_one)
 	}
 }
@@ -1193,6 +1187,19 @@ function IsTarget() {
 	catch (err) {
 		return false
 	}
+}
+
+function EnvsTran(envs){
+	let data = db.get("spy_envtrans_new")
+	let trans =data? JSON.parse(data):[]
+	envs.forEach((env,i)=>{
+		let tran=trans.find(tran=>tran.ori==env.name)
+		if(tran){
+			envs[i].name=tran.redi
+			Notify(st.ToEasyCopy(s.getPlatform(),"转换•\n"+tran.name,"export " + tran.redi + "=\"" + env.value + "\""))
+		}
+	})
+	return envs		
 }
 
 //检查env{name:变量名,value:变量值}是否已存在队列[[{name:变量名,value:变量值}]]
@@ -1641,7 +1648,7 @@ var UrlDecodeRule =[
 				},
 				{
 					ori:"c",
-					redi:"C"
+					redi:"Test1"
 				}
 			],
 //			admin:true,
@@ -2006,6 +2013,41 @@ var UrlDecodeRule =[
 
 	
 	/*******************环境保护库********************** */	
+	{
+			keyword: /cjhy(dz)?-isv\.isvjcloud\.com\/wxTeam\/activity/,
+			name: "CJ组队瓜分",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_cjhydz_wxTeam_Id"
+			}]
+		},
+
+		{
+			keyword: /lzkj(dz)?-isv\.isvj(clou)?d.com\/wxTeam\/activity/,
+			name: "LZ组队瓜分",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkjdz_wxTeam_Id"
+			}]
+		},
+
+		{
+			keyword: /cjhy(dz)?-isv\.isvjcloud\.com\/microDz\/invite\/activity/,
+			name: "CJ微定制",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_cjhydz_microDz_Id"
+			}]
+		},
+
+		{
+			keyword: /cjhy(dz)?-isv\.isvjcloud\.com\/microDz\/invite\/openLuckBag/,
+			name: "CJ微定制福袋",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_openLuckBag_Id"
+			}]
+		},
 		{
 			keyword: /https:\/\/lzkj-isv\.isvj(clou)?d\.com\/wxShopFollowActivity/,
 			name: "LZ店铺关注抽奖",
@@ -2020,15 +2062,6 @@ var UrlDecodeRule =[
 			trans: [{
 				ori: "activityId",
 				redi: "jd_cjhy_wxShopFollowActivity_activityId"
-			}]
-		},
-
-		{
-			keyword: "https://cjhydz-isv.isvjcloud.com/microDz/invite/openLuckBag",
-			name: "CJ微定制福袋",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_wdz_openLuckBag_activityId"
 			}]
 		},
 	
@@ -2156,7 +2189,15 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://cjhy-isv.isvjcloud.com/sign/signActivity",
+			keyword: /(cjhy|lzkj)-isv\.isvj(clou)?d\.com\/sign/,
+			name: "超级店铺无线签到",
+			trans: [{
+				ori: "-1",
+				redi: "jd_sevenDay_activityUrl"
+			}]
+		},
+		{
+			keyword: /cjhy-isv\.isvjcloud\.com\/sign\/signActivity/,
 			name: "CJ超级店铺无线签到",
 			trans: [{
 				ori: "activityId",
@@ -2164,7 +2205,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /https:\/\/cjhy-isv.isvj(clou)?d.com\/sign\/sevenDay\/signActivity/,
+			keyword: /cjhy-isv.isvj(clou)?d.com\/sign\/sevenDay\/signActivity/,
 			name: "CJ超级店铺无线签到",
 			trans: [{
 				ori: "activityId",
@@ -2172,7 +2213,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /https:\/\/lzkj-isv.isvj(clou)?d.com\/sign\/signActivity/,
+			keyword: /lzkj-isv.isvj(clou)?d.com\/sign\/signActivity/,
 			name: "LZ超级店铺无线签到",
 			trans: [{
 				ori: "activityId",
@@ -2180,7 +2221,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /https:\/\/lzkj-isv.isvj(clou)?d.com\/sign\/sevenDay/,
+			keyword: /lzkj-isv.isvj(clou)?d.com\/sign\/sevenDay/,
 			name: "LZ超级店铺无线签到",
 			trans: [{
 				ori: "activityId",
