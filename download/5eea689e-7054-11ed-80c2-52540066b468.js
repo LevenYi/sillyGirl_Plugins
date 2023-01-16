@@ -20,15 +20,10 @@ const tg = new Bucket("tg")
 const tgbot = new Sender("tg")
 const st=require("something")
 let token = tg.get("token")// 🧧设置Tgbot token指令：set tg token ? ，如需与官方版共存，set tg token2 ？
-let token2 = tg.get("token2")
 let url = tg.get("url", "https://api.telegram.org")// 🧧设置代理地址指令：set tg url ? 默认直连官方服务器
 let offset = tg.get("offset")
 tg.watch("token", function (old, now, key) {
     token = now
-})
-tg.watch("token2", function (old, now, key) {
-    token2 = now
-
 })
 
 tg.watch("url", function (old, now, key) {
@@ -99,7 +94,8 @@ tgbot.recall(function (message_id) {
 
 sender.listen(["tgbot"], function (s) {
     s.recallMessage(s.getMessageId())
-//    s.reply("yes")
+    sleep(1000)
+    s.reply("yes")
 })
 sender.listen(["删除键盘"], function (s) {
     st.SendToTG(s.getUserId(),"ok",{"remove_keyboard":true})
@@ -119,7 +115,7 @@ tgbot.send(function (msg) {
     //let [a, reply_to_message_id] = msg.message_id.split(".")
     //console.log("tg发送\n"+JSON.stringify(msg))
     let body = {}
-    let items = CQ2Items(msg.content)
+    let items = [{ type: "text", value: msg.content.trim() }]
     let contents = []
     let images = []
     let videos = []
@@ -170,11 +166,12 @@ tgbot.send(function (msg) {
                 //reply_to_message_id,
                 chat_id:chat_id,
                 text: contents.join("\n"),
-			    parse_mode: "markdown",
+//			    parse_mode: "markdown",
             },
             json: true,
         }
     }
+    //console.log(JSON.stringify(options.body))
     if (options) {
         //options["goroutine"] = true //此行代码将会导致无法使用撤回等功能，境外机器可以将这行代码注释
         let resp = request(options)
@@ -184,7 +181,7 @@ tgbot.send(function (msg) {
                 return chat_id + "." + resp.body["result"]["message_id"]
             }
             if (resp.body["ok"] == false) {
-                console.log("Tgbot消息发送失败，" + body["description"])
+                console.log("Tgbot消息发送失败\n" + JSON.stringify(resp.body))
             }
         }
 
@@ -211,12 +208,12 @@ tgbot.request(running, {
 
     }
     if (body && body["result"] && body["result"].length) {
-        //console.log(JSON.stringify(body))
+       // console.log(offset+"\n"+JSON.stringify(body))
         for (let record of body["result"]) {
-            if (record.update_id >= offset) {
+ //           if (record.update_id >= offset) {
                 offset = record.update_id + 1
                 tg.set("offset", offset)
-            }
+//            }
             if(record.message){ 
                 tgbot.receive({
                     message_id: record.message.chat.id + "." + record.message.message_id,
@@ -239,6 +236,5 @@ tgbot.request(running, {
         console.log("Tgbot错误：%s", body["description"])
    }
 })
-
 
 

@@ -1,37 +1,46 @@
 /**
 * @author https://t.me/sillyGirl_Plugin
 * @create_at 2022-09-10 12:49:37
-* @description 默认过期资产价值超过3元即通知，须安装qinglong与something模块
-* @version v1.0.1
-* @title 京东资产过期提醒
+* @description 各种京东自动通知，具体查看备注，须安装qinglong与something模块
+* @version v1.0.2
+* @title 京东提醒
 * @platform qq wx tg pgm web cron
-* @rule 提醒资产过期
-* @cron 43 10 * * *
+* @rule 京东提醒
+* @cron 36 10 * * *
  * @public false
 * @admin true
 */
 
-//最小过期提醒金额（最近两天内过期红包与最近7天内过期京豆价值总和）提醒，可修改，默认过期超过3米即提醒 
+/*************有概率导致QQ冻结，自行配置通知项目**************/
+//为降低京东限流与企鹅冻结概率，整个通知过程将花费较长时间，每个账号将花费15-25秒不等
+//【过期资产】
+//通知开关
+const NotifyAssets=true
+//最小提醒价值
 const NUM=3
 
- 
+//【农场领取】
+//通知开关
+const NotifyFarm=true
 
+ 
+/********************************************************/
 
 const ql=require("qinglong")
 const st=require("something")
-
+const NotifySetting=new Bucket("jdNotify")
 const s = sender
 const sillyGirl=new SillyGirl()
 
 function main(){
-	let notify=""
+	let notify=""	//管理员通知内容
 	let QLS=ql.QLS()
 	if(!QLS){
 		s.reply("醒一醒，你都没对接青龙，使用\"青龙管理\"命令对接青龙")
 		return
 	}
-	let record=[]//记录已通知pin，防止多容器存在同一账号时重复通知
-	let tipid=s.reply("正在为您提醒，请稍候...")
+	let record=[]	//记录已通知pin，防止多容器存在同一账号时重复通知
+	let tipid=s.reply("正在为您提醒，将花费较长时间，请耐心稍候...")
 	for(let i=0;i<QLS.length;i++){
 		notify+="★"+QLS[i].name+"\n"
 		if(QLS[i].disable){
@@ -52,8 +61,17 @@ function main(){
 		for(j=0;j<envs.length;j++){
 			if(envs[j].name=="JD_COOKIE"){
 				let pin=envs[j].value.match(/(?<=pin=)[^;]+/)[0]
-				let redpackets_data=st.JD_RedPacket(envs[j].value)
-				let expirebean=st.JD_ExpireBean(envs[j].value)
+				if(envs[j].status==1){
+					console.log("【"+pin+"】:已禁用，可能失效")
+					continue
+				}
+				let flag=false 	//是否需要通知
+				let tip="温馨提醒，您的账号【"+GetName(envs[j].value)+"】\n"	//通知内容
+				let temp=NotifySetting.get(pin)
+				let setting=temp?JSON.parse(temp):null	//用户通知设置
+				if(NotifyAssets){
+					let redpackets_data=st.JD_RedPacket(envs[j].value)
+					let expirebean=st.JD_ExpireBean(envs[j].value)
 //				if(redpackets_data!=null&&expirebean!=null){
 /*					let redpackets=redpackets_data.redList;console.log(redpackets_data)
 					let overdue=0//过期红包金额统计
@@ -63,49 +81,101 @@ function main(){
 							overdue+=redpackets[k].balance
 					}console.log(overdue)*/
 					
-				let exbeans=0//过期京豆统计
-				if(expirebean){
-					expirebean.forEach(value=>exbeans+=Number(value.expireamount))
-					console.log("【"+pin+"】过期京豆:"+exbeans)
-				}
-				else{
-					notify+="【"+pin+"】:过期京豆数据获取失败\n"
-				}
-					
-				let exredpacket=0
-				if(redpackets_data){
-					if(redpackets_data.expiredBalance)
-						exredpacket=Number(redpackets_data.expiredBalance)
-					else
-						exredpacket=0
-					console.log("【"+pin+"】过期红包:"+exredpacket)
-				}
-				else{
-					notify+="【"+pin+"】:过期红包数据获取失败\n"
-				}
-				//console.log(envs[j].value+"\n"+redpackets_data.expiredBalance+"\n"+exbeans)
-				if(exbeans/100+exredpacket>=NUM){
-					let tip="温馨提醒，您的账号【"+GetName(envs[j].value)+"】有"
-					tip+=redpackets_data.expiredBalance+"元红包与"+exbeans+"京豆将于近期过期"
-					//console.log(pin+tip)
-					if(record.indexOf(pin)==-1){
-						st.NotifyPin(pin,tip)
-						notify+="【"+pin+"】:\n红包:"+redpackets_data.expiredBalance+"\t京豆:"+exbeans+"\n"
-						record.push(pin)
-						sleep(Math.random()*10000+10000)
+					let exbeans=0	//临期京豆统计
+					let exredpacket=0	//临期红包
+					if(expirebean){
+						expirebean.forEach(value=>exbeans+=Number(value.expireamount))
+						console.log("【"+pin+"】临期京豆:"+exbeans)
 					}
+					else{
+						notify+="【"+pin+"】:临期京豆数据获取失败\n"
+					}
+					if(redpackets_data){
+						if(redpackets_data.expiredBalance)
+							exredpacket=Number(redpackets_data.expiredBalance)
+						else
+							exredpacket=0
+						console.log("【"+pin+"】临期红包:"+exredpacket)
+					}
+					else{
+						notify+="【"+pin+"】:临期红包数据获取失败\n"
+					}
+				//console.log(envs[j].value+"\n"+redpackets_data.expiredBalance+"\n"+exbeans)
+					if(exbeans/100+exredpacket>=NUM){
+						flag=true
+						tip+=redpackets_data.expiredBalance+"元红包与"+exbeans+"京豆将于近期过期\n"
+						notify+="【"+pin+"】临期资产:\n红包:"+redpackets_data.expiredBalance+"\t京豆:"+exbeans+"\n"
+					}
+				}
+
+				if(NotifyFarm&&(!setting||!setting.Fruit)){
+					let farm_data=Farm(envs[j].value)
+					if(!farm_data ||farm_data.code!=0){
+						notify+="【"+pin+"】:农场数据获取失败\n"
+						console.log("【"+pin+"】农场数据出错\n"+JSON.stringify(farm_data))
+					}
+					//console.log(JSON.stringify(farm_data.farmUserPro))
+					else if(farm_data.farmUserPro.treeEnergy){
+						if(farm_data.farmUserPro.treeState==2 || farm_data.farmUserPro.treeState==3){
+							flag=true
+							tip+="东东农场水果已可兑换(可在'账号管理'关闭通知)\n"
+							console.log("【"+pin+"】东东农场水果已可兑换")
+						}
+					}
+					else{
+						if(farm_data.farmUserPro.treeState==0){
+							flag=true
+							tip+="东东农场水果领取后未种植(可在'账号管理'关闭通知)\n"
+							console.log("【"+pin+"】东东农场水果领取后未种植")	
+						}
+						else if(farm_data.farmUserPro.treeState==1){
+							//种植中
+						}
+						else	
+							console.log("【"+pin+"】:农场异常\n")
+					}
+				}
+
+				if(flag && record.indexOf(pin)==-1){	//通知
+					console.log(tip)
+					st.NotifyPin(pin,tip)
+					record.push(pin)
 				}
 				sleep(Math.random() * 10000+15000)
 			}
 		}
 	}
-	if(record.length==0)
-		notify="无账号近期过期红包与京豆合计超过"+NUM+"元"
+	//通知管理员
 	if(s.getPlatform()!="cron"){
 		s.recallMessage(tipid)
 		s.reply(notify)
 	}
-	else sillyGirl.notifyMasters(notify+"\n--资产过期通知")
+	else sillyGirl.notifyMasters(notify+"\n--京东提醒")
+}
+
+function Farm(ck){
+    const JD_API_HOST = 'https://api.m.jd.com/client.action';
+    option = {
+	    url: `${JD_API_HOST}?functionId=initForFarm`,
+        method:"post",
+		headers: {
+		    "accept": "*/*",
+			"cookie": ck,
+			"origin": "https://home.m.jd.com",
+			"referer": "https://home.m.jd.com/myJd/newhome.action",
+			"User-Agent": st.USER_AGENT(),
+			"Content-Type": "application/x-www-form-urlencoded"
+		},
+        body: `body=${encodeURI(JSON.stringify({"version":4}))}&appid=wh5&clientVersion=9.1.0`
+	};
+    let resp=request(option)
+    try{
+        return JSON.parse(resp.body)
+    }
+    catch(err){
+        console.log(JSON.stringify(resp))
+        return null
+    }
 }
 
 //获取ck对应账号通知时使用的称呼

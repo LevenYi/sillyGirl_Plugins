@@ -203,17 +203,17 @@ function QLS(){
 			let envs=Get_QL_Envs(ql.host,ql.token)	//检测token是否失效
 			if(!envs){
 				console.log(ql.name+"token疑似失效,重新获取")
-				QLS[i].token=Get_QL_Token(ql.host,ql.client_id,ql.client_secret)
+				QLS[i]["token"]=Get_QL_Token(ql.host,ql.client_id,ql.client_secret)
 				updated=true
 			}
 		}
 		else{
 			console.log("获取"+ql.name+"token")
-			QLS[i].token=Get_QL_Token(ql.host,ql.client_id,ql.client_secret)
+			QLS[i]["token"]=Get_QL_Token(ql.host,ql.client_id,ql.client_secret)
 			updated=true
 		}
 		if(!QLS[i].token){
-			console.log(ql.name+"token获取失败,请检测青龙管理容器是否配置错误\n")
+			console.log(ql.name+"token获取失败,青龙管理容器配置错误或者青龙已挂掉\n")
 			return null
 		}
 	})

@@ -546,7 +546,7 @@ function SendToTG(id, msg,reply_markup,token) {
 		method: "post",
 		body: {
 			"chat_id": id,
-			"parse_mode": "markdown",
+			"parse_mode": "Markdown",
 			"text": msg
 		}
 	}
@@ -554,8 +554,13 @@ function SendToTG(id, msg,reply_markup,token) {
 		option.body["reply_markup"]=reply_markup
 	try{
 		let resp=request(option)
-		//console.log(resp.body)
-		return JSON.parse(resp.body).ok
+		if(JSON.parse(resp.body).ok)
+			return true
+		else{
+			console.log("SendToTG failed\n"+resp.body)
+			delete option.body["parse_mode"]
+			return JSON.parse(request(option).body).ok
+		}
 	}
 	catch(err){
 		return false

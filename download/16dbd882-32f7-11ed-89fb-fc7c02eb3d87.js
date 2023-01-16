@@ -40,12 +40,12 @@ const handle=function(s){
 
 function main(){
 	if(BlackList.indexOf(s.getUserId())!=-1){
-		s.reply("禁止上车，请联系管理员")//不需要通知请注释本行 
+		//s.reply("禁止上车，请联系管理员")//不需要通知请注释本行 
 		return
 	}
 	else if(s.getChatId() && GroupWhiteList.indexOf(s.getChatId())==-1){
 		if(s.isAdmin())
-			s.reply("本群禁止上车")//不需要通知请注释本行
+			//s.reply("本群禁止上车")//不需要通知请注释本行
 		return
 	}
 
@@ -140,22 +140,23 @@ function main(){
 		return
 	}
 }
-
+//更新账号更新时间
 function UpdateLoginDate(pin){
+	let date=(new Date()).toISOString()
 	let config={
 		"ID":pin,
 		"Pet":false,
 		"Fruit":false,
 		"DreamFactory":false,
 		"Note":"",
-		"LoginedAt":"",
+		"LoginedAt":date,
 		"ClientID":""
 	}
 	let jdNotify=new Bucket("jdNotify")
 	let data=jdNotify.get(pin)
 	if(data)
 		config=JSON.parse(data)
-	config.LoginedAt=(new Date()).toISOString()
+	config.LoginedAt=date
 	jdNotify.set(pin,JSON.stringify(config))
 }
 
@@ -321,9 +322,12 @@ function VerifyCode(nark,Tel){
 			return VerifySendSMS(nark,Tel,message)
 		}
 		else if(data.message){
-			s.reply(data.message)
 			if(data.message.indexOf('Object reference')!=-1){
-				s.reply('您的账号暂不支持短信登录，请手动抓取cookie')
+				s.reply('您的账号暂不支持短信登录，请手动抓取cookie或者修改京东密码后重新尝试登陆')
+				return false
+			}
+			else{
+				s.reply(data.message)
 				return false
 			}
 		}
@@ -370,7 +374,7 @@ function SendSMS(nark){
 		}
 	}
 	catch(err){
-		sillyGirl.notifyMasters("报告管理员，客户登陆失败，nark疑似寄了\n"+JSON.stringify(resp))
+		sillyGirl.notifyMasters("报告管理员,nark疑似挂了\n"+JSON.stringify(resp))
 		return null
 	}
 }

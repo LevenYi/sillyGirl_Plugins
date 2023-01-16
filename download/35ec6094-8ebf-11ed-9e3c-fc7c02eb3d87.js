@@ -314,15 +314,18 @@ function Bean_Info(QLS,n,m){
 		return
 	}
 	let envs=ql.Get_QL_Envs(ql_host,ql_token)
+	let pin=envs[m-1].value.match(/(?<=pin=)[^;]+/)
 	if(m>envs.length)
 		return "查询序号大于容器变量数量，退出"
 	else if(envs[m-1].name!="JD_COOKIE")
 		return "查询序号变量非京东CK，退出"
 	info=st.JD_BeanInfo(envs[m-1].value,1)
-	if(info==null)
-		return "京东数据获取失败"
+	if(info==null){
+		//s.reply(pin)
+		return pin[0]+"京东数据获取失败"
+	}
 	else if(info.length==0)
-		return "您今日暂无收入"
+		return pin+"今日暂无收入"
 		
 	else{
 		for(let i=0;i<info.length;i++){

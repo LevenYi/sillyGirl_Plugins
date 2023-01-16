@@ -13,13 +13,15 @@
 * @rule 监控管理
 * @rule 监控状态
 * @rule 监控自检
+* @rule 监控排序
+* @rule 监控移动 ? ?
 * @rule 清空监控队列
 * @rule 清空监控记录
 * @rule 清空白眼数据
 * @rule 天王盖地虎
  * @public false
 * @disable false
-* @version v1.4.2
+* @version v1.4.3
 */
 
 
@@ -127,6 +129,7 @@ const FuckRebate=true
 2023-1-6 v1.4.0 排队及队列处理逻辑优化
 2023-1-9 v1.4.1 增加监控自检功能
 2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防捣乱(错误变量)，修改单一线报触发多个监控任务时仅触发其中一个任务
+2023-1-9 v1.4.3 增加监控排序与移动功能
 
 
 /*****************数据存储******************/
@@ -209,12 +212,12 @@ function main() {
 	  //try{	
 		//变量监控
 		if (msg.match(/export\s+[^=]+=[ ]*"[^"]+"/g)) {
-			// 变量转换
-			let data = db.get("spy_envtrans_new")
-			let trans =data? JSON.parse(data):[]
 			let names = msg.match(/(?<=export[\s]+)[^=\s]+(?=[ ]*=[ ]*"[^"]+")/g)	//变量名
 			let values = msg.match(/(?<=export\s[^=]+=[ ]*")[^"]+(?=")/g)	//变量值
 			let envs = [],urls=[]
+			// 变量转换
+			let data = db.get("spy_envtrans_new")
+			let trans =data? JSON.parse(data):[]
 			for (let i = 0; i < names.length; i++){	//变量转换
 				for (let j = 0; j < trans.length; j++) {
 					if (names[i] == trans[j].ori) {
@@ -313,7 +316,12 @@ function main() {
 	
 	else if(msg=="监控自检")
 		Spy_Check()
-
+	
+	else if(msg=="监控排序")
+		Spy_Sort()
+	
+	else if(msg.indexOf("监控移动")!=-1)
+		Spy_Move(s.param(1)-1,s.param(2)-1)
 	else if (msg == "清空白眼数据") {
 		SaveData("", "", "", "", "")
 		db.set("env_listens_backup", "")
@@ -323,7 +331,6 @@ function main() {
 }
 
 function Spy_Manager() {
-
 	let silent = db.get("spy_silent_new")
 	let data = db.get("env_listens_new")
 	let Listens = data?JSON.parse(data):[]
@@ -335,12 +342,12 @@ function Spy_Manager() {
 	let urldecodes = data?JSON.parse(data):[]
 
 	let limit = LIMIT
-	let inp = 1//随便什么值，非null即可
+	let inp = 1	//初始化，可通过if判定即可
 	let exit=function(inp){	//退出
 		if (inp == "q") {
-			s.reply("请确认是否直接退出？输入\"是\"不保存数据直接退出")
+			s.reply("请输入(y/n)确认是否不保存数据直接退出：")
 			let temp=s.listen(WAIT)
-			if (temp &&temp.getContent() == "是")
+			if (temp &&temp.getContent() == "y")
 				s.reply("未保存本次修改内容")
 			else
 				s.reply(SaveData(Listens, silent, targets, trans, urldecodes))	
@@ -455,8 +462,71 @@ function Spy_Manager() {
 	}
 }
 
+
+//监控任务移动
+function Spy_Move(from,to) {
+	let notify=""
+	let data = db.get("env_listens_new")
+	let Listens = data?JSON.parse(data):[]
+	if(from<0||to<0||from>Listens.length-1||to>Listens.length-1){
+		s.reply("位置错误")
+		return
+	}
+	let temp=Listens[from]
+	Listens.splice(from,1)
+	Listens.splice(to,0,temp)
+	for (let i = 0; i < Listens.length; i++) {
+		if(i<9)
+			notify+="【0"+(i + 1) + "】"
+		else
+			notify+="【"+(i + 1) + "】"
+		let name = Listens[i]["Name"]
+		if (name == undefined)
+			name = Listens[i]["name"]//之前数据存储写错单词
+		if (Listens[i].Disable)
+			notify += name + "-[管理员]\n"
+		else
+			notify += name + "\n"
+	}
+	db.set("env_listens_new",JSON.stringify(Listens))
+	s.reply(notify+"\n\n移动结果如上所示")
+}
+
+function Spy_Sort(){
+	let notify=""
+	let data = db.get("env_listens_new")
+	let Listens = data?JSON.parse(data):[]
+	let result=Listens.sort((a,b)=>{
+		//根据任务关键词进行第一重排序	
+		let a_repo=a.Keyword.match(/\w+(?=\/)/)
+		let b_repo=b.Keyword.match(/\w+(?=\/)/)
+		if(!a_repo)
+			return -1
+		else if(!b_repo)
+			return 1
+		else if(a_repo[0]==b_repo[0]){	//根据任务名进行第二重排序
+			if(a.Name>b.Name)
+				return 1
+			else
+				return -1
+		}
+		else if(a_repo[0]<b_repo[0])
+			return -1
+		else
+			return 1
+	})
+	result.forEach(listen=>notify+="【"+listen.Name+"】"+listen.Keyword+"\n")
+	s.reply(notify+"\n\n自动排序结果如上，请输入(y/n)选择是否确认修改：")
+	let inp=s.listen(60000)
+	if(inp&&inp.getContent()=="y"){
+		db.set("env_listens_new",JSON.stringify(result))
+		s.reply("已修改")
+	}
+	else s.reply("未修改")
+}
+
 function Spy_Check(){
-	let tip_id=s.reply("自检中...")
+	//let tip_id=s.reply("自检中...")
 	let notify=""
 	let data = db.get("env_listens_new")
 	let Listens = data?JSON.parse(data):[]
@@ -468,7 +538,7 @@ function Spy_Check(){
 		})
 		for(let j=i+1;j<QLS.length;j++){
 			if(QLS[j].client_id==QLS[i].client_id){
-				notify+="容器【"+QLS[i].name+"】与容器【"+QLS[j].name+"】应用id相同,请前往容器重新创建应用并在与傻妞对接容器信息中修改"
+				notify+="容器【"+QLS[i].name+"】与容器【"+QLS[j].name+"】应用id相同,请前往容器重新创建应用并在与傻妞对接容器信息中修改\n"
 			}
 		}
 	})
@@ -497,11 +567,11 @@ function Spy_Check(){
 			})
 		})
 	})
-	s.recallMessage(tip_id)
+	//s.recallMessage(tip_id)
 	if(notify)
-		Notify(notify)
+		s.reply(notify)
 	else
-		Notify("所有监控任务配置正常")
+		s.reply("所有监控任务配置正常")
 }
 
 function Spy_Status() {
@@ -527,7 +597,7 @@ function Spy_Status() {
 			notify+=fmt.sprintf("%-4v%-4v%-15v%4v\n",Listens[i].TODO.length,Listens[i].DONE.length,Listens[i].Name,towait)
 		}
 	}
-	Notify(notify)
+	s.reply(notify)
 }
 
 function Spy_Clear() {
@@ -858,7 +928,7 @@ function Que_Manager(QLS) {
 	while (true) {
 		let now = (new Date()).getTime()
 		if (--limit < 0) {
-			Notify("『白眼』\n可能死循环了，自动退出")
+			Notify("疑似陷入死循环，清除队列自动退出")
 			Spy_Clear()
 			break
 		}
@@ -889,24 +959,24 @@ function Que_Manager(QLS) {
 		let update=false
 		let record=[]	//记录处于冷却状态等待下一次执行的任务
 		for (let i = 0; i < QLS.length; i++) {
-			console.log(QLS[i].name+":执行\n"+JSON.stringify(QLS[i].envs)+"\n\n"+QLS[i].keywords)
+			console.log(QLS[i].name+":执行\n"+JSON.stringify(QLS[i].envs)+"\n"+QLS[i].keywords)
 			if(!QLS[i].envs.length){
 				console.log(QLS[i].name+"无任务")
 				continue
 			}
 			if (!QLS[i].token) {
-				notify += "【执行结果】:失败" 
-				notify += "【故障原因】:"+QLS[i].name + "token获取失败,可能容器挂了或者未支持该青龙版本\n"
+				notify += "【执行结果】:失败\n" 
+				notify += "【故障原因】:"+QLS[i].name + "token获取失败,可能青龙对接有误或者容器挂了\n"
 				continue
 			}
 			else if (!ql.Modify_QL_Config(QLS[i].host, QLS[i].token, QLS[i].envs)) {
-				notify += "【执行结果】:失败" 
+				notify += "【执行结果】:失败\n" 
 				notify += "【故障原因】:"+QLS[i].name + "配置文件变量修改失败,可能容器挂了或者未支持该青龙版本\n"
 				continue
 			}
 			let crons = ql.Get_QL_Crons(QLS[i].host, QLS[i].token)
 			if (!crons ) {					
-				notify += "【执行结果】:失败" 
+				notify += "【执行结果】:失败\n" 
 				notify += "【故障原因】:"+QLS[i].name + "获取青龙任务失败,可能容器挂了或者未支持该青龙版本\n"
 				continue
 			}
@@ -936,8 +1006,9 @@ function Que_Manager(QLS) {
 					}
 				}
 				else{
-					notify += "【执行结果】:【"+QLS[i].name + "】未找到任务" +QLS[i].keywords[j]+"\n" 
-					notify += "【故障原因】:可能监控任务配置有误(请使用\"监控自检\"命令自检),或青龙挂了，或未支持该青龙版本\n"
+					let temp=QLS[i].keywords[j].indexOf("_")==-1?QLS[i].keywords[j]:QLS[i].keywords[j].replace(/_/g,"\_")
+					notify += "【执行结果】:【"+QLS[i].name + "】未找到任务" +temp+"\n" 
+					notify += "【故障原因】:可能监控任务配置有误,或青龙挂了，或未支持该青龙版本\n"
 				}
 			}
 			//console.log("待冷却任务：\n"+JSON.stringify(record))
@@ -1172,19 +1243,22 @@ function Menu(Listens, silent, targets) {
 		let name = Listens[i]["Name"]
 		if (name == undefined)
 			name = Listens[i]["name"]//之前数据存储写错单词
-		if (Listens[i].Disable)
-			notify += (i + 1) + "、" + name + "-[管理员]\n"
+		if(i<9)
+			notify+="【0"+(i + 1) + "】"
 		else
-			notify += (i + 1) + "、" + name + "\n"
+			notify+="【"+(i + 1) + "】"
+		if (Listens[i].Disable)
+			notify += name + "-[管理员]\n"
+		else
+			notify += name + "\n"
 	}
-
 	if (silent != "true")
-		notify += "a、开启静默\n"
+		notify += "【a】开启静默\n"
 	else
-		notify += "a、关闭静默\n"
-	notify += "b、变量转换\n"
-	notify += "c、链接解析\n"
-	notify += "d、监听目标:"
+		notify += "【a】关闭静默\n"
+	notify += "【b】变量转换\n"
+	notify += "【c】链接解析\n"
+	notify += "【d】监听目标:"
 	for (let i = 0; i < targets.length; i++) {
 		if (targets[i].name)
 			notify += "【" + targets[i].name + "】"
@@ -1195,6 +1269,7 @@ function Menu(Listens, silent, targets) {
 	notify+="[-删除][0增加][wq保存][q退出]"
 	s.reply(notify)
 }
+
 
 //主菜单-监听目标管理
 function SpyTargets(targets) {
