@@ -7,7 +7,7 @@
 * @platform qq wx tg pgm sxg
 * @rule raw [\s\S]*https://u\.jd\.com/\w+[\s\S]*
 * @admin true
-* @public false
+ * @public false
 * @priority 9
 */
 
