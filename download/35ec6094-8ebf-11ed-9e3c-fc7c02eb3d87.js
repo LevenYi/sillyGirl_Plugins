@@ -435,22 +435,23 @@ function Recovery_qlEnv(QLS){
 				continue
 			}
 			else{
+				let remarks=""
+				if(backup[i].envs[j].remarks)
+					remarks=backup[i].envs[j].remarks
+				else if(backup[i].envs[j].remark)
+					remarks=backup[i].envs[j].remark
 				addenvs.push({
 					name:backup[i].envs[j].name,
 					value:backup[i].envs[j].value,
-					remarks:backup[i].envs[j].remark
+					remarks:remarks
 				})
-				if(backup[i].envs[i].name=="JD_COOKIE")
+				if(backup[i].envs[j].name=="JD_COOKIE")
 					notify+="恢复京东变量:"+backup[i].envs[j].value.match(/(?<=pin=)[^;]+/g)+"\n"
 				else
 					notify+="恢复变量:"+backup[i].envs[j].name+"\n"
 			}
 		}
-		console.log(JSON.stringify(backup[i].envs))
-//		console.log(JSON.stringify(addenvs))
-//		s.reply(JSON.stringify(addenvs))
-//		addenvs=JSON.parse(JSON.stringify(addenvs))//????
-//		s.reply(JSON.stringify(addenvs))
+		//console.log(JSON.stringify(addenvs))
 		if(addenvs.length>0)
 			suss=ql.Add_QL_Envs(ql_host,ql_token,addenvs)
 		else{
@@ -492,7 +493,7 @@ function Backup_qlEnv(QLS){
 			data[i].envs.push({
 				name:envs[j].name,
 				value:envs[j].value,
-				remark:envs[j].remarks
+				remarks:envs[j].remarks
 				})
 		}
 		count+=data[i].envs.length

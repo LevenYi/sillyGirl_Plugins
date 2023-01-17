@@ -305,7 +305,7 @@ function Get_QL_Env(host,token,id){
 	}
 }
 
-//添加青龙变量envs:[{name:变量名,value:变量值,remark:变量备注}]数组
+//添加青龙变量envs:[{name:变量名,value:变量值,remarks:变量备注}]数组,注：reamrks项必需
 //成功返回环境变量对象
 function Add_QL_Envs(host,token,envs){
 	try{
