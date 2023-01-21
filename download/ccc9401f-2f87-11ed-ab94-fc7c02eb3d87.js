@@ -2,7 +2,7 @@
 * @author https://t.me/sillyGirl_Plugin
 * @create_at 2022-09-10 12:49:37
 * @description 各种京东自动通知，具体查看备注，须安装qinglong与something模块
-* @version v1.0.2
+* @version v1.0.3
 * @title 京东提醒
 * @platform qq wx tg pgm web cron
 * @rule 京东提醒
@@ -16,7 +16,7 @@
 //【过期资产】
 //通知开关
 const NotifyAssets=true
-//最小提醒价值
+//过期资产最小提醒金额
 const NUM=3
 
 //【农场领取】
@@ -103,14 +103,14 @@ function main(){
 				//console.log(envs[j].value+"\n"+redpackets_data.expiredBalance+"\n"+exbeans)
 					if(exbeans/100+exredpacket>=NUM){
 						flag=true
-						tip+=redpackets_data.expiredBalance+"元红包与"+exbeans+"京豆将于近期过期\n"
-						notify+="【"+pin+"】临期资产:\n红包:"+redpackets_data.expiredBalance+"\t京豆:"+exbeans+"\n"
+						tip+=exredpacket+"元红包与"+exbeans+"京豆将于近期过期\n"
+						notify+="【"+pin+"】临期资产:\n红包:"+exredpacket+"\t京豆:"+exbeans+"\n"
 					}
 				}
 
 				if(NotifyFarm&&(!setting||!setting.Fruit)){
 					let farm_data=Farm(envs[j].value)
-					if(!farm_data ||farm_data.code!=0){
+					if(!farm_data ||!farm_data.farmUserPro){
 						notify+="【"+pin+"】:农场数据获取失败\n"
 						console.log("【"+pin+"】农场数据出错\n"+JSON.stringify(farm_data))
 					}

@@ -95,34 +95,50 @@ function main(){
         if(tostart || scriptname){
             //console.log("拉库前第一个任务是"+latest.name)
             notify+="执行拉库\n"
-            let repo=crons.find(cron=>cron.command.indexOf(config.repo)!=-1 &&cron.command.indexOf("repo")!=-1)
-            if(!repo){
-                console.log(QLS[i].name+"无拉库任务"+config.repo)
-                continue
-            }
-            else if(repo.pid){
-                console.log("已经正在拉库")
-                return
-            }
-            let id=repo.id?repo.id:repo._id
-            if(ql.Start_QL_Crons(QLS[i].host,QLS[i].token,[id])){
-                while(true){
-                    sleep(WAIT)
-                    crons=ql.Get_QL_Crons(QLS[i].host,QLS[i].token)
-                    repo=crons.find(cron=>cron.command.indexOf(config.repo)!=-1 &&cron.command.indexOf("repo")!=-1)
-                    //console.log("拉库状态\n"+JSON.stringify(repo))
-                    if(!repo.pid){
-                        console.log("拉库完成")
-                        break
+            let sub=ql.Get_QL_Subs(QLS[i].host,QLS[i].token,config.repo)
+            if(sub){
+                if(sub.length){
+                    if(ql.Start_QL_Subs(QLS[i].host,QLS[i].token,[sub[0].id])){
+                        console.log("成功执行订阅"+config.repo)
+                        sleep(60000)
                     }
-                    else{
-                        console.log("等待拉库结束")
-                    }
+                    else
+                        console.log("订阅执行失败"+config.repo)
                 }
+                else    
+                    console.log("无订阅任务"+config.repo)
             }
             else{
-                console.log("拉库执行失败")
-                continue
+                console.log("可能旧版青龙")
+                let repo=crons.find(cron=>cron.command.indexOf(config.repo)!=-1 &&cron.command.indexOf("repo")!=-1)
+                if(!repo){
+                    notify+=QLS[i].name+"无拉库任务"+config.repo+"\n"
+                    continue
+                }
+                else if(repo.pid){
+                    console.log("已经正在拉库")
+                    return
+                }
+                let id=repo.id?repo.id:repo._id
+                if(ql.Start_QL_Crons(QLS[i].host,QLS[i].token,[id])){
+                    while(true){
+                        sleep(WAIT)
+                        crons=ql.Get_QL_Crons(QLS[i].host,QLS[i].token)
+                        repo=crons.find(cron=>cron.command.indexOf(config.repo)!=-1 &&cron.command.indexOf("repo")!=-1)
+                        //console.log("拉库状态\n"+JSON.stringify(repo))
+                        if(!repo.pid){
+                            console.log("拉库完成")
+                            break
+                        }
+                        else{
+                            console.log("等待拉库结束")
+                        }
+                    }
+                }
+                else{
+                    console.log("拉库执行失败")
+                    continue
+                }
             }
             if(tostart){
                 for(let j=0;j<crons.length;j++){

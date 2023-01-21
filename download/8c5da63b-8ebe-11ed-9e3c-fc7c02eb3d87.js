@@ -3,7 +3,7 @@
 * @module true
 * @create_at 2021-09-09 16:30:33
 * @description 青龙模块，本模块不适用最新版青龙，可能仅适用2.10.x
-* @version v1.0.3
+* @version v1.0.4
  * @public false
 * @title qinglong
 */
@@ -13,6 +13,9 @@
 module.exports = {
 	//认证
 	Get_QL_Token,
+	//订阅
+	Get_QL_Subs,
+	Start_QL_Subs,
 	//环境变量
 	Get_QL_Envs,
 	Get_QL_Env,
@@ -31,7 +34,6 @@ module.exports = {
 	Get_QL_Log,
 	//定时任务
 	Get_QL_Crons,
-	Search_QL_Crons,
 	Add_QL_Cron,
 	Update_QL_Cron,
 	Delete_QL_Crons,
@@ -58,10 +60,11 @@ module.exports = {
 //使用样例
 function Sample(){
 	let data=null
-	let QLS=JSON.parse((new Bucket("qinglong").get("QLS")))
-	let host=QLS[0].host
-	let client_id=QLS[0].client_id
-	let client_secret=QLS[0].client_secret
+	let QL=QLS()[0]
+	let host=QL.host
+	let client_id=QL.client_id
+	let client_secret=QLS.client_secret
+	let token=QL.token
 
 
 	// let token=Get_QL_Token(host,client_id,client_secret)
@@ -227,7 +230,7 @@ function QLS(){
 //获取青龙token
 function Get_QL_Token(host,client_id,client_secret){
 	try{
-		let data=request({url:host+"/open/auth/token?client_id="+client_id+"&client_secret="+client_secret})
+		let data=request(host+"/open/auth/token?client_id="+client_id+"&client_secret="+client_secret)
 		return JSON.parse(data.body).data	
 	}
 	catch(err){
@@ -255,6 +258,76 @@ function QL_Login(host,name,password){
 	}
 }
 
+//****************青龙订阅***************** */
+/*{
+            "id": 4,
+            "name": "KR",
+            "url": "https://github.com/KingRan/KR.git",
+            "schedule": "2 23 * * *",
+            "interval_schedule": null,
+            "type": "public-repo",
+            "whitelist": "jd_|jx_|jdCookie",
+            "blacklist": "activity|backUp|XAY|FLP|MN|AJ|YSLD|qbyq",
+            "status": 1,
+            "dependences": "^jd[^_]|USER|utils|function|sign|sendNotify|ql|JDJR",
+            "extensions": null,
+            "sub_before": null,
+            "sub_after": null,
+            "branch": null,
+            "pull_type": null,
+            "pull_option": null,
+            "pid": 12934,
+            "is_disabled": null,
+            "log_path": "KingRan_KR/2023-01-18-23-02-00.log",
+            "schedule_type": "crontab",
+            "alias": "KingRan_KR",
+            "proxy": null,
+            "createdAt": "2023-01-16T15:52:19.105Z",
+            "updatedAt": "2023-01-18T15:02:03.896Z"
+}*/
+//获取青龙订阅，无searchValue返回所有订阅
+function Get_QL_Subs(host,token,searchValue){
+	let option={
+		url:host+"/open/subscriptions",
+		method:"get",
+		headers:{
+			accept: "application/json",
+			Authorization:token.token_type+" "+token.token
+		}
+	}
+	if(searchValue)
+		option.url+="?searchValue="+encodeURI(searchValue)
+	try{
+		let data=request(option)
+		return JSON.parse(data.body).data	
+	}
+	catch(err){
+		return null
+	}
+}
+//立即执行订阅id,id为数组
+function Start_QL_Subs(host,token,id){
+	try{
+		let data=request({
+			url:host+"/open/subscriptions/run",
+			method:"put",
+			headers:{
+				accept: "application/json",
+				Authorization:token.token_type+" "+token.token
+			},
+			body:id,
+			dataType: "application/json"
+		})	
+		if(JSON.parse(data.body).code==200)
+			return true
+		else
+			return false
+	}
+	catch(err){
+		return false
+	}	
+}
+
 
 /****************青龙变量*******************/
 /*环境变量对象
@@ -269,17 +342,20 @@ function QL_Login(host,name,password){
     "remarks": ""		//变量备注
 }]*/
 
-//获取所有青龙环境变量,成功返回环境变量对象数组
-function Get_QL_Envs(host,token){
+//获取青龙环境变量,无searchValue返回所有环境变量对象
+function Get_QL_Envs(host,token,searchValue){
+	let option={
+		url:host+"/open/envs",
+		method:"get",
+		headers:{
+			accept: "application/json",
+			Authorization:token.token_type+" "+token.token
+		}
+	}
+	if(searchValue)
+		option.url+="?searchValue="+encodeURI(searchValue)
 	try{
-		let data=request({
-			url:host+"/open/envs",
-			method:"get",
-			headers:{
-				accept: "application/json",
-				Authorization:token.token_type+" "+token.token
-			}
-		})
+		let data=request(option)
 		return JSON.parse(data.body).data	
 	}
 	catch(err){
@@ -543,46 +619,28 @@ function Get_QL_Log(host,token,name,logfile){
 
 
 /****************青龙任务*******************/
-//获取所有任务，返回所有任务对象数组
-function Get_QL_Crons(host,token){
+//获取青龙定时任务，无searchValue返回所有任务
+function Get_QL_Crons(host,token,searchValue){
+	let option={
+		url:host+"/open/crons",
+		method:"get",
+		headers:{
+			accept: "application/json",
+			Authorization:token.token_type+" "+token.token
+		}
+	}
+	if(searchValue)
+		option.url+="?searchValue="+encodeURI(searchValue)
 	try{
-		let data=JSON.parse(request({
-			url:host+"/open/crons",
-			method:"get",
-			headers:{
-				accept: "application/json",
-				Authorization:token.token_type+" "+token.token
-			},
-			dataType: "application/json"
-		}).body).data
-		if(data.data)
-			return data.data
-		else
-			return data
+		let resp=request(option)
+		let data=JSON.parse(resp.body).data
+		return data.data?data.data:data	
 	}
 	catch(err){
 		return null
 	}
 }
 
-
-//搜索青龙中含keyword的定时任务
-function Search_QL_Crons(host,token,keyword){
-	try{
-		let data=request({
-			url:host+"/open/crons?searchValue="+keyword,
-			method:"get",
-			headers:{
-				accept: "application/json",
-				Authorization:token.token_type+" "+token.token
-			}
-		})
-		return JSON.parse(data.body).data
-	}
-	catch(err){
-		return null
-	}
-}
 
 //添加任务
 function Add_QL_Cron(host,token,name,task,cron){

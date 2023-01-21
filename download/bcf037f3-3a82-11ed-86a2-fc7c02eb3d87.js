@@ -5,7 +5,7 @@
 * @title 白眼
 * @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
 * @rule raw [\s\S]*https:\/\/(.{2,}\.isvj(clou)?d\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
-* @rule raw [\s\S]*https:\/\/([\w\.]*[^u]\.jd\.com)[\s\S]*
+* @rule raw [\s\S]*(pro(dev)?|shop)\.m\.jd\.com[\s\S]*
 * @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+"[\s\S]*
 * @rule raw ImportWhiteEye=[\S\s]+
 * @rule 导出白眼
@@ -719,15 +719,15 @@ function Env_Listen(envs,only_one) {
 					notify+="【监控结果】:管理员任务，忽略\n"
 					return
 				}
-				else if(!Listens[i].Clients.length){
-					notify+="【监控结果】:无指定容器，忽略\n"
-					return
-				}
-				else if(!Listens[i].Clients.every((value)=>
-						QLS.findIndex(QL=>QL.client_id==value)!=-1)){
-					notify += "【监控结果】:存在错误容器，忽略"
-					return
-				}
+				// else if(!Listens[i].Clients.length){
+				// 	notify+="【监控结果】:无指定容器，忽略\n"
+				// 	return
+				// }
+				// else if(!Listens[i].Clients.every((value)=>
+				// 		QLS.findIndex(QL=>QL.client_id==value)!=-1)){
+				// 	notify += "【监控结果】:存在错误容器，忽略"
+				// 	return
+				// }
 				//console.log(JSON.stringify(envs[j])+"\n\n"+JSON.stringify(Listens[i].DONE))
 				else if (IsIn(env, Listens[i].TODO) || IsIn(env, Listens[i].DONE)) {
 					if(env.length>1)
@@ -938,13 +938,15 @@ function Que_Manager(QLS) {
 			if(QL.disable)
 				return
 			Listens.forEach(listen=>{
-				if(listen.Clients.indexOf(QL.client_id)!=-1&&listen.TODO.length){
+				if(listen.Clients.indexOf(QL.client_id)!=-1){
 					//console.log(listen.Name+"\n"+JSON.stringify(listen.TODO)+"\n加入容器:"+QL.name)
-					//if(listen.TODO.length && listen.TODO[0].length){
+					if(listen.TODO.length){
 						listen.TODO[0].forEach(env=>QLS[i].envs.push(env))
 						QLS[i].keywords.push(listen.Keyword)
-					//}
+					}
 				}
+				else
+					console.log(listen.Name+"的监控容器"+QL.name+"未对接")
 			})
 		})
 		//对各个容器执行任务

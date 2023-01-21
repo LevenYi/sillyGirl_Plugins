@@ -11,6 +11,7 @@
 * @rule 恢复青龙变量
 * @rule 通知失效
 * @rule 删除失效
+* @rule 执行 ?
 * @rule raw 豆\d+
 * @rule raw 豆\s[\d]+\s[\d]+
 * @rule 保存昵称
@@ -135,7 +136,8 @@ function main(){
 	else if(msg=="恢复青龙变量")
 		s.reply(Recovery_qlEnv(QLS))
 		
-
+	else if(msg.indexOf("执行")!=-1)
+		Start_qlCron(QLS,s.param(1))
 		
 	else if(msg.match(/^豆\d+$/)!=null||msg.match(/^豆\s[\d]+\s[\d]+$/)!=null){
 	//	s.recallMessage(msg_id)
@@ -167,6 +169,76 @@ function main(){
 		s.reply(st.GetBind(s.getPlatform(),s.param(1)).join("\n"))
 
 	return
+}
+
+
+function Start_qlCron(QLS,keyword){
+	let notify=""
+	let qls=[]	//需要执行的容器
+	if(QLS.length>1){
+		let tip="请选择执行容器：\n"
+		QLS.forEach((QL,i)=>tip+=(i+1)+"、"+QL.name+"\n")
+		tip+="a、所有容器"
+		s.reply(tip)
+		let inp=s.listen(30000)
+		if(inp){
+			if(inp.getContent().match(/^\d+$/)&&inp.getContent()>=1&&inp.getContent()<=QLS.length){
+				qls.push(QLS[inp.getContent()-1])
+			}
+			else if(inp.getContent()=="a")
+				qls=QLS
+			else{
+				s.reply("输入错误")
+				return
+			}
+		}
+		else{
+			s.reply("超时")
+			return
+		}
+	}
+	else
+		qls=QLS
+	qls.forEach(QL=>{
+		let crons=ql.Get_QL_Crons(QL.host,QL.token,keyword)
+		if(!crons){
+			notify+=QL.name+"青龙任务获取失败\n"
+			return
+		}
+		else if(!crons.length){
+			notify+=QL.name+"未找到定时任务"+keyword+"\n"
+			return
+		}
+		let ids=[]
+		if(crons.length>1){
+			let tip=QL.name+"请选择执行的任务\n"
+			crons.forEach((cron,i)=>tip+=(i+1)+"、"+cron.name+":"+cron.command+"\n")
+			s.reply(tip)
+			let inp=s.listen(30000)
+			if(inp){
+				if(inp.getContent().match(/^\d+$/)&&inp.getContent()>=1&&inp.getContent()<=crons.length){
+					let index=inp.getContent()-1
+					ids.push(crons[index].id?crons[index].id:crons[index]._id)
+				}
+				else{
+					s.reply("输入错误")
+					return
+				}
+			}
+			else{
+				s.reply("超时")
+				return
+			}
+		}
+		else
+			ids.push(crons[0].id?crons[0].id:crons[0]._id)
+		//console.log("id\n"+ids)
+		if(ql.Start_QL_Crons(QL.host,QL.token,ids))
+			notify+=QL.name+"执行成功\n"
+		else
+			notify+=QL.name+"执行失败\n"
+	})
+	s.reply(notify)
 }
 
 function Reduce_JDCK_Repetition(QLS){
