@@ -93,7 +93,7 @@ function main(){
         let latest=crons.find(cron=>!cron.pid) //记录拉库前的第一个定时任务，用于判断新增任务
         let ids=[],names=[] //记录将执行的任务
         if(tostart || scriptname){
-            console.log("拉库前第一个任务是"+latest.name)
+           // console.log("拉库前第一个任务是"+latest.name)
             let sub=ql.Get_QL_Subs(QLS[i].host,QLS[i].token,config.repo)
             if(sub){    //新版青龙
                 if(!sub.length){

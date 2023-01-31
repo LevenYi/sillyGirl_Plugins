@@ -224,7 +224,7 @@ function main() {
 			//console.log(JSON.stringify(envs))
 			//监控
 			if(!SPY||!Env_Listen(envs)){	//无需监控或者监控失败,尝试解析
-				const NoDecode=["jd_zdjr_activityUrl","jd_cjhy_activityUrl","jd_wdz_activityUrl","jd_wdzfd_activityUrl"]//不解析的链接型变量
+				const NoDecode=["jd_zdjr_activityUrl","jd_cjhy_activityUrl","jd_wdz_activityUrl","jd_wdzfd_activityUrl"]	//不解析的链接型变量
 				names.forEach((ele,index)=>{
 					if(ele.match(/URL/i) && NoDecode.indexOf(ele)==-1)
 						urls.push(values[index])

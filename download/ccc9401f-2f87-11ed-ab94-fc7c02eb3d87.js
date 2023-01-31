@@ -138,7 +138,7 @@ function main(){
 
 				if(flag && record.indexOf(pin)==-1){	//通知
 					console.log(tip)
-					//st.NotifyPin(pin,tip)
+					st.NotifyPin(pin,tip)
 					record.push(pin)
 				}
 				sleep(Math.random() * 10000+15000)
