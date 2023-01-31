@@ -212,7 +212,13 @@ function Start_qlCron(QLS,keyword){
 		let ids=[]
 		if(crons.length>1){
 			let tip=QL.name+"请选择执行的任务\n"
-			crons.forEach((cron,i)=>tip+=(i+1)+"、"+cron.name+":"+cron.command+"\n")
+			crons.forEach((cron,i)=>{
+				tip+=(i+1)+"、"+cron.name+"\n"
+				if(!cron.isDisabled)
+					tip+=":"+cron.command+"\n"
+				else
+					tip+="【禁用】:"+cron.command+"\n"
+			})
 			s.reply(tip)
 			let inp=s.listen(30000)
 			if(inp){
@@ -658,7 +664,7 @@ function Notify_JDCK_disabled(QLS){
 						if(to.length!=0){
 							record.push(pin)//记录已通知pin
 							for(let k=0;k<to.length;k++)
-								notify+="★通知"+to[k].imType+"-"+to[k].uid+"成功\n"							
+								notify+="★通知"+to[k].type+"-"+to[k].id+"成功\n"							
 						}
 						else
 							notify+="☆通知失败，该客户未绑定傻妞\n"
@@ -751,8 +757,11 @@ function Move_qlEnv(QLS,from,to_index){
 }
 
 function Exchange_JDPin(QLS,x,y){
-	let notify=""
-	let suss=null
+	let temp=x
+	if(x>y){
+		x=y
+		y=temp
+	}
 	if(Get_QL(QLS)==-1)
 		return "获取QLS失败"
 	if(!ql_token)
@@ -760,19 +769,12 @@ function Exchange_JDPin(QLS,x,y){
 	let envs=ql.Get_QL_Envs(ql_host,ql_token)
 	if(envs==null)
 		return "青龙变量获取失败，跳过"
-	if(envs[x]._id){
-		suss=ql.Update_QL_Env(ql_host,ql_token,envs[x]._id,envs[y].name,envs[y].value,envs[y].remarks)
-		if(suss!=null)
-			suss=ql.Update_QL_Env(ql_host,ql_token,envs[y]._id,envs[x].name,envs[x].value,envs[x].remarks)
-	}
-	else{
-		suss=ql.Update_QL_Env(ql_host,ql_token,envs[x].id,envs[y].name,envs[y].value,envs[y].remarks)
-		if(suss!=null)
-			suss=ql.Update_QL_Env(ql_host,ql_token,envs[y].id,envs[x].name,envs[x].value,envs[x].remarks)
-	}
-	if(suss!=null)
+	let x_id=envs[x].id?envs[x].id:envs[x]._id
+	let y_id=envs[y].id?envs[y].id:envs[y]._id
+	if(ql.Move_QL_Env(ql_host,ql_token,y_id,y,x)&&ql.Move_QL_Env(ql_host,ql_token,x_id,x+1,y))
 		return "成功交换【"+envs[x].value.match(/(?<=pin=)[^;]+/)+"】与【"+envs[y].value.match(/(?<=pin=)[^;]+/)+"】"
-	else return "交换失败"
+	else 
+		return "交换失败"
 }
 
 

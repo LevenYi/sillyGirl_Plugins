@@ -16,7 +16,6 @@ module.exports={
 	GetBind,
 	ToHyperLink,
 	ToEasyCopy,
-	formatStringLen,
 
 	USER_AGENT,
 	JD_UserInfo,
@@ -78,35 +77,17 @@ function GetBind(imtype,uid){
 //管理员通知
 function NotifyMasters(msg){
 	const sillyGirl=new SillyGirl()
-    let qqm=(new Bucket("qq")).get("masters")
-    let tgm=(new Bucket("tg")).get("masters")
-    let wxm=(new Bucket("wx")).get("masters")
-	let masters=[]	//[{ imType:xx, id: id }]
-    qqm.split("&").forEach(id=>{
-		sillyGirl.push({
-             platform: "qq",
-             userId: id,
-             content: msg
-        })
-		masters.push({imType: "qq", id: id })
+	let types=["qq","tg","wx"]
+	types.forEach(type=>{
+		let matsers=(new Bucket(type).get("masters"))
+		matsers.split("&").forEach(id=>
+			sillyGirl.push({
+            	platform: type,
+             	userId: id,
+             	content: msg
+    		})
+		)
 	})
-    tgm.split("&").forEach(id=>{
-		sillyGirl.push({
-             platform: "qq",
-             userId: id,
-             content: msg
-        })
-		masters.push({imType: "qq", id: id })
-	})
-	wxm.split("&").forEach(id=>{
-		sillyGirl.push({
-             platform: "qq",
-             userId: id,
-             content: msg
-        })
-		masters.push({imType: "qq", id: id })
-	})
-	return masters
 }
 
 //在totype平台的群cid中向绑定京东账号pin的用户通知msg
@@ -125,39 +106,20 @@ function NotifyPinInGroup(totype,cid,pin,msg){
 		return false
 }
 
-//向绑定pin的用户全平台推送msg
+//向绑定pin的用户全平台推送msg，返回该用户所绑定的所有平台
 function NotifyPin(pin,msg){
 	const sillyGirl=new SillyGirl()
+	let types=["qq","tg","wx","sxg","wxmp"]
 	let to=[]
-	
-	let uid=(new Bucket("pinQQ")).get(pin)
-	if(uid!="")
-		to.push({imType:"qq",uid:uid})
-	
-	uid=(new Bucket("pinTG")).get(pin)
-	if(uid!="")
-		to.push({imType:"tg",uid:uid})
-		
-//	uid=bucketGet("pinPGM",pin)
-//	if(uid!="")
-//		to.push({imType:"pgm",uid:uid})
-		
-	uid=(new Bucket("pinWX")).get(pin)
-	if(uid!="")
-		to.push({imType:"wx",uid:uid})
-		
-	uid=(new Bucket("pinWXMP")).get(pin)
-	if(uid!="")
-		to.push({imType:"wxmp",uid:uid})
-		
-	uid=(new Bucket("pinSXG")).get(pin)
-	if(uid!="")
-		to.push({imType:"sxg",uid:uid})
-		
+	types.forEach(type=>{
+		let uid=(new Bucket("pin"+type.toUpperCase())).get(pin)
+		if(uid)
+			to.push({type:type,id:uid})
+	})		
 	for(let i=0;i<to.length;i++)
 		sillyGirl.push({
-			platform:to[i].imType,
-			userID:to[i].uid,
+			platform:to[i].type,
+			userID:to[i].id,
 			content:msg,
 		})
 	return to
@@ -180,7 +142,7 @@ function NotifyMainKey(mainKey, isGroup, msg,token) {
 		let ids = dbn.get(toType[i]).split("&")
 		if(toType[i]=="tg"){
 			ids.forEach(id=>{
-				SendToTG(id,msg,"",token)
+				SendToTG(id,msg,null,token)
 				record.push({ imType: toType[i], id: id })
 			})
 		}

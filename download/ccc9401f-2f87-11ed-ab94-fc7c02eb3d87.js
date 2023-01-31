@@ -138,7 +138,7 @@ function main(){
 
 				if(flag && record.indexOf(pin)==-1){	//通知
 					console.log(tip)
-					st.NotifyPin(pin,tip)
+					//st.NotifyPin(pin,tip)
 					record.push(pin)
 				}
 				sleep(Math.random() * 10000+15000)
@@ -147,11 +147,12 @@ function main(){
 	}
 	//通知管理员
 	if(s.getPlatform()!="cron"){
-		s.recallMessage(tipid)
+		//s.recallMessage(tipid)
 		s.reply(notify)
 	}
 	else sillyGirl.notifyMasters(notify+"\n--京东提醒")
 }
+
 
 function Farm(ck){
     const JD_API_HOST = 'https://api.m.jd.com/client.action';
@@ -166,7 +167,11 @@ function Farm(ck){
 			"User-Agent": st.USER_AGENT(),
 			"Content-Type": "application/x-www-form-urlencoded"
 		},
-        body: `body=${encodeURI(JSON.stringify({"version":4}))}&appid=wh5&clientVersion=9.1.0`
+        body: `body=${encodeURIComponent(JSON.stringify({
+            "version": 14,
+            "channel": 1,
+            "babelChannel": "120"
+        }))}&appid=wh5&clientVersion=9.1.0`
 	};
     let resp=request(option)
     try{

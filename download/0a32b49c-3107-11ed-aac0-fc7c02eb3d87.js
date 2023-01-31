@@ -11,10 +11,7 @@
 * @admin true
 */
 
-//请在消息框输入并发送：你好 佩奇
-//建议同时打开浏览器控制台
 
-//sender
 const s = sender
 const st=require("something")
 

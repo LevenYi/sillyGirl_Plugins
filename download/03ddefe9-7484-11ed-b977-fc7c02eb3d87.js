@@ -56,6 +56,7 @@ function Talk(token,text){
             //"stop": "\n"
         })
         s.recallMessage(tipid)
+        sleep(400)
         //console.log(JSON.stringify(data))
         if(!data){
             s.reply("网络错误")

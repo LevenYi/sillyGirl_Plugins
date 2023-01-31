@@ -30,7 +30,8 @@
 
 监控目标:
 除设置的对象外，默认监控管理员消息
-注：若要正常监控，除设置监控目标外，还需傻妞监听该目标（在傻妞后台-群组管理，添加监听目标群或者频道）
+注1：若要正常监控，除设置监控目标外，还需傻妞监听该目标（在傻妞后台-群组管理，添加监听目标群或者频道）
+注2：若使用人形傻妞，建议开启静默，防止被ban，另pagermaid插件shift与人形傻妞冲突，建议不要使用shift，可在开启静默后设置推送
 
 静默：是否针对非管理员静默
 静默推送：开启静默后，使用过命令"set SpyNotify qq/tg/wx 用户id"或者"set SpyGroupNotify qq/tg/wx 群id"设置推送渠道，傻妞将会对非管理员线报保持静默，并将监控处理情况推送到设置的渠道，将命令中的set改为delete即为取消设置
@@ -93,7 +94,7 @@ const NotifyMode=false
 const BlackList=["162726413","5036494307"]
 
 //口令关键词黑名单,用于屏蔽某些不想监控的口令，仅对非管理员起效
-const JDCodeBlackList=["炸年兽","年夜饭","队","助","红包"]
+const JDCodeBlackList=["年兽","年夜饭","队","助","红包","就差"]
 
 //如果跟返利冲突，是否干掉返利
 const FuckRebate=true
@@ -225,7 +226,7 @@ function main() {
 			if(!SPY||!Env_Listen(envs)){	//无需监控或者监控失败,尝试解析
 				const NoDecode=["jd_zdjr_activityUrl","jd_cjhy_activityUrl","jd_wdz_activityUrl","jd_wdzfd_activityUrl"]//不解析的链接型变量
 				names.forEach((ele,index)=>{
-					if(ele.match(/URL|Url/) && NoDecode.indexOf(ele)==-1)
+					if(ele.match(/URL/i) && NoDecode.indexOf(ele)==-1)
 						urls.push(values[index])
 					})
 				if(urls.length){
@@ -773,7 +774,7 @@ function Env_Listen(envs,only_one) {
 			return true
 		}
 		else
-			console.log("已存在其他进程处理队列,由对方处理")
+			console.log("疑似已存在其他进程处理队列,由对方处理")
 	}
 	return true
 }
@@ -889,21 +890,34 @@ function Import_Spy(data) {//console.log(data)
 		return "接收信息有误，或者切换平台导入，或者在命令行交互模式导入"
 	}
 	let olddata = db.get("env_listens_new")
-	let oldspy = olddata?JSON.parse(olddata):new Array()
+	let oldspy = olddata?JSON.parse(olddata):[]
+	QLS.forEach((QL,i)=>QLS[i]["crons"]=ql.Get_QL_Crons(QL.host,QL.token))
 	//console.log(JSON.stringify(olddata))
 	newspy.forEach(spy=>{
-		let index=oldspy.findIndex(listen=>spy.Envs.find(env=>listen.Envs.indexOf(env)!=-1))
+		let index=oldspy.findIndex(listen=>spy.Envs.find(env=>listen.Envs.indexOf(env)!=-1))	//是否已存在监控同一变量的任务
 		if(index==-1){
-			notify+="★【"+spy.Name+"】导入成功\n"
+			let some=false
+			let temp=""
 			QLS.forEach(QL=>{
-				if(!QL.disable)
-					spy.Clients.push(QL.client_id)
+				if(!QL.disable){	//该监控任务的监控关键词是否存在对接的容器中
+					if(QL.crons.find(cron=>cron.command.indexOf(spy.Keyword)!=-1||cron.name.indexOf(spy.Keyword)!=-1)){
+						some=true
+						spy.Clients.push(QL.client_id)
+					}
+					else
+						temp+="容器【"+QL.name+"】内不存在监控任务【"+spy.Keyword+"】\n"
+				}
 			})
-			oldspy.push(spy)
-			count++
+			if(some){
+				notify+="★【"+spy.Name+"】导入成功\n"
+				oldspy.push(spy)
+				count++
+			}
+			else
+				notify+="☆【"+spy.Name+"】导入失败\n"+temp
 		}
 		else{
-			notify+="☆【"+spy.Name+"】与监控任务"+(index+1)+"【"+oldspy[index].Name+"】存在相同变量，忽略\n"
+			notify+="☆【"+spy.Name+"】导入失败\n与监控任务"+(index+1)+"【"+oldspy[index].Name+"】存在相同变量，忽略\n"
 		}
 	})
 	if(count)
@@ -951,8 +965,8 @@ function Que_Manager(QLS) {
 		})
 		//对各个容器执行任务
 		let notify = ""
-		let t=1
-		let update=false
+		let t=1	//轮询间隔：分钟
+		let update=true	//是否更新数据开始队列下一个任务
 		let record=[]	//记录处于冷却状态等待下一次执行的任务
 		for (let i = 0; i < QLS.length; i++) {
 			console.log(QLS[i].name+":执行\n"+JSON.stringify(QLS[i].envs)+"\n"+QLS[i].keywords)
@@ -993,7 +1007,8 @@ function Que_Manager(QLS) {
 								notify+="停止失败，未知原因\n"
 						}
 						else{
-							console.log("【"+Listens[index].Name+"等待任务冷却")
+							console.log("【"+Listens[index].Name+"】等待任务冷却")
+							update=false
 							if(record.indexOf(QLS[i].keywords[j])==-1)
 								record.push(QLS[i].keywords[j])
 						}
@@ -1002,7 +1017,9 @@ function Que_Manager(QLS) {
 					}
 				}
 				else{
-					let temp=QLS[i].keywords[j].indexOf("_")==-1?QLS[i].keywords[j]:QLS[i].keywords[j].replace(/_/g,"\_")
+					// let temp=QLS[i].keywords[j]
+					// if(temp.indexOf("_")!=-1 && (s.getPlatform()=="tg"||s.getPlatform()=="pgm"))
+					let	temp=QLS[i].keywords[j].replace(/_/g,"\_")
 					notify += "【执行结果】:【"+QLS[i].name + "】未找到任务" +temp+"\n" 
 					notify += "【故障原因】:可能监控任务配置有误,或青龙挂了，或未支持该青龙版本\n"
 				}
@@ -1012,14 +1029,9 @@ function Que_Manager(QLS) {
 				//console.log("本次轮询无需要执行的任务")
 				continue
 			}
-			let ids=todo.map(value=>{
-				if(value.id)
-					return value.id
-				else
-					return value._id
-			})
+			let ids=todo.map(value=>value.id?value.id:value._id)
 			let names=todo.map(value=>value.name)
-			if (ql.Start_QL_Crons(QLS[i].host, QLS[i].token, ids)) { //记录队列中成功执行的任务
+			if (ql.Start_QL_Crons(QLS[i].host, QLS[i].token, ids)) { //执行
 //			if(true){ 
 				notify += "【执行结果】:【"+QLS[i].name + "】成功执行"+JSON.stringify(names)+"\n"  
 			}
@@ -1030,7 +1042,7 @@ function Que_Manager(QLS) {
 		let done=true
 		for(let i=0;i<Listens.length;i++){
 			if(Listens[i].TODO.length && record.indexOf(Listens[i].Keyword)==-1){
-				update=true
+				//update=true
 				//console.log("【"+Listens[i].Name+"】队列:\n"+JSON.stringify(Listens[i].TODO))
 				Listens[i].LastTime=now
 				Listens[i].DONE.push(Listens[i].TODO[0])
@@ -1267,7 +1279,7 @@ function Menu(Listens, silent, targets) {
 		notify += "【a】关闭静默\n"
 	notify += "【b】变量转换\n"
 	notify += "【c】链接解析\n"
-	notify += "【d】监听目标:"
+	notify += "【d】监控目标:"
 	for (let i = 0; i < targets.length; i++) {
 		if (targets[i].name)
 			notify += "【" + targets[i].name + "】"
@@ -1280,7 +1292,7 @@ function Menu(Listens, silent, targets) {
 }
 
 
-//主菜单-监听目标管理
+//主菜单-监控目标管理
 function SpyTargets(targets) {
 	let limit = LIMIT
 	let inp = 1
@@ -1289,7 +1301,7 @@ function SpyTargets(targets) {
 			return false
 		}
 		if (inp){
-			let notify = "请选择监听目标进行编辑：\n"
+			let notify = "请选择监控目标进行编辑：\n"
 			for (let i = 0; i < targets.length; i++) {
 				notify += (i + 1) + "、"+ targets[i].name + ":"+targets[i].id + "\n"
 			}
@@ -1314,9 +1326,9 @@ function SpyTargets(targets) {
 		}
 		else if (inp == "0") {
 			try{
-				s.reply("请输入新添加的监听目标的账号ID或者群ID：")
+				s.reply("请输入新添加的监控目标的账号ID或者群ID：")
 				let id = s.listen(WAIT).getContent()
-				s.reply("请输入新添加的监听目标的备注名称：")
+				s.reply("请输入新添加的监控目标的备注名称：")
 				let name = s.listen(WAIT).getContent()
 				targets.push({ id: id, name: name })
 			}
