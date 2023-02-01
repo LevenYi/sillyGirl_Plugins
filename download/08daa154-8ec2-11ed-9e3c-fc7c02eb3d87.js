@@ -4,7 +4,6 @@
 * @create_at 2022-09-08 15:06:22
 * @description 频道监控
 * @title 频道监控
-* @platform qq wx tg pgm sxg
 * @rule ?
  * @public false
 */
@@ -15,7 +14,7 @@ const Config=[
         id:"-1001642487812",  //监控频道的id
         keyword:"开卡监控",     //触发关键词，可空
         container:[1],  //监控容器
-        repo:"KingRan",     //触发后需要执行的拉库任务
+        repo:"",     //触发后需要执行的拉库任务
         startscript:"opencard", //拉库结束后需要自动执行的新增任务
         modify:{
             suffix:"desi JD_COOKIE 1-200",  //对新增任务的执行命令添加后缀
@@ -23,7 +22,7 @@ const Config=[
         },
         otherscript:true,   //是否在频道消息中出现js py等脚本名时自动执行该脚本
         stopword:["无","停","干","没水"],      //频道消息出现关键词自动停止任务stopscript任务
-        stopscript:"opencard"   //需要监控停止执行的任务关键词
+        stopscript:"Test"   //需要监控停止执行的任务关键词
     },
     {
         name:"KR",    //备注名
@@ -33,7 +32,7 @@ const Config=[
         repo:"KingRan",     //触发后需要执行的拉库任务
         startscript:"opencard", //拉库结束后需要自动执行的新增任务
         modify:{
-            suffix:"desi JD_COOKIE 1-200",  //对新增任务的执行命令添加后缀
+            suffix:"desi JD_COOKIE 3 1-200",  //对新增任务的执行命令添加后缀
             schedule:"2 2 29 2 *"   //对新增任务修改定时规则
         },
         otherscript:true,   //是否在频道消息中出现js py等脚本名时自动执行该脚本
@@ -48,7 +47,7 @@ const Config=[
         repo:"feverrun",     //触发后需要执行的拉库任务
         startscript:"opencard", //拉库结束后需要自动执行的新增任务
         modify:{
-            suffix:"desi JD_COOKIE 1 200-2",  //对新增任务的执行命令添加后缀
+            suffix:"desi JD_COOKIE 3 200-2",  //对新增任务的执行命令添加后缀
             schedule:"2 2 29 2 *"   //对新增任务修改定时规则
         },
         otherscript:true,   //是否在频道消息中出现js py等脚本名时自动执行该脚本
@@ -92,7 +91,15 @@ function main(){
         let crons=ql.Get_QL_Crons(QLS[i].host,QLS[i].token)
         let latest=crons.find(cron=>!cron.pid) //记录拉库前的第一个定时任务，用于判断新增任务
         let ids=[],names=[] //记录将执行的任务
-        if(tostart || scriptname){
+        if(tostop){
+            let cron=crons.find(cron=>cron.pid&&cron.command.indexOf(config.repo)!=-1 && cron.command.indexOf(config.stopscript)!=-1)
+            if(!cron)
+                notify+="没有需要停止的任务\n"
+            else if(ql.Stop_QL_Crons(QLS[i].host,QLS[i].token,[cron.id?cron.id:cron._id]))
+                notify+="成功停止【"+cron.name+"】\n"
+            else console.log("停止"+cron.name+"失败")
+        }
+        else if(tostart || scriptname){
            // console.log("拉库前第一个任务是"+latest.name)
             let sub=ql.Get_QL_Subs(QLS[i].host,QLS[i].token,config.repo)
             if(sub){    //新版青龙
@@ -210,14 +217,6 @@ function main(){
             }
             else 
                 notify+="没有需要执行的任务\n"
-        }
-        if(tostop){
-            let cron=crons.find(cron=>cron.pid&&cron.command.indexOf(config.repo)!=-1 && cron.command.indexOf(config.stopscript)!=-1)
-            if(!cron)
-                notify+="没有需要停止的任务\n"
-            else if(ql.Stop_QL_Crons(QLS[i].host,QLS[i].token,[cron.id?cron.id:cron._id]))
-                notify+="成功停止【"+cron.name+"】\n"
-            else console.log("停止"+cron.name+"失败")
         }
     }
     //console.log(notify)

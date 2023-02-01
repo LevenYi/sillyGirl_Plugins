@@ -3,7 +3,6 @@
 * @create_at 2022-09-07 18:30:34
 * @description 每天自动调整变量顺序需填写相关配置,须安装somethong与qinglong模块
 * @title 雨露均沾
-* @platform qq wx tg pgm sxg
 * @rule 动一动
 * @cron 20 12 * * *
 * @admin true
@@ -16,7 +15,7 @@
 
 /******************************配置区域*****************************/
 //每次调整顺序时的移动数量
-const MoveNum=4
+const MoveNum=2
 
 
 //调整模式，1为欧气模式，2为雨露均沾模式
@@ -28,7 +27,7 @@ const SelectMode=2
 //填写位置不动的变量序号，-1表示该容器不调整顺序
 //例：单容器[[1,2,3,4,5]]
 //例：多容器[[1,2,3],[-1],[]]，容器1环境变量1-3不动，容器2所有变量位置不动，容器3无车头,填写容器数量及顺序必须与傻妞中的容器数量及顺序保持一致
-const NotMove=[[1,2,3,4,5,6]]
+const NotMove=[[1,2,3,4,5,6,7]]
 
 
 //通知模式，0表示不通知，1表示通知管理员默认内容，2表示除通知管理员外再另外在客户群组通知
@@ -145,32 +144,17 @@ function main(){
 		Notify+="以下变量移动至前排\n"
 		notify+="以下账号移动至前排\n"	
 //		let backup=Backup_NotMoveEnvOrder(NotMove[i],envs)//备份移动之前不动变量及其位置[{order:位置,name:变量名,value:变量值}]	
-		for(let j=move.length-1;j>=0;j--){//从前往后将移动变量移至前排，以免导致未移动变量位置改变
-//		console.log(envs[move[j]].value.match(/(?<=pt_pin=)[^;]+/g)+":"+envs[move[j]]._id+":"+move[j]+"-->"+fp+"\n")
-			if(envs[move[j]].id){
-				if(ql.Move_QL_Env(QLS[i].host,ql_token,envs[move[j]].id,move[j],fp)!=null){
-					if(envs[move[j]].name=="JD_COOKIE"){
-						Notify+="京东账号【"+envs[move[j]].value.match(/(?<=pt_pin=)[^;]+/g)+"】\n"//管理员通知，使用pin
-						notify+="京东账号【"+GetName(envs[move[j]].value)+"】\n"//客户通知，使用昵称
-					}
-					else
-						Notify+="青龙变量【"+envs[move[j]].name+"】\n"	
-				}
-				else
-					Notify+="变量"+envs[move[j]].name+":"+envs[move[j]].value+"移动失败"
-			}										
-			else{
-				if(ql.Move_QL_Env(QLS[i].host,ql_token,envs[move[j]]._id,move[j],fp)!=null){
-					if(envs[move[j]].name=="JD_COOKIE"){
-						Notify+="京东账号【"+envs[move[j]].value.match(/(?<=pt_pin=)[^;]+/g)+"】\n"//管理员通知，使用pin
-						notify+="京东账号【"+GetName(envs[move[j]].value)+"】\n"//客户通知，使用昵称
-					}
-					else
-						Notify+="青龙变量【"+envs[move[j]].name+"】\n"	
-				}
-				else
-					Notify+="变量"+envs[move[j]].name+":"+envs[move[j]].value+"移动失败"				
+		for(let j=move.length-1;j>=0;j--){	//从前往后将移动变量移至前排，以免导致未移动变量位置改变
+			let pin=envs[move[j]].value.match(/(?<=pt_pin=)[^;]+/g)[0]
+			let id=envs[move[j]].id?envs[move[j]].id:envs[move[j]]._id
+			console.log(pin+":"+id+":"+move[j]+"-->"+fp+"\n")
+			if(ql.Move_QL_Env(QLS[i].host,ql_token,id,move[j],fp)){
+			//if(true){
+				Notify+="京东账号【"+envs[move[j]].value.match(/(?<=pt_pin=)[^;]+/g)+"】\n"//管理员通知，使用pin
+				notify+="京东账号【"+GetName(envs[move[j]].value)+"】\n"//客户通知，使用昵称	
 			}
+			else
+				Notify+="变量"+envs[move[j]].name+":"+envs[move[j]].value+"移动失败\n"
 			sleep(500)
 		}
 		//复原调整顺序后导致的不动变量位置变化

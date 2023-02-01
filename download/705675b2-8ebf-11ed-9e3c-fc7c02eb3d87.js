@@ -1,6 +1,6 @@
 /*
 * @author https://t.me/sillyGirl_Plugin
-* @version v1.0.3
+* @version v1.0.4
 * @create_at 2022-09-08 15:06:22
 * @description 饿了么ck提交与查询,需安装qinglong模块
 * @title 饿了么
@@ -54,21 +54,15 @@ function main(){
     }
 
     let temp=elm.get("ql_token")
-    let token=null
-    if(temp)
-        token=JSON.parse(temp)
-    let envs=ql.Get_QL_Envs(Host,token)
-    if(!envs){
-        token=ql.Get_QL_Token(Host,CilentID,CilentSecret)
-        if(token){
-            envs=ql.Get_QL_Envs(Host,token)
-            elm.set("ql_token",JSON.stringify(token))
-        }
-        else{
-            console.log("token failed")
-            return
-        }
+    let token=temp?JSON.parse(temp):ql.Get_QL_Token(Host,CilentID,CilentSecret)
+    if(!token){
+        elm.set('ql_token','')
+        s.reply('token failed')
+        return
     }
+    else
+        elm.set('ql_token',JSON.stringify(token))
+    let envs=ql.Get_QL_Envs(Host,token)
     if(!envs){
         s.reply("青龙变量获取失败")
         return

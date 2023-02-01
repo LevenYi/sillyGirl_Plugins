@@ -232,7 +232,7 @@ function GetAllRedirect(){
 			// 	else
 			// 		flag=1
 			// }
-			s.continue()
+			//s.continue()
 		}
 		else
 			s.reply("执行失败，退出")

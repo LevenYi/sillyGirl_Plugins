@@ -70,10 +70,10 @@
 var QLS=[
     {
         "host":"http://127.0.0.1:5700",     //容器1地址
-        "client_id":"aaaaaaaa",         //容器应用id
+        "client_id":"aaaaaaaa",         //容器应用id（于青龙面板-系统设置-应用设置内创建)
         "client_secret":"AAAAAAAA", //容器应用密钥
         "disable":false,    //导入监控任务时本容器是否默认不监控
-        "name":"服务器1"   //容器名
+        "name":"服务器1"   //容器备注
     },
     {
         "host":"http://127.0.0.1:5800",     
