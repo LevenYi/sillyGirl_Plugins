@@ -167,7 +167,7 @@ function Login(host,name,password){
          return resp.headers["Set-Cookie"][0].split(";").find(ele=>ele.indexOf("SID")!=-1)
     }
     catch(err){
-        console.log("qbittorent login in failed\n"+SON.stringify(resp))
+        console.log("qbittorent login in failed\n"+JSON.stringify(resp))
         return null
     }
 }
@@ -185,7 +185,7 @@ function Resume_Torr(host,ck,hashes){
     if(resp.status==200)
         return true
     else{
-        console.log("qbittorent Resume failed\n"+SON.stringify(resp))
+        console.log("qbittorent Resume failed\n"+JSON.stringify(resp))
         return false
     }
 }
@@ -200,11 +200,11 @@ function Pause_Torr(host,ck,hashes){console.log(hashes)
 
 		}
 	})
-    //console.log(SON.stringify(resp))
+    //console.log(JSON.stringify(resp))
     if(resp.status==200)
         return true
     else{
-        console.log("qbittorent Pause failed\n"+SON.stringify(resp))
+        console.log("qbittorent Pause failed\n"+JSON.stringify(resp))
         return false
     }
 }
@@ -223,7 +223,7 @@ function Del_Torr(host,ck,hashes,deleteFiles){
     if(resp.status==200)
         return true
     else{
-        console.log("qbittorent Delete failed\n"+SON.stringify(resp))
+        console.log("qbittorent Delete failed\n"+JSON.stringify(resp))
         return false
     }
 }
@@ -241,7 +241,7 @@ function Get_DownloadngTorr(host,ck){
     if(resp.status==200)
         return JSON.parse(resp.body)
     else{
-        console.log("qbittorent Resume failed\n"+SON.stringify(resp))
+        console.log("qbittorent Resume failed\n"+JSON.stringify(resp))
         return null
     }
 }
@@ -259,7 +259,7 @@ function Get_AllTorr(host,ck){
     if(resp.status==200)
         return JSON.parse(resp.body)
     else{
-        console.log("qbittorent GetTorrent failed\n"+SON.stringify(resp))
+        console.log("qbittorent GetTorrent failed\n"+JSON.stringify(resp))
         return null
     }
 }
@@ -278,7 +278,7 @@ function Add_Torr(host,ck,urls){
     if(resp.body=="Ok.")
         return true
     else{
-        console.log("qbittorent AddTorrent failed\n"+SON.stringify(resp))
+        console.log("qbittorent AddTorrent failed\n"+JSON.stringify(resp))
         return false
     }
 }
