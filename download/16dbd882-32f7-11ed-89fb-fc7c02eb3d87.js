@@ -5,14 +5,16 @@
 * @description nark对接，默认禁用，可修改默认上车容器,本插件需对接过芝士，需安装qinglong与something模块
 * @title nark登陆
 * @rule raw ^(登陆|登录)$
-* @rule raw [\S ]*pin=[^;]+; ?wskey=[^;]+;[\S ]*
-* @rule raw [\S ]*pt_key=[^;]+; ?pt_pin=[^;]+;[\S ]*
-* @priority 99999999999999999999
+* @rule 扫码登陆
+* @priority 9
  * @public false
 * @disable false
 */
 
 /***************配置****************** */
+/* @rule raw [\S ]*pin=[^;]+; ?wskey=[^;]+;[\S ]*
+* @rule raw [\S ]*pt_key=[^;]+; ?pt_pin=[^;]+;[\S ]*/
+
 //默认上车青龙容器序号
 const DefaultQL=1
 
@@ -54,6 +56,13 @@ function main(){
 		value:"",
 		remarks:""
 	}
+
+	let QLS=ql.QLS()
+	let ql_token=QLS[DefaultQL-1].token
+	if(!ql_token){
+		s.reply("token获取失败，请联系管理员")
+		return
+	}
 	if(s.getContent()=="登陆"||s.getContent()=="登录"){
 		const nark=jddb.get("nolan_addr")
 		if(nark==""){
@@ -63,11 +72,19 @@ function main(){
 				s.reply("未对接登陆，请联系管理员")
 			return
 		}
+		//检查绑定账号是否失效
+		if(!NeedLogin(st.GetBind(s.getPlatform(),s.getUserId()),QLS[DefaultQL-1])){
+			s.reply("您的账号尚未失效，无需重新登陆")
+			return
+		}
 		let Tel=SendSMS(nark)
-		if(Tel){
-			if(Tel=="q"){
-				return
-			}
+		if(Tel==false || Tel=="q")
+			return
+		else if(Tel==null){
+			s.reply("登陆暂时不可用,已自动催促管理员修复,您可以发送'呆瓜'获取其他登录方式")
+			return
+		}
+		else{
 			let result=VerifyCode(nark,Tel)
 			if(result=="q"){
 				return
@@ -81,10 +98,81 @@ function main(){
 				return
 			}
 		}
-		else{
-			s.reply("登陆暂时不可用,已自动催促管理员修复,您可以发送'呆瓜'获取其他登录方式")
+	}
+	else if(s.getContent()=="扫码登陆"){
+    	let qr_addr=jddb.get("rabbit_qr_addr")
+    	let qr_geneaddr=jddb.get("qr_gene_addr")
+    	let ql_server=jddb.get("rabbit_qr_ql")
+    	if(!qr_addr){
+        	s.reply("未设置扫码地址！\nset jd_cookie rabbit_qr_addr ?\n")
+   		}
+    	let tip=""
+    	if(!qr_geneaddr){
+        	tip+="未设置二维码生成地址！\nset jd_cookie qr_gene_addr ?\n"
+    	}
+    	if(!ql_server){
+        	tip+="未设置上车服务器！\nset jd_cookie rabbit_qr_ql ?\n"
+    	}
+    	if(tip){
+        	s.reply(tip)
+        	return
+    	}
+		//检查绑定账号是否失效
+		if(!NeedLogin(st.GetBind(s.getPlatform(),s.getUserId()),QLS[DefaultQL-1])){
+			s.reply("您的账号尚未失效，无需重新登陆")
 			return
 		}
+    	s.reply("请稍候..")
+    	let data=QR(qr_addr)
+    	if(!data){
+        	s.reply("二维码数据获取失败！")
+        	return
+    	}
+    	if(!QR_Gene(qr_geneaddr,data.qr)){
+       		s.reply("二维码生成失败！")
+        	return
+    	}
+    	let qrfile="http://192.168.31.5:8000/qr.jpg"
+     	s.reply("请使用京东app扫码\n"+st.CQ_Image(qrfile))
+		let inp=s.listen(10000)
+		if(inp && inp.getContent()=="q"){
+			s.reply("已退出")
+			return
+		}
+    	let limit=50
+    	while(limit-->0){
+        	sleep(1000) 
+        	let resp=request({
+            	url:qr_addr+"/api/QrCheck",
+            	method:"post",
+            	body:{
+                	"token": "",
+                	"qlkey": Number(ql_server),
+                	"QRCodeKey": data.QRCodeKey
+            	}
+        	})
+        	try{
+            	let data=JSON.parse(resp.body)
+            	if(data.code==200){
+                	s.reply(data.msg)
+                	break 
+            	}
+            	else if(data.code==54){
+                	s.reply(data.msg)
+                	break
+            	}
+            	else
+                	console.log(resp.body)
+        	}
+        	catch(err){
+            	console.log(JSON.stringify(resp))
+            	break
+        	} 
+    	}
+    	if(limit<=0){
+        	s.reply("超时")
+    	}
+		return
 	}
 	else if(s.getContent().indexOf("wskey")!=-1){
 		s.recallMessage(s.getMessageId())
@@ -105,15 +193,8 @@ function main(){
 			return
 		}
 	}
+	env.value=env.value.replace(' ','')
 	console.log(JSON.stringify(env))
-
-	let QLS=ql.QLS()
-	let ql_token=QLS[DefaultQL-1].token
-	if(!ql_token){
-		s.reply("token获取失败，请联系管理员")
-		s.reply(env.value)
-		return
-	}
 	
 	result=Submit_QL(QLS[DefaultQL-1].host,ql_token,env)
 	if(result){
@@ -140,6 +221,89 @@ function main(){
 		return
 	}
 }
+
+
+function NeedLogin(pins,QL){
+	let envs=ql.Get_QL_Envs(QL.host,QL.token)
+	for(let i=0;i<pins.length;i++){
+		for(let j=0;j<envs.length;j++){
+			if(envs[j].name=="JD_COOKIE" && pins[i]==envs[j].value.match(/(?<=pin=)[^;]+/)[0]){
+				if(!JD_isLogin(envs[j].value)){
+					console.log(pins[i]+"可能已失效")
+					return true
+				}
+			}
+		}
+	}
+	return false
+	// return pins.some(Pin=>envs.find(env=>{
+	// 	if(env.name=="JD_COOKIE" && env.value.match(/(?<=pin=)[^;]+/)[0]==Pin){
+	// 		console.log(Pin)
+	// 		if(!JD_isLogin(env.value)){
+	// 			console.log(Pin+"可能已失效")
+	// 			return true
+	// 		}
+	// 	}
+	// 	return false
+	// })?true:false)
+}
+
+//二维码扫描确认
+function QR_isLogin(host,ql_server,key){
+    let limit=50
+    while(limit-->0){
+        let resp=request({
+            url:host+"/api/QrCheck",
+            method:"post",
+            body:{
+                "token": "",
+                "qlkey": ql_server,
+                "QRCodeKey": key
+            }
+        })
+        try{
+            let data=JSON.parse(resp.body)
+            if(data.code==200){
+                return data.code
+            }
+            else if(data.code==54){
+                console.log(data.msg)
+                return data.code
+            }
+        }
+        catch(err){
+            console.log(JSON.stringify(resp))
+            return null
+        }  
+    }
+    return -1
+}
+
+//获取二维码数据
+function QR(host){
+    let resp=request({
+        url:host+"/api/BeanQrCode",
+        method:"post"
+    })
+    try{
+        console.log(resp.body)
+        return JSON.parse(resp.body)
+    }
+    catch(err){
+        console.log(JSON.stringify(resp))
+        return null
+    }
+}
+//生成二维码
+function QR_Gene(host,base64){
+        let resp=request({
+        url:host,
+        body:base64
+    })
+    return resp.body=="ok"?true:false
+}
+
+
 //更新账号更新时间
 function UpdateLoginDate(pin){
 	let date=(new Date()).toISOString()
@@ -368,6 +532,7 @@ function SendSMS(nark){
 		if(data.success)
 			return Tel
 		else{
+			console.log(resp.body)
 			if(data.message)
 				s.reply(data.message)
 			return null

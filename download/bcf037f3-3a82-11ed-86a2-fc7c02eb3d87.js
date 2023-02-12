@@ -1,11 +1,11 @@
 /*
 * @author https://t.me/sillyGirl_Plugin
-* @create_at 2022-09-07 18:35:08
+* @create_at 2022-12-07 18:35:08
 * @description 口令解析、链接解析、变量转换、变量监控多合一，须安装something与qinglong模块，安装之后务必查看插件内详细说明与配置
 * @title 白眼
 * @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
 * @rule raw [\s\S]*https:\/\/(.{2,}\.isvj(clou)?d\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
-* @rule raw [\s\S]*(pro(dev)?|shop)\.m\.jd\.com[\s\S]*
+* @rule raw [\s\S]*(pro(dev)?|shop|h5)\.m\.jd\.com[\s\S]*
 * @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+"[\s\S]*
 * @rule raw ImportWhiteEye=[\S\s]+
 * @rule 导出白眼
@@ -21,7 +21,8 @@
 * @rule 天王盖地虎
  * @public false
 * @disable false
-* @version v1.4.3
+* @priority 10
+* @version v1.4.4
 */
 
 
@@ -30,7 +31,7 @@
 
 监控目标:
 除设置的对象外，默认监控管理员消息
-注1：若要正常监控，除设置监控目标外，还需傻妞监听该目标（在傻妞后台-群组管理，添加监听目标群或者频道）
+注1：若要正常监控，除设置监控目标外，还需傻妞监听该目标（在傻妞后台-群组管理，添加监听目标群或者频道,建议同时在禁用群组内添加该群组，防止被钓鱼被ban）
 注2：若使用人形傻妞，建议开启静默，防止被ban，另pagermaid插件shift与人形傻妞冲突，建议不要使用shift，可在开启静默后设置推送
 
 静默：是否针对非管理员静默
@@ -56,6 +57,12 @@
 
 监控自检：
 检查监控任务是否存在非对接容器、监控脚本是否存在、以及监控变量是否与其他任务相同
+
+监控排序：
+监控任务顺序自动排序，优先级：关键词>任务名
+
+监控移动：
+移动监控任务，例：监控移动 3 1
 
 其他：出现奇奇怪怪的不运行的情况可以使用‘清空监控队列’或者‘清空监控记录’命令进行重置
 批量修改监控容器方式：导出白眼，然后使用命令delete jd_cookie env_listens_new删除数据，再导入即可（导入监控任务时会自动将所有非禁用容器作为监控容器)
@@ -131,6 +138,7 @@ const FuckRebate=true
 2023-1-9 v1.4.1 增加监控自检功能
 2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防捣乱(错误变量)，修改单一线报触发多个监控任务时仅触发其中一个任务
 2023-1-17 v1.4.3 增加监控排序与移动功能,更新部分内置规则
+2023-2-12 v1.4.4 修复多容器队列更新问题
 
 
 /*****************数据存储******************/
@@ -403,7 +411,7 @@ function Spy_Manager() {
 			else
 				targets=temp			
 		}
-		else if (inp == "0") {
+		else if (inp == "0") {	//添加监控任务
 			let spy = {
 				ID: Listens.length,
 				Name: "",
@@ -436,7 +444,7 @@ function Spy_Manager() {
 			}
 		}
 
-		else if (inp < 0) {
+		else if (inp < 0) {	//删除监控任务
 			try {
 				Listens.splice(Math.abs(inp) - 1, 1)
 			}
@@ -932,6 +940,7 @@ function Import_Spy(data) {//console.log(data)
 function Que_Manager(QLS) {
 	console.log("进行队列处理")
 	let limit = 100//死循环保险，防止陷入死循环
+	let t=1	//轮询间隔：分钟
 	//处理队列任务
 	while (true) {
 		let now = (new Date()).getTime()
@@ -965,8 +974,7 @@ function Que_Manager(QLS) {
 		})
 		//对各个容器执行任务
 		let notify = ""
-		let t=1	//轮询间隔：分钟
-		let update=true	//是否更新数据开始队列下一个任务
+		let update=false	//是否更新数据开始队列下一个任务
 		let record=[]	//记录处于冷却状态等待下一次执行的任务
 		for (let i = 0; i < QLS.length; i++) {
 			console.log(QLS[i].name+":执行\n"+JSON.stringify(QLS[i].envs)+"\n"+QLS[i].keywords)
@@ -1008,7 +1016,7 @@ function Que_Manager(QLS) {
 						}
 						else{
 							console.log("【"+Listens[index].Name+"】等待任务冷却")
-							update=false
+							//update=false
 							if(record.indexOf(QLS[i].keywords[j])==-1)
 								record.push(QLS[i].keywords[j])
 						}
@@ -1033,6 +1041,7 @@ function Que_Manager(QLS) {
 			let names=todo.map(value=>value.name)
 			if (ql.Start_QL_Crons(QLS[i].host, QLS[i].token, ids)) { //执行
 //			if(true){ 
+				update=true
 				notify += "【执行结果】:【"+QLS[i].name + "】成功执行"+JSON.stringify(names)+"\n"  
 			}
 			else{
@@ -1150,10 +1159,10 @@ function Notify(msg) {
 		let temp="--------------------\n"
 		let gname=JSON.parse(db.get("spy_targets_new")).find(target=>target.id==s.getChatId()).name	//线报来源备注名
 		if((s.getPlatform()=="tg" || s.getPlatform()=="pgm") && s.getContent().match(/`[\s\S]*`/)){
+			//console.log("markupdown线报")
 			temp+="【线报】"+s.getContent()+"\n\n"
 		}
 		else{
-			console.log("markupdown线报")
 			temp+=st.ToEasyCopy(s.getPlatform(),"线报",s.getContent())+"\n\n"
 		}
 		temp+="【来源】"+gname+"("+s.getPlatform().toUpperCase()+")\n"

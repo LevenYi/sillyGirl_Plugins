@@ -2,7 +2,7 @@
 * @author https://t.me/sillyGirl_Plugin
 * @version v1.0.1
 * @create_at 2022-09-08 15:06:22
-* @description 定时自动命令、一键多命令，默认禁用
+* @description 自用打卡
 * @title 定时任务
 * @rule ^session_id=
 * @rule 执行定时

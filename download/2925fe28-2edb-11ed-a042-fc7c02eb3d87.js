@@ -40,7 +40,7 @@ const sillyGirl=new SillyGirl()
 const db= new Bucket("sillyGirl")
 
 function main(){
-	s.continue() 
+	s.continue()
 	if(!s.isAdmin()){
 		return
 	}

@@ -167,7 +167,7 @@ function Modify_QL_Config(host, token, envs) {
 	let Config = Get_QL_Config(host, token, "config.sh")
 	if (Config != null) {
 		for (let i = 0; i < envs.length; i++) {
-			let reg = new RegExp("(?<=export[ ]+" + envs[i].name + "[ ]*=[ ]*\")[^\"]*")
+			let reg = new RegExp("(?<=export[ ]+" + envs[i].name + "[ ]*=[ ]*(\"|\'))[^\"\']*")
 			if (Config.search(reg) == -1)
 				Config += "\nexport " + envs[i].name + "=\"" + envs[i].value + "\""
 			else

@@ -11,7 +11,7 @@
 * @admin true
 */
 
-/***********配置************* */
+/***********配置命令************* */
 //qbittorent ip及端口，set qbittorent host http://127.0.0.1:8080
 
 //qbittorent登陆用户名:set qbittorent username admin
@@ -32,7 +32,7 @@ function main(){
     if(!host || !uname || !pwd){
         let tip="请使用命令'set qbittorent host ip:端口'设置qb面板地址\n"
         tip+="请使用命令'set qbittorent username 账号'设置qb面板登录账号\n"
-        tip+="请使用命令'set qbittorent password 账号'设置qb面板登录账号\n"
+        tip+="请使用命令'set qbittorent password 账号'设置qb面板登录密码\n"
         s.reply(tip)
         return
     }
@@ -167,6 +167,7 @@ function Login(host,name,password){
          return resp.headers["Set-Cookie"][0].split(";").find(ele=>ele.indexOf("SID")!=-1)
     }
     catch(err){
+        console.log("qbittorent login in failed\n"+SON.stringify(resp))
         return null
     }
 }
@@ -181,11 +182,12 @@ function Resume_Torr(host,ck,hashes){
 
 		}
 	})
-    //console.log(SON.stringify(resp))
     if(resp.status==200)
         return true
-    else
+    else{
+        console.log("qbittorent Resume failed\n"+SON.stringify(resp))
         return false
+    }
 }
 
 function Pause_Torr(host,ck,hashes){console.log(hashes)
@@ -201,8 +203,10 @@ function Pause_Torr(host,ck,hashes){console.log(hashes)
     //console.log(SON.stringify(resp))
     if(resp.status==200)
         return true
-    else
+    else{
+        console.log("qbittorent Pause failed\n"+SON.stringify(resp))
         return false
+    }
 }
 
 function Del_Torr(host,ck,hashes,deleteFiles){
@@ -218,8 +222,10 @@ function Del_Torr(host,ck,hashes,deleteFiles){
     //console.log(hashes+"\n"+deleteFiles+"\n"+JSON.stringify(resp))
     if(resp.status==200)
         return true
-    else
+    else{
+        console.log("qbittorent Delete failed\n"+SON.stringify(resp))
         return false
+    }
 }
 
 function Get_DownloadngTorr(host,ck){
@@ -234,8 +240,10 @@ function Get_DownloadngTorr(host,ck){
 	})
     if(resp.status==200)
         return JSON.parse(resp.body)
-    else
+    else{
+        console.log("qbittorent Resume failed\n"+SON.stringify(resp))
         return null
+    }
 }
 
 function Get_AllTorr(host,ck){
@@ -250,8 +258,10 @@ function Get_AllTorr(host,ck){
 	})
     if(resp.status==200)
         return JSON.parse(resp.body)
-    else
+    else{
+        console.log("qbittorent GetTorrent failed\n"+SON.stringify(resp))
         return null
+    }
 }
 
 function Add_Torr(host,ck,urls){
@@ -267,8 +277,10 @@ function Add_Torr(host,ck,urls){
 	})
     if(resp.body=="Ok.")
         return true
-    else
+    else{
+        console.log("qbittorent AddTorrent failed\n"+SON.stringify(resp))
         return false
+    }
 }
 
 main()

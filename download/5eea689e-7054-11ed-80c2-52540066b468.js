@@ -2,7 +2,7 @@
  * @title Telegram Bot(魔改版)
  * @on_start true
  * @create_at 2020-11-30 22:47:06
- * @description 魔改版，与官方版不可共存，需安装something模块
+ * @description 魔改自用版，与官方版不可共存，需安装something模块
  * @author https://t.me/sillyGirl_Plugin
  * @version v1.0.1
  * @public false
@@ -24,6 +24,7 @@ let url = tg.get("url", "https://api.telegram.org")// 🧧设置代理地址指�
 let offset = tg.get("offset")
 tg.watch("token", function (old, now, key) {
     token = now
+    offset = 0
 })
 
 tg.watch("url", function (old, now, key) {
@@ -115,7 +116,7 @@ tgbot.send(function (msg) {
     //let [a, reply_to_message_id] = msg.message_id.split(".")
     //console.log("tg发送\n"+JSON.stringify(msg))
     let body = {}
-    let items = [{ type: "text", value: msg.content.trim() }]
+    let items = CQ2Items(msg.content)
     let contents = []
     let images = []
     let videos = []

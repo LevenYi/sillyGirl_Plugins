@@ -16,6 +16,7 @@ module.exports={
 	GetBind,
 	ToHyperLink,
 	ToEasyCopy,
+	CQ_Image,
 
 	USER_AGENT,
 	JD_UserInfo,
@@ -49,6 +50,10 @@ function formatStringLen(strVal, len,padChar){
 	for(i=0;i<len-count;i++)
     strVal+=padChar
 	return strVal
+}
+
+function CQ_Image(url){
+	return "[CQ:image,cache=0,file="+url+"]"
 }
 
 //tg快捷复制
