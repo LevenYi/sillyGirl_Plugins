@@ -6,7 +6,7 @@
 * @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
 * @rule raw [\s\S]*https:\/\/(.{2,}\.isvj(clou)?d\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
 * @rule raw [\s\S]*(pro(dev)?|shop|h5)\.m\.jd\.com[\s\S]*
-* @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+"[\s\S]*
+* @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+[^\\]"[\s\S]*
 * @rule raw ImportWhiteEye=[\S\s]+
 * @rule 导出白眼
 * @rule 恢复ql spy

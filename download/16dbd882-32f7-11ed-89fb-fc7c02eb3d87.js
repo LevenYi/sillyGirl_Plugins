@@ -50,6 +50,10 @@ function main(){
 			//s.reply("本群禁止上车")//不需要通知请注释本行
 		return
 	}
+	// if(!s.isAdmin()){
+	// 	s.reply("维护中...")
+	// 	return
+	// }
 
 	var env={
 		name:"",
@@ -128,12 +132,11 @@ function main(){
         	s.reply("二维码数据获取失败！")
         	return
     	}
-    	if(!QR_Gene(qr_geneaddr,data.qr)){
+    	if(!QR_Gene(qr_geneaddr+"/qr-code",data.qr)){
        		s.reply("二维码生成失败！")
         	return
     	}
-    	let qrfile="http://192.168.31.5:8000/qr.jpg"
-     	s.reply("请使用京东app扫码\n"+st.CQ_Image(qrfile))
+     	s.reply("请使用京东app扫码\n"+st.CQ_Image(qr_geneaddr+"/qr-code"))
 		let inp=s.listen(10000)
 		if(inp && inp.getContent()=="q"){
 			s.reply("已退出")
@@ -153,12 +156,12 @@ function main(){
         	})
         	try{
             	let data=JSON.parse(resp.body)
-            	if(data.code==200){
+            	if(data.code==200){	//登陆成功
                 	s.reply(data.msg)
                 	break 
             	}
-            	else if(data.code==54){
-                	s.reply(data.msg)
+            	else if(data.code==54){	//二维码失效
+                	s.reply(data.msg)	
                 	break
             	}
             	else
@@ -172,6 +175,8 @@ function main(){
     	if(limit<=0){
         	s.reply("超时")
     	}
+		//更新变量
+		Update_JDCOOKIE(QLS[DefaultQL-1])
 		return
 	}
 	else if(s.getContent().indexOf("wskey")!=-1){
@@ -207,6 +212,9 @@ function main(){
 		else if(result==2)
 			sillyGirl.notifyMasters("报告老板！老客户[ "+pin+" ]成功更新账号\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
 		s.reply("上车成功")
+		//更新变量
+		Update_JDCOOKIE(QLS[DefaultQL-1])
+		return
 	}
 	else{
 		s.reply("提交失败，请联系管理员")
@@ -222,6 +230,37 @@ function main(){
 	}
 }
 
+function Update_JDCOOKIE(QL){
+	let msg=""
+	sleep(10000)
+	let envs=ql.Get_QL_Envs(QL.host,QL.token)
+	let ids=[]
+	for(let i=0;i<envs.length;i++){
+		if(envs[i].name=="JD_R_WSCK"){
+			let id=envs[i].id?envs[i].id:envs[i]._id
+			ids.push(id)
+			ql.Update_QL_Env(QL.host,QL.token,id,"JD_WSCK",envs[i].value,envs[i].remarks)
+		}
+	}
+	let crons=ql.Get_QL_Crons(QL.host,QL.token,"ws")
+	for(let i=0;i<crons.length;i++){
+		if(crons[i].command.indexOf("KingRan_KR/jd_wskey.py")!=-1){
+			let id=crons[i].id?crons[i].id:crons[i]._id
+			if(!ql.Start_QL_Crons(QL.host,QL.token,[id]))
+				return "转换执行失败"
+		}
+	}
+	sleep(15000)
+	for(let i=0;i<crons.length;i++){
+		if(crons[i].command.indexOf("jd_wskey_encode.py")!=-1){
+			let id=crons[i].id?crons[i].id:crons[i]._id
+			if(!ql.Start_QL_Crons(QL.host,QL.token,[id]))
+				return "加密执行失败"
+		}
+	}
+	if(!ql.Delete_QL_Envs(QL.host,QL.token,ids))
+		return "JD_WSCK删除失败"
+}
 
 function NeedLogin(pins,QL){
 	let envs=ql.Get_QL_Envs(QL.host,QL.token)
@@ -298,9 +337,17 @@ function QR(host){
 function QR_Gene(host,base64){
         let resp=request({
         url:host,
-        body:base64
+        method:"post",
+        body:{
+			image:base64
+		}
     })
-    return resp.body=="ok"?true:false
+    if(resp.status==200)
+		return true
+	else{
+		console.log(JSON.stringify(resp))
+		return false
+	}
 }
 
 

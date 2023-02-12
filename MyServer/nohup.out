@@ -2,3 +2,5 @@
 172.17.0.2 - - [12/Feb/2023 16:01:52] "GET /qr.jpg HTTP/1.1" 200 -
 172.17.0.2 - - [12/Feb/2023 16:05:47] "GET /qr.jpg HTTP/1.1" 200 -
 172.17.0.2 - - [12/Feb/2023 16:07:04] "GET /qr.jpg HTTP/1.1" 200 -
+172.17.0.2 - - [12/Feb/2023 17:44:27] "GET /qr.jpg HTTP/1.1" 200 -
+Server listening at http://localhost:3000
