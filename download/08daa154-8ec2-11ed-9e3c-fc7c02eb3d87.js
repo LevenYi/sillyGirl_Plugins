@@ -13,7 +13,7 @@ const Config=[
         name:"测试",    //备注名
         id:"-1001642487812",  //监控频道的id
         keyword:"开卡监控",     //触发关键词，可空
-        container:[1],  //监控容器
+        container:[1],  //监控容器,多容器例[1,3,5],对应青龙管理内的容器顺序
         repo:"KingRan",     //触发后需要执行的拉库任务
         startscript:"opencard", //拉库结束后需要自动执行的新增任务
         modify:{
@@ -25,34 +25,34 @@ const Config=[
         stopscript:"opencard"   //需要监控停止执行的任务关键词
     },
     {
-        name:"KR",    //备注名
-        id:"-1001659538110",  //监控频道的id
-        keyword:"",     //触发关键词，可空
-        container:[1],  //监控容器
-        repo:"KingRan",     //触发后需要执行的拉库任务
-        startscript:"opencard", //拉库结束后需要自动执行的新增任务
+        name:"KR",    
+        id:"-1001659538110",  
+        keyword:"",     
+        container:[1],  
+        repo:"KingRan",     
+        startscript:"opencard", 
         modify:{
-            suffix:"desi JD_COOKIE 3 1-200",  //对新增任务的执行命令添加后缀
-            schedule:"2 2 29 2 *"   //对新增任务修改定时规则
+            suffix:"desi JD_COOKIE 3 1-200",  
+            schedule:"2 2 29 2 *"   
         },
-        otherscript:true,   //是否在频道消息中出现js py等脚本名时自动执行该脚本
-        stopword:["无","停","干","没","不"],      //频道消息出现关键词自动停止任务stopscript任务
-        stopscript:"opencard"   //需要监控停止执行的任务关键词
+        otherscript:true,   
+        stopword:["无","停","干","没","不"],      
+        stopscript:"opencard"   
     },
         {
-        name:"环境保护",    //备注名
-        id:"-1001765547510",  //监控频道的id
-        keyword:"",     //触发关键词，可空
-        container:[1],  //监控容器
-        repo:"feverrun",     //触发后需要执行的拉库任务
-        startscript:"opencard", //拉库结束后需要自动执行的新增任务
+        name:"环境保护",    
+        id:"-1001765547510",  
+        keyword:"",     
+        container:[1],  
+        repo:"feverrun",     
+        startscript:"opencard", 
         modify:{
-            suffix:"desi JD_COOKIE 3 200-2",  //对新增任务的执行命令添加后缀
-            schedule:"2 2 29 2 *"   //对新增任务修改定时规则
+            suffix:"desi JD_COOKIE 3 200-2",  
+            schedule:"2 2 29 2 *"   
         },
-        otherscript:true,   //是否在频道消息中出现js py等脚本名时自动执行该脚本
-        stopword:["无","停","干","没","不"],      //频道消息出现关键词自动停止任务stopscript任务
-        stopscript:"opencard"   //需要监控停止执行的任务关键词
+        otherscript:true,
+        stopword:["无","停","干","没","不"],      
+        stopscript:"opencard"   
     }
 ]
 
