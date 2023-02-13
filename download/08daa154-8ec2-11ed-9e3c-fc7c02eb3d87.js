@@ -87,7 +87,7 @@ function main(){
     for(let i=0;i<QLS.length;i++){
         if(config.container.indexOf(i+1)==-1)
             continue
-        notify+="容器【"+QLS[i].name+"】\n"
+        notify+="※容器【"+QLS[i].name+"】\n"
         let crons=ql.Get_QL_Crons(QLS[i].host,QLS[i].token)
         let latest=crons.find(cron=>!cron.pid) //记录拉库前的第一个定时任务，用于判断新增任务
         let ids=[],names=[] //记录将执行的任务
