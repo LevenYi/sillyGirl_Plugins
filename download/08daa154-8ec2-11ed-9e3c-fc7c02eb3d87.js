@@ -1,6 +1,6 @@
 /*
 * @author https://t.me/sillyGirl_Plugin
-* @version v1.0.0
+* @version v1.1.0
 * @create_at 2022-09-08 15:06:22
 * @description 频道监控
 * @title 频道监控
@@ -11,7 +11,7 @@
 const Config=[
     {
         name:"测试",    //备注名
-        id:"-1001781172029",  //监控频道的id
+        id:"-1001642487812",  //监控频道的id
         keyword:"开卡监控",     //触发关键词，可空
         container:[1],  //监控容器
         repo:"KingRan",     //触发后需要执行的拉库任务
@@ -179,19 +179,19 @@ function main(){
                     }
                     else
                         notify+="任务修改失败\n"
-                    if(crons[j].command.indexOf(config.startscript)!=-1){
+                    if(crons[j].command.indexOf(config.startscript)!=-1 && ids.indexOf(id)==-1 && !crons[j].pid){
                         ids.push(id)
                         names.push(crons[j].name)
                     }
                 }
             }
-            else if(scriptname){
+            if(scriptname){
                 notify+="消息中含脚本名【"+scriptname.toString()+"】，可能为线报\n"
                 scriptname.forEach(script=>{
                     let cron=crons.find(cron=>cron.command.indexOf(script)!=-1)
                     if(cron){
                         let id=cron.id?cron.id:cron._id
-                        if(ids.indexOf(id)==-1){
+                        if(ids.indexOf(id)==-1 && !crons[j].pid){
                             ids.push(id)
                             names.push(cron.name)
                         }
@@ -213,10 +213,10 @@ function main(){
         else if(tostop){
             let temp=[]
             for(let j=0;j<crons.length;j++){
-                if(!crons[j].pid)
-                    break
-                else if(crons[j].command.indexOf(config.stopscript)!=-1)
+                if(crons[j].pid && crons[j].command.indexOf(config.stopscript)!=-1)
                     temp.push(crons[j])
+                // if(!crons[j].pid)
+                //     break
             }
             if(!temp.length)
                 notify+="没有需要停止的任务\n"
