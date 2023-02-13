@@ -191,7 +191,7 @@ function main(){
                     let cron=crons.find(cron=>cron.command.indexOf(script)!=-1)
                     if(cron){
                         let id=cron.id?cron.id:cron._id
-                        if(ids.indexOf(id)==-1 && !crons[j].pid){
+                        if(ids.indexOf(id)==-1 && !cron.pid){
                             ids.push(id)
                             names.push(cron.name)
                         }
