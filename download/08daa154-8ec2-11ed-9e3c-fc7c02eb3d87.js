@@ -79,7 +79,7 @@ function main(){
     }
     let QLS=ql.QLS()
     if(!QLS){
-        console.log("未对接青龙")
+        console.log("青龙对接失败")
         return
     }
     notify+=config.name+"触发监控\n-------------------\n"
@@ -158,59 +158,8 @@ function main(){
                     }
                 }
             }
-            if(tostart){
-                for(let j=0;j<crons.length;j++){
-                    if(crons[j].name==latest.name)
-                        break
-                    if(crons[j].pid)
-                        continue
-                    notify+="★新增任务：【"+crons[j].name+"】\n"
-                    let command=crons[j].command
-                    let schedule=crons[j].schedule
-                    let id=crons[j].id?crons[j].id:crons[j]._id
-                    if(config.modify&&config.modify.suffix)
-                        command+=" "+config.modify.suffix
-                    if(config.modify&&config.modify.schedule)
-                        schedule=config.modify.schedule
-                    if(ql.Update_QL_Cron(QLS[i].host,QLS[i].token,id,crons[j].name,command,schedule)){
-                    if(true)
-                        notify+="执行命令修改为："+command+"\n"
-                        notify+="定时规则修改为:"+schedule+"\n"
-                    }
-                    else
-                        notify+="任务修改失败\n"
-                    if(crons[j].command.indexOf(config.startscript)!=-1 && ids.indexOf(id)==-1 && !crons[j].pid){
-                        ids.push(id)
-                        names.push(crons[j].name)
-                    }
-                }
-            }
-            if(scriptname){
-                notify+="消息中含脚本名【"+scriptname.toString()+"】，可能为线报\n"
-                scriptname.forEach(script=>{
-                    let cron=crons.find(cron=>cron.command.indexOf(script)!=-1)
-                    if(cron){
-                        let id=cron.id?cron.id:cron._id
-                        if(ids.indexOf(id)==-1 && !cron.pid){
-                            ids.push(id)
-                            names.push(cron.name)
-                        }
-                    }
-                    else
-                        notify+="未找到脚本"+script+"\n"
-                })
-            }
-            if(ids.length){
-                if(ql.Start_QL_Crons(QLS[i].host,QLS[i].token,ids))
-                //if(true)
-                    notify+="成功执行【"+names.toString()+"】\n"
-                else
-                    notify+="执行【"+names.toString()+"】失败\n"
-            }
-            else 
-                notify+="没有需要执行的任务\n"
         }
-        else if(tostop){
+        if(tostop){
             let temp=[]
             for(let j=0;j<crons.length;j++){
                 if(crons[j].pid && crons[j].command.indexOf(config.stopscript)!=-1)
@@ -227,6 +176,59 @@ function main(){
                 else console.log("停止"+temp.map(cron=>cron.name)+"失败")
             }
         }
+        else if(tostart){
+            for(let j=0;j<crons.length;j++){
+                if(crons[j].name==latest.name)
+                    break
+                if(crons[j].pid)
+                    continue
+                notify+="★新增任务：【"+crons[j].name+"】\n"
+                let command=crons[j].command
+                let schedule=crons[j].schedule
+                let id=crons[j].id?crons[j].id:crons[j]._id
+                if(config.modify){
+                    if(config.modify.suffix)
+                        command+=" "+config.modify.suffix
+                    if(config.modify.schedule)
+                        schedule=config.modify.schedule
+                    if(ql.Update_QL_Cron(QLS[i].host,QLS[i].token,id,crons[j].name,command,schedule)){
+                    //if(true){
+                        notify+="执行命令修改为："+command+"\n"
+                        notify+="定时规则修改为:"+schedule+"\n"
+                    }
+                    else
+                        notify+="任务修改失败\n"
+                }
+                if(crons[j].command.indexOf(config.startscript)!=-1 && ids.indexOf(id)==-1 && !crons[j].pid){
+                    ids.push(id)
+                    names.push(crons[j].name)
+                }
+            }
+        }
+        else if(scriptname){
+            notify+="消息中含脚本名【"+scriptname.toString()+"】，可能为线报\n"
+            scriptname.forEach(script=>{
+                let cron=crons.find(cron=>cron.command.indexOf(script)!=-1)
+                if(cron){
+                    let id=cron.id?cron.id:cron._id
+                    if(ids.indexOf(id)==-1 && !cron.pid){
+                        ids.push(id)
+                        names.push(cron.name)
+                    }
+                }
+                else
+                    notify+="脚本"+script+"未找到或者真正运行中\n"
+            })
+        }
+        if(ids.length){
+            if(ql.Start_QL_Crons(QLS[i].host,QLS[i].token,ids))
+            //if(true)
+                notify+="成功执行【"+names.toString()+"】\n"
+            else
+                notify+="执行【"+names.toString()+"】失败\n"
+        }
+        else 
+            notify+="没有需要执行的任务\n"
     }
     //console.log(notify)
     sillyGirl.notifyMasters(notify)

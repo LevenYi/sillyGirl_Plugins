@@ -101,7 +101,7 @@ const NotifyMode=false
 const BlackList=["162726413","5036494307"]
 
 //口令关键词黑名单,用于屏蔽某些不想监控的口令，仅对非管理员起效
-const JDCodeBlackList=["年兽","年夜饭","队","助","红包","就差"]
+const JDCodeBlackList=["年兽","年夜饭","助","红包"]
 
 //如果跟返利冲突，是否干掉返利
 const FuckRebate=true
