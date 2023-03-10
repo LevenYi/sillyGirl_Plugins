@@ -21,7 +21,7 @@
  * @public false
 * @disable false
 * @priority 1
-* @version v1.4.4
+* @version v1.4.5
 */
 
 
@@ -143,7 +143,7 @@ const outputOriURL=true
 2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防捣乱(错误变量)，修改单一线报触发多个监控任务时仅触发其中一个任务
 2023-1-17 v1.4.3 增加监控排序与移动功能,更新部分内置规则
 2023-2-12 v1.4.4 修复多容器队列更新问题
-2023-3-10 v1.4.5 添加支持短链
+2023-3-10 v1.4.5 添加支持短链,更新部分内置规则
 
 /*****************数据存储******************/
 
@@ -399,13 +399,12 @@ function Spy_Manager() {
 		}
 		if (inp)
 			Menu(Listens, silent, targets)
-		inp=s.listen(WAIT)
-		if(inp)
-			inp=inp.getContent()
+		let temp=s.listen(WAIT)
+		inp=temp?temp.getContent():null
 		
 		if(exit(inp))	//退出
 			return
-		else if (inp == "a") {	//静默
+		else if (inp == "a") {	//静默设置
 			if (silent != "true"){
 				silent = "true"
 				s.reply("已开启静默!\n若需获取监控情况，可在完成设置后使用命令'set SpyNotify tg(或qq、wx) id'或'set SpyGroupNotify tg(或qq、wx) 群id'设置推送渠道")
@@ -474,15 +473,15 @@ function Spy_Manager() {
 			Listens.splice(Math.abs(inp) - 1, 1)
 		}
 
-		else if (inp > 0 && inp <= Listens.length) {
+		else if (inp > 0 && inp <= Listens.length) {	//监控任务管理
 			let temp=SpyItem(Listens[inp-1])
 			if(exit(temp))
 				return
 			else
 				Listens[inp-1]=temp
 		}
-		else
-			s.reply("输入错误！")
+		// else
+		// 	s.reply("输入错误！")
 	}
 }
 
@@ -2026,7 +2025,8 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: /(interactsaas|interact)\/index\?activityType=(10006|10070)/,
-			name: "邀请入会有礼（lzkj_loreal）",
+			name: "loreal邀请入会有礼",
+			script:"KingRan_KR/jd_lzkj_loreal_invite.js",
 			trans: [{
 				ori: "-1",
 				redi: "jd_lzkj_loreal_invite_url"//kr
@@ -2034,23 +2034,26 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: /interactsaas\/index\?activityType=(10020|10021|10026|10080)/,
-			name: "店铺抽奖（超级无线欧莱雅）",
+			name: "loreal幸运抽奖",
+			script:"KingRan_KR/jd_lzkj_loreal_draw.js",
 			trans: [{
 				ori: "-1",
 				redi: "jd_lzkj_loreal_draw_url"//kr
 			}]
 		},
 		{
-			keyword: /(interactsaas|interact)\/index\?activityType=10024/,
-			name: "加购有礼（超级无线欧莱雅）",
+			keyword: /interactsaas\/index\?activityType=10024/,
+			name: "loreal加购有礼",
+			script:"KingRan_KR/jd_lzkj_loreal_cart.js",
 			trans: [{
 				ori: "-1",
 				redi: "jd_lzkj_loreal_cart_url"//kr
 			}]
 		},
 		{
-			keyword: /(interactsaas|interact)\/index\?activityType=10069/,
-			name: "关注店铺有礼（超级无线欧莱雅",
+			keyword: /interactsaas\/index\?activityType=10069/,
+			name: "loreal关注有礼",
+			script:"KingRan_KR/jd_lzkj_loreal_followShop.js",
 			trans: [{
 				ori: "-1",
 				redi: "jd_lzkj_loreal_followShop_url"//kr
@@ -2300,43 +2303,93 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /interact\/index\?activityType=10006/,
-			name: "loreal邀请入会有礼",
+			keyword: /lorealjdcampaign-rc\.isvjcloud.comapps\/interact\/index\?activityType=10001/,
+			name: "loreal_interact签到",
+			script:"feverrun_my_scripts/jd_loreal_interact_ljqdysl.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_loreal_interact_yqrhyl_activityId"
+				redi: "jd_loreal_interact_ljqdysl_Ids"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10006/,
-			name: "邀请入会有礼",
+			keyword: /interact\/index\?activityType=10006/,
+			name: "loreal邀请入会有礼",
+			script:"feverrun_my_scripts/jd_lzkj_interact_yqrhyl.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_yqrhyl_activityId"
+				redi: "jd_lzkj_interact_yqrhyl_activityId"
+			}]
+		},
+		// {
+		// 	keyword: /interactsaas\/index\?activityType=10006/,
+		// 	name: "邀请入会有礼",
+		// 	script:"",
+		// 	trans: [{
+		// 		ori: "activityId",
+		// 		redi: "jd_lzkj_interactsaas_yqrhyl_activityId"
+		// 	}]
+		// },
+		{
+			keyword: /interactsaas\/index\?activityType=10023/,
+			name: "lzkj_interactsaas日历签到",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_rlqd.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_rlqd_Ids"
 			}]
 		},
 		{
 			keyword: /interactsaas\/index\?activityType=10024/,
 			name: "lzkj_interactsaas加购有礼",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_jgyl.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkj_interactsaas_jgyl_activityId"
 			}]
 		},
 		{
+			keyword: /interactsaas\/index\?activityType=10040/,
+			name: "lzkj_interactsaas签到",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_qrqd.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_qrqd_Ids"
+			}]
+		},
+		{
+			keyword: /interactsaas\/index\?activityType=10047/,
+			name: "lzkj_interactsaas盖楼有礼",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_glyl.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_glyl_Ids"
+			}]
+		},
+		{
+			keyword: /interactsaas\/index\?activityType=10053/,
+			name: "lzkj_interactsaas关注商品有礼",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_gzspyl.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_gzspyl_activityId"
+			}]
+		},
+		{
 			keyword: /interactsaas\/index\?activityType=10069/,
 			name: "lzkj_interactsaas关注店铺有礼",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_gzyl.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkj_interactsaas_gzyl_activityId"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10053/,
-			name: "lzkj_interactsaas关注商品有礼",
+			keyword: /interactsaas\/index\?activityType=10070/,
+			name: "lzkj_interactsaas邀请好友入会",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_yqhyrh.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_gzspyl_activityId"
+				redi: "jd_lzkj_interactsaas_yqhyrh_activityId"
 			}]
 		},
 
