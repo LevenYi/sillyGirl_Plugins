@@ -21,7 +21,7 @@ const Config=[
             schedule:"2 2 29 2 *"   //对新增任务修改定时规则
         },
         otherscript:true,   //是否在频道消息中出现js py等脚本名时自动执行该脚本
-        stopword:["无","停","干","没","不"],      //频道消息出现关键词自动停止任务stopscript任务
+        stopword:["停","干","没","不"],      //频道消息出现关键词自动停止任务stopscript任务
         stopscript:"opencard"   //需要监控停止执行的任务关键词
     },
     {
@@ -36,7 +36,7 @@ const Config=[
             schedule:"2 2 29 2 *"   
         },
         otherscript:true,   
-        stopword:["无","停","干","没","不"],      
+        stopword:["停","干","没","不"],      
         stopscript:"opencard"   
     },
         {
@@ -51,7 +51,7 @@ const Config=[
             schedule:"2 2 29 2 *"   
         },
         otherscript:true,
-        stopword:["无","停","干","没","不"],      
+        stopword:["停","干","没","不"],      
         stopscript:"opencard"   
     }
 ]
@@ -176,6 +176,21 @@ function main(){
                 else console.log("停止"+temp.map(cron=>cron.name)+"失败")
             }
         }
+        else if(scriptname){
+            notify+="消息中含脚本名【"+scriptname.toString()+"】，可能为线报\n"
+            scriptname.forEach(script=>{
+                let cron=crons.find(cron=>cron.command.indexOf(script)!=-1)
+                if(cron){
+                    let id=cron.id?cron.id:cron._id
+                    if(ids.indexOf(id)==-1 && !cron.pid){
+                        ids.push(id)
+                        names.push(cron.name)
+                    }
+                }
+                else
+                    notify+="脚本"+script+"未找到或者真正运行中\n"
+            })
+        }
         else if(tostart){
             for(let j=0;j<crons.length;j++){
                 if(crons[j].name==latest.name)
@@ -204,21 +219,6 @@ function main(){
                     names.push(crons[j].name)
                 }
             }
-        }
-        else if(scriptname){
-            notify+="消息中含脚本名【"+scriptname.toString()+"】，可能为线报\n"
-            scriptname.forEach(script=>{
-                let cron=crons.find(cron=>cron.command.indexOf(script)!=-1)
-                if(cron){
-                    let id=cron.id?cron.id:cron._id
-                    if(ids.indexOf(id)==-1 && !cron.pid){
-                        ids.push(id)
-                        names.push(cron.name)
-                    }
-                }
-                else
-                    notify+="脚本"+script+"未找到或者真正运行中\n"
-            })
         }
         if(ids.length){
             if(ql.Start_QL_Crons(QLS[i].host,QLS[i].token,ids))

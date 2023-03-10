@@ -4,8 +4,7 @@
 * @description 口令解析、链接解析、变量转换、变量监控多合一，须安装something与qinglong模块，安装之后务必查看插件内详细说明与配置
 * @title 白眼
 * @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
-* @rule raw [\s\S]*https:\/\/(.{2,}\.isvj(clou)?d\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
-* @rule raw [\s\S]*(pro(dev)?|shop|h5)\.m\.jd\.com[\s\S]*
+* @rule raw [\s\S]*\.jd\.com[\s\S]*
 * @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+[^\\]"[\s\S]*
 * @rule raw ImportWhiteEye=[\S\s]+
 * @rule 导出白眼
@@ -21,12 +20,14 @@
 * @rule 天王盖地虎
  * @public false
 * @disable false
-* @priority 10
+* @priority 1
 * @version v1.4.4
 */
 
 
 /*****************************详细说明***********************
+* @rule raw [\s\S]*https:\/\/(.{2,}\.isvj(clou)?d\.com(\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\(\)\*\+,;\=]*)?)[\s\S]*
+* @rule raw [\s\S]*(pro(dev)?|shop|h5)\.m\.jd\.com[\s\S]*
 本插件有概率会导致跟返利或者其他插件冲突导致他们无法使用，解决方法是提高其他冲突插件的权限或者将白眼配置项的FuckRebate值设置为false
 
 监控目标:
@@ -105,6 +106,9 @@ const JDCodeBlackList=["年兽","年夜饭","助","红包"]
 
 //如果跟返利冲突，是否干掉返利
 const FuckRebate=true
+
+//如果线报为短链，是否输出原始链接
+const outputOriURL=true
 /************************************************/
 
 /*
@@ -139,7 +143,7 @@ const FuckRebate=true
 2023-1-10 v1.4.2 增加可自定义推送机器人(需升级something模块)，监控防捣乱(错误变量)，修改单一线报触发多个监控任务时仅触发其中一个任务
 2023-1-17 v1.4.3 增加监控排序与移动功能,更新部分内置规则
 2023-2-12 v1.4.4 修复多容器队列更新问题
-
+2023-3-10 v1.4.5 添加支持短链
 
 /*****************数据存储******************/
 
@@ -204,6 +208,7 @@ const s = sender
 const db = new Bucket("jd_cookie")
 const LIMIT = 60	//循环次数限制，防止意外死循环
 const WAIT = 60 * 1000	//输入等待时间
+let message=""
 
 function main() {
 	let msg = s.getContent()
@@ -217,6 +222,8 @@ function main() {
 	else if(QLS.length){
 		QLS.forEach((QL,i)=>QLS[i].token=ql.Get_QL_Token(QL.host,QL.client_id,QL.client_secret))
 	}
+	if(!FuckRebate)	//是否冲突处理
+		s.continue()
 	if (IsTarget() || s.isAdmin()) {//仅对监控目标和管理员消息监控
 	  //try{	
 		//变量监控
@@ -238,34 +245,51 @@ function main() {
 						urls.push(values[index])
 					})
 				if(urls.length){
-					Notify("未加入监控队列，尝试解析变量链接")
+					message+= "\n"+"未加入监控队列，尝试解析变量链接"
 					Urls_Decode(urls)
 				}
 			}
 		}
 		//链接监控
-		else if (msg.match(/.isvj(clou)?d/) || msg.match(/\.\jd\.com/) ) {
+		else if (msg.match(/https/)) {
 			let urls = msg.match(/https:\/\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\*\+,%;\=]*/g).map(url=>decodeURIComponent(url))
-			//console.log(urls.toString())
-			Urls_Decode(urls)
-			if(FuckRebate&&s.getUserId()!=s.getChatId())
-				return
+			if(msg.match("u.jd.com")){	//短链
+				let notify=s.getContent()
+				for(let i=0;i<urls.length;i++){
+        			let temp= request(urls[i]).body.match(/(?<=hrl=')https:\/\/u\.jd\.com[^']+/)
+        			if(temp){
+            			let resp=data=request({
+                			url:temp[0],
+                			method:"get",
+                			allowredirects: false, 
+            			})
+            			if(resp.status==302){
+							notify=notify.replace(urls[i],resp.headers["Location"])
+                			//console.log(typeof(resp.headers["Location"])+"\n\n"+resp.headers["Location"])
+							urls[i]=resp.headers["Location"][0]
+            			}
+					}
+        		}
+				if(outputOriURL)
+					Notify("『白眼』获取真实链接:\n"+notify)
+			}
+			//console.log(JSON.stringify(urls))
+			if(urls.find(url=>url.match(/isvj(clou)?d\.com/) || url.match(/(pro(dev)?|shop|h5)\.m\.jd\.com/)))
+				Urls_Decode(urls)
 		}
 		//口令监控
 		else if (msg.match(/[(|)|#|@|$|%|¥|￥|!|！][0-9a-zA-Z]{10,14}[(|)|#|@|$|%|¥|￥|!|！]/g) != null) {
-			//console.log("口令")
-			JDCODE_Decode(msg)			
-			if(FuckRebate)
-				return
+			JDCODE_Decode(msg)	
 		}
 	//   }
 	//   catch(err){
-	// 		Notify("发生错误，请联系开发者\n"+err)
+	// 		message+= "\n"+"发生错误，请联系开发者\n"+err
 	// 		return
 	//   }
 	}
-	s.continue()
 	if (!s.isAdmin()) {//其他命令为管理员命令
+		if(message)
+			Notify(message)
 		return
 	}
 
@@ -329,6 +353,8 @@ function main() {
 		db.set("env_listens_backup", "")
 		s.reply("已删除白眼监控任务、静默设置、监控目标、变量转换、自定义链接解析、和ql spy备份数据")
 	}
+	if(message)
+		Notify(message)
 	return
 }
 
@@ -444,14 +470,8 @@ function Spy_Manager() {
 			}
 		}
 
-		else if (inp < 0) {	//删除监控任务
-			try {
-				Listens.splice(Math.abs(inp) - 1, 1)
-			}
-			catch (err) {
-				s.reply("输入有误，请重新选择")
-				continue
-			}
+		else if (inp < 0 && Math.abs(inp)<=Listens.length) {	//删除监控任务
+			Listens.splice(Math.abs(inp) - 1, 1)
 		}
 
 		else if (inp > 0 && inp <= Listens.length) {
@@ -461,6 +481,8 @@ function Spy_Manager() {
 			else
 				Listens[inp-1]=temp
 		}
+		else
+			s.reply("输入错误！")
 	}
 }
 
@@ -611,7 +633,7 @@ function Spy_Clear() {
 		db.set("env_listens_new", JSON.stringify(Listens))
 	}
 	db.set("spy_locked", false)//开锁
-	Notify("清空任务队列完成")
+	message+= "\n"+"清空任务队列完成"
 	return
 }
 
@@ -626,7 +648,7 @@ function Spy_RecordReset() {
 		db.set("env_listens_new", JSON.stringify(Listens))
 	}
 	db.set("spy_locked", false)//开锁
-	Notify("清理记录完成")
+	message+= "\n"+"清理记录完成"
 	return
 }
 
@@ -678,7 +700,7 @@ function Recovery_qlspy() {
 	}
 	else {
 		db.set("env_listens", data)
-		Notify("已恢复,可前往ql spy查看")
+		message+= "\n"+"已恢复,可前往ql spy查看"
 	}
 }
 
@@ -689,7 +711,7 @@ function Env_Listen(envs,only_one) {
 
 	let data=db.get("env_listens_new")
 	if(!data){
-		Notify("无监控任务，请先添加或者导入监控任务,或者在插件内关闭监控开关")
+		message+= "\n"+"无监控任务，请先添加或者导入监控任务,或者在插件内关闭监控开关"
 		return true
 	}
 	//分析变量是否为监控变量，是否为重复线报，变量对应监控任务是否仅管理员可用，以及加入任务队列后是否执行
@@ -769,9 +791,9 @@ function Env_Listen(envs,only_one) {
 	// 		console.log(listen.Name+"\n"+ JSON.stringify(listen.TODO))
 	// })
 	if(notify)
-		Notify(notify)
+		message+= "\n"+notify
 	else{
-		Notify("未监控该变量，已忽略")
+		message+= "\n"+"未监控该变量，已忽略"
 		return false
 	}
 	if (flag){
@@ -798,13 +820,13 @@ function JDCODE_Decode(JDCODE) {
 		if (info == null){
 			info = st.WindfggDecode(JDCODE)
 			if (info == null){
-				Notify("解析失败")
+				message+= "\n"+"解析失败"
 				return null
 			}
 		}
 	}
 	//console.log(JSON.stringify(info))
-	Notify(st.ToHyperLink(s.getPlatform(),info.jumpUrl,info.title))//口令解析结果通知，不需要自行注释
+	message+= "\n"+st.ToHyperLink(s.getPlatform(),info.jumpUrl,info.title)//口令解析结果通知，不需要自行注释
 	Urls_Decode([info.jumpUrl])
 }
 
@@ -845,7 +867,7 @@ function Urls_Decode(urls) {
 		})
 	}
 	//console.log(JSON.stringify(envs))
-	Notify(notify)	//链接解析结果通知，不需要自行注释
+	message+= "\n"+notify	//链接解析结果通知，不需要自行注释
 	if (envs.length){
 		let only_one=false
 		if(urls.length==1)	//如果在一个链接中解析出多个变量，后续监控处理择一加入队列
@@ -945,7 +967,7 @@ function Que_Manager(QLS) {
 	while (true) {
 		let now = (new Date()).getTime()
 		if (--limit < 0) {
-			Notify("疑似陷入死循环，清除队列自动退出")
+			message+= "\n"+"疑似陷入死循环，清除队列自动退出"
 			Spy_Clear()
 			break
 		}
@@ -975,6 +997,7 @@ function Que_Manager(QLS) {
 		//对各个容器执行任务
 		let notify = ""
 		let update=false	//是否更新数据开始队列下一个任务
+		let flag=true	//是否所有容器异常
 		let record=[]	//记录处于冷却状态等待下一次执行的任务
 		for (let i = 0; i < QLS.length; i++) {
 			console.log(QLS[i].name+":执行\n"+JSON.stringify(QLS[i].envs)+"\n"+QLS[i].keywords)
@@ -989,20 +1012,21 @@ function Que_Manager(QLS) {
 			}
 			else if (!ql.Modify_QL_Config(QLS[i].host, QLS[i].token, QLS[i].envs)) {
 				notify += "【执行结果】:失败\n" 
-				notify += "【故障原因】:"+QLS[i].name + "配置文件变量修改失败,可能容器挂了或者未支持该青龙版本\n"
+				notify += "【故障原因】:【"+QLS[i].name + "】配置文件变量修改失败\n"
 				continue
 			}
 			let crons = ql.Get_QL_Crons(QLS[i].host, QLS[i].token)
 			if (!crons ) {					
 				notify += "【执行结果】:失败\n" 
-				notify += "【故障原因】:"+QLS[i].name + "获取青龙任务失败,可能容器挂了或者未支持该青龙版本\n"
+				notify += "【故障原因】:【"+QLS[i].name + "】获取青龙任务失败\n"
 				continue
 			}
-			//在各个容器找到需要执行的任务并执行
+			//在容器找到需要执行的任务并执行
 			let todo=[]//记录将要执行的青龙任务
 			for(let j=0;j<QLS[i].keywords.length;j++){
 				let cron=crons.find(cron=>(cron.name&&cron.name.indexOf(QLS[i].keywords[j])!=-1)||(cron.command&& cron.command.indexOf(QLS[i].keywords[j])!=-1))
 				if(cron){//找到需要执行的青龙任务
+					flag=false
 					if(!cron.pid)
 						todo.push(cron)
 					else{//任务正在执行，即上次任务尚未执行完,分析是否需要强制停止前一个任务并开始下一个任务
@@ -1027,7 +1051,7 @@ function Que_Manager(QLS) {
 				else{
 					// let temp=QLS[i].keywords[j]
 					// if(temp.indexOf("_")!=-1 && (s.getPlatform()=="tg"||s.getPlatform()=="pgm"))
-					let	temp=QLS[i].keywords[j].replace(/_/g,"\_")
+					let	temp=QLS[i].keywords[j].replace(/_/g,"\\_")
 					notify += "【执行结果】:【"+QLS[i].name + "】未找到任务" +temp+"\n" 
 					notify += "【故障原因】:可能监控任务配置有误,或青龙挂了，或未支持该青龙版本\n"
 				}
@@ -1062,10 +1086,10 @@ function Que_Manager(QLS) {
 			if(Listens[i].TODO.length)
 				done=false
 		}
-		if(update)
+		if(update || flag)
 			db.set("env_listens_new", JSON.stringify(Listens))
 		if(notify)
-			Notify(notify)
+			message+= "\n"+notify
 
 		if(done){
 			db.set("spy_locked", false)	//开锁
@@ -1219,7 +1243,7 @@ function EnvsTran(envs){
 		let tran=trans.find(tran=>tran.ori==env.name)
 		if(tran){
 			envs[i].name=tran.redi
-			Notify(st.ToEasyCopy(s.getPlatform(),"转换•\n"+tran.name,"export " + tran.redi + "=\"" + env.value + "\""))
+			message+= "\n"+st.ToEasyCopy(s.getPlatform(),"转换•\n"+tran.name,"export " + tran.redi + "=\"" + env.value + "\"")
 		}
 	})
 	return envs		

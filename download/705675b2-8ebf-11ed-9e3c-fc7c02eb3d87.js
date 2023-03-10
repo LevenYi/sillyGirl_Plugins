@@ -54,18 +54,38 @@ function main(){
     }
 
     let temp=elm.get("ql_token")
-    let token=temp?JSON.parse(temp):ql.Get_QL_Token(Host,CilentID,CilentSecret)
-    let envs=ql.Get_QL_Envs(Host,token)
-    if(!envs){
+    let token=null
+    let envs=null
+    if(temp){
+        token=JSON.parse(temp)
+        envs=ql.Get_QL_Envs(Host,token)
+        if(!envs){
+            console.log("token疑似过期")
+            token=ql.Get_QL_Token(Host,CilentID,CilentSecret)
+            if(!token){
+                s.reply('token获取失败')
+                return
+            }
+            else{
+                envs=ql.Get_QL_Envs(Host,token)
+                elm.set("ql_token",JSON.stringify(token))
+            }
+        }
+    }
+    else{
         token=ql.Get_QL_Token(Host,CilentID,CilentSecret)
         if(!token){
-        s.reply("token获取失败")
-        return
+            s.reply("token获取失败")
+            return
         }
         else{
             envs=ql.Get_QL_Envs(Host,token)
-            elm.set('ql_token',JSON.stringify(token))
+            elm.set("ql_token",JSON.stringify(token))
         }
+    }
+    if(!envs){
+        s.reply("变量获取失败")
+        return
     }
 
     if(s.getContent()=="饿了么"){

@@ -6,6 +6,7 @@
 * @title 京豆详情
 * @platform qq wx tg pgm sxg
 * @rule 最近\d+天收入
+* @rule 豆
  * @public false
 */
 
@@ -13,8 +14,8 @@ const s = sender
 const ql=require("qinglong")
 const st=require("something")
 
-function main(){
-    let days=Number(s.getContent().match(/\d+/g)[0]);
+function main(){	
+    let days=s.getContent()=="豆"?1:Number(s.getContent().match(/\d+/g)[0]);
 	let QLS=ql.QLS()
 	if(!QLS){
 		s.reply("查询失败，请联系管理员")//未对接青龙
