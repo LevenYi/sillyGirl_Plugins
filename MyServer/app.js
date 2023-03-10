@@ -38,7 +38,8 @@ app.post('/shell',(req, res)=>{
 			res.send({message:"no stdout"})
 		}
 		else{
-			res.send({message:stdout})
+			res.send({message:stdout.toString()})
+			console.log(stdout.toString().length)
 		}
 	});
 })
