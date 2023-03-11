@@ -21,7 +21,7 @@
  * @public false
 * @disable false
 * @priority 1
-* @version v1.4.5
+* @version v1.4.4
 */
 
 
@@ -289,6 +289,8 @@ function main() {
 	}
 	//console.log(message.replace(/_/,"\\_"))
 	if (!s.isAdmin()) {//其他命令为管理员命令
+		if(message)
+			Notify(message)
 		return
 	}
 
@@ -352,6 +354,8 @@ function main() {
 		db.set("env_listens_backup", "")
 		s.reply("已删除白眼监控任务、静默设置、监控目标、变量转换、自定义链接解析、和ql spy备份数据")
 	}
+	if(message)
+		Notify(message)
 	return
 }
 
@@ -629,7 +633,7 @@ function Spy_Clear() {
 		db.set("env_listens_new", JSON.stringify(Listens))
 	}
 	db.set("spy_locked", false)//开锁
-	message+= "\n"+"清空任务队列完成"
+	Notify("清空任务队列完成")
 	return
 }
 
@@ -644,7 +648,7 @@ function Spy_RecordReset() {
 		db.set("env_listens_new", JSON.stringify(Listens))
 	}
 	db.set("spy_locked", false)//开锁
-	message+= "\n"+"清理记录完成"
+	s.reply("清理记录完成")
 	return
 }
 
@@ -957,8 +961,6 @@ function Import_Spy(data) {//console.log(data)
 //处理任务队列 
 function Que_Manager(QLS) {
 	console.log("进行队列处理")
-	if(message)
-		Notify(message)
 	let limit = 100//死循环保险，防止陷入死循环
 	let t=1	//轮询间隔：分钟
 	//处理队列任务
@@ -1061,8 +1063,8 @@ function Que_Manager(QLS) {
 			}
 			let ids=todo.map(value=>value.id?value.id:value._id)
 			let names=todo.map(value=>value.name)
-			//if (ql.Start_QL_Crons(QLS[i].host, QLS[i].token, ids)) { //执行
-			if(true){ 
+			if (ql.Start_QL_Crons(QLS[i].host, QLS[i].token, ids)) { //执行
+			//if(true){ 
 				update=true
 				notify += "【执行结果】:【"+QLS[i].name + "】成功执行"+JSON.stringify(names)+"\n"  
 			}
