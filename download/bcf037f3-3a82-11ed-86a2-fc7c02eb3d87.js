@@ -107,7 +107,7 @@ const JDCodeBlackList=["年兽","年夜饭","助","红包"]
 //如果跟返利冲突，是否干掉返利
 const FuckRebate=true
 
-//如果线报为短链，是否输出原始链接
+//如果线报为短链，是否输出转链链接
 const outputOriURL=true
 /************************************************/
 
@@ -287,9 +287,8 @@ function main() {
 	// 		return
 	//   }
 	}
+	//console.log(message.replace(/_/,"\\_"))
 	if (!s.isAdmin()) {//其他命令为管理员命令
-		if(message)
-			Notify(message)
 		return
 	}
 
@@ -353,8 +352,6 @@ function main() {
 		db.set("env_listens_backup", "")
 		s.reply("已删除白眼监控任务、静默设置、监控目标、变量转换、自定义链接解析、和ql spy备份数据")
 	}
-	if(message)
-		Notify(message)
 	return
 }
 
@@ -613,7 +610,7 @@ function Spy_Status() {
 			let towait=Listens[i].Interval*60-Math.floor((now-last)/1000)
 			if(towait<0)
 				towait=0
-			if (towait>0)
+			if (towait>0||Listens[i].TODO.length)
 				notify+="★"
 			else
 				notify+="☆"
@@ -960,13 +957,16 @@ function Import_Spy(data) {//console.log(data)
 //处理任务队列 
 function Que_Manager(QLS) {
 	console.log("进行队列处理")
+	if(message)
+		Notify(message)
 	let limit = 100//死循环保险，防止陷入死循环
 	let t=1	//轮询间隔：分钟
 	//处理队列任务
 	while (true) {
+		let notify = ""
 		let now = (new Date()).getTime()
 		if (--limit < 0) {
-			message+= "\n"+"疑似陷入死循环，清除队列自动退出"
+			Notify( "疑似陷入死循环,清除队列自动退出")
 			Spy_Clear()
 			break
 		}
@@ -994,7 +994,6 @@ function Que_Manager(QLS) {
 			})
 		})
 		//对各个容器执行任务
-		let notify = ""
 		let update=false	//是否更新数据开始队列下一个任务
 		let flag=true	//是否所有容器异常
 		let record=[]	//记录处于冷却状态等待下一次执行的任务
@@ -1050,7 +1049,7 @@ function Que_Manager(QLS) {
 				else{
 					// let temp=QLS[i].keywords[j]
 					// if(temp.indexOf("_")!=-1 && (s.getPlatform()=="tg"||s.getPlatform()=="pgm"))
-					let	temp=QLS[i].keywords[j].replace(/_/g,"\\_")
+					let	temp=QLS[i].keywords[j]//.replace(/_/g,"\\_")
 					notify += "【执行结果】:【"+QLS[i].name + "】未找到任务" +temp+"\n" 
 					notify += "【故障原因】:可能监控任务配置有误,或青龙挂了，或未支持该青龙版本\n"
 				}
@@ -1062,8 +1061,8 @@ function Que_Manager(QLS) {
 			}
 			let ids=todo.map(value=>value.id?value.id:value._id)
 			let names=todo.map(value=>value.name)
-			if (ql.Start_QL_Crons(QLS[i].host, QLS[i].token, ids)) { //执行
-//			if(true){ 
+			//if (ql.Start_QL_Crons(QLS[i].host, QLS[i].token, ids)) { //执行
+			if(true){ 
 				update=true
 				notify += "【执行结果】:【"+QLS[i].name + "】成功执行"+JSON.stringify(names)+"\n"  
 			}
@@ -1088,7 +1087,7 @@ function Que_Manager(QLS) {
 		if(update || flag)
 			db.set("env_listens_new", JSON.stringify(Listens))
 		if(notify)
-			message+= "\n"+notify
+			Notify(notify)
 
 		if(done){
 			db.set("spy_locked", false)	//开锁
@@ -1251,10 +1250,24 @@ function EnvsTran(envs){
 //检查env{name:变量名,value:变量值}是否已存在队列[[{name:变量名,value:变量值}]]
 function IsIn(env, TODO) {
 	//	s.reply("env:"+JSON.stringify(env)+"\n\ntodo:"+JSON.stringify(TODO)+"\n\ndone:"+JSON.stringify(DONE))
-	for (let i = 0; i < TODO.length; i++)
-		for (j = 0; j < TODO[i].length; j++)
-			if (TODO[i][j].name == env.name && TODO[i][j].value == env.value)
-				return true
+	let activityId=null,isurl=false
+	if(env.name.match(/url/i)){
+		isurl=true
+		activityId=env.value.match(/(?<=(actId|code|activityId)=)[^&]+/)
+	}
+	for (let i = 0; i < TODO.length; i++){
+		for (j = 0; j < TODO[i].length; j++){
+			if (TODO[i][j].name == env.name){
+				if(TODO[i][j].value==env.value)
+					return true
+				else if(isurl){
+					let temp=TODO[i][j].value.match(/(?<=(actId|code|activityId)=)[^&]+/)
+					if(activityId && temp && activityId[0]==temp[0])
+						return true
+				}
+			}
+		}
+	}
 	return false
 }
 
