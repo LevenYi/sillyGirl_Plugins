@@ -53,7 +53,7 @@ module.exports = {
 	Task_QL_Script,
 	//自定义
 	QLS,
-	Async_QL_Envs,  
+	Sync_QL_Envs,  
 	Modify_QL_Config
 }
 
@@ -119,7 +119,8 @@ function Sample(){
 }
 
 //青龙变量name同步
-function Async_QL_Envs(from_host,from_token,to_host,to_token,name,value_keyword){
+//function Sync_QL_Envs(from_host,from_token,to_host,to_token,name,value_keyword){
+function Sync_QL_Envs(ql1,ql2,name,value_keyword){
 	let from_envs=Get_QL_Envs(from_host,from_token)
 	let to_envs=Get_QL_Envs(to_host,to_token)
 	if(!from_envs || !to_envs)
@@ -147,15 +148,15 @@ function Async_QL_Envs(from_host,from_token,to_host,to_token,name,value_keyword)
 		}
 		else
 			index=to_envs.findIndex(env=>env.name==from_envs[i].name)
-		let id=to_envs[index]._id?to_envs[index]._id:to_envs[index].id
 		if(index!=-1){
+			let id=to_envs[index]._id?to_envs[index]._id:to_envs[index].id
 			to_envs[index].value=from_envs[i].value
-			if(!Update_QL_Env(to_host,to_token,id,to_envs[index].name,to_envs[index].value,to_envs[index].remarks))
-				console.log(from_envs[i].name+"\n"+from_envs[i].value+"async update failed")
+			if(!Update_QL_Env(to_host,to_token,id,from_envs[i].name,from_envs[i].value,from_envs[i].remarks))
+				console.log(from_envs[i].name+"\n"+from_envs[i].value+"sync update failed")
 		}
 		else{
 			if(!Add_QL_Envs(to_host,to_token,from_envs[i].name,[from_envs[i]]))
-				console.log(from_envs[i].name+"\n"+from_envs[i].value+"async add failed")
+				console.log(from_envs[i].name+"\n"+from_envs[i].value+"sync add failed")
 		}
 	}
 }
@@ -388,7 +389,7 @@ function Get_QL_Env(host,token,id){
 	}
 }
 
-//添加青龙变量envs:[{name:变量名,value:变量值,remarks:变量备注}]数组,注：reamrks项必需
+//添加青龙变量envs:[{name:变量名,value:变量值,remarks:变量备注}]数组
 //成功返回环境变量对象
 function Add_QL_Envs(host,token,envs){
 	let resp=request({

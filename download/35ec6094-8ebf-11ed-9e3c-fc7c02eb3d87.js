@@ -19,9 +19,10 @@
 * @rule 查询\S+
 * @rule 查找 ?
 * @rule 查绑 ?
+* @rule 拉库
  * @public false
 * @admin true
-* @version v1.8.3
+* @version v1.8.4
 */
 
 /***********青龙管理******************
@@ -91,6 +92,7 @@
 //2022-9-12 v1.8.1 模块化
 //2022-9-12 v1.8.2 修复部分命令多容器选择的bug
 //2022-12-25 v1.8.3 更新qinglong模块token缓存机制
+//2023-3-22 v1.8.4 更新新版青龙拉库命令
 
 
 const s = sender
@@ -165,12 +167,42 @@ function main(){
 	
 	else if(msg=="ck去重")
 		s.reply(Reduce_JDCK_Repetition(QLS))
+
 	else if(msg.indexOf("查绑")!=-1)
 		s.reply(st.GetBind(s.getPlatform(),s.param(1)).join("\n"))
 
+	else if(msg=="拉库")
+		Repo(QLS)
 	return
 }
 
+
+function Repo(QLS){
+	QLS.forEach((QL,i)=>{
+		let index=0
+		QLS[i].subs=ql.Get_QL_Subs(QL.host,QL.token)
+		if(!QLS[i].subs){
+			s.reply(QL.name+"订阅获取失败")
+			return
+		}
+		else if(QLS[i].subs.length>1){
+			let tip="请选择拉库任务：\n"
+			QLS[i].subs.forEach((sub,j)=>tip+=(j+1)+"、"+sub.name+"\n")
+			s.reply(tip)
+			let inp=s.listen(60000)
+			if(!inp){
+				index=-1
+				s.reply("超时")
+				return
+			}
+			index=Number(inp.getContent())-1
+		}
+		if(index!=-1 && ql.Start_QL_Subs(QL.host,QL.token,[QLS[i].subs[index].id]))
+			s.reply("执行成功")
+		else
+			s.reply("执行失败")
+	})
+}
 
 function Start_qlCron(QLS,keyword){
 	let notify=""

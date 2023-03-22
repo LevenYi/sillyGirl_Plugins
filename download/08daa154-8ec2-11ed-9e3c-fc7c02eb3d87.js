@@ -6,6 +6,7 @@
 * @title 频道监控
 * @rule ?
  * @public false
+* @disable false
 */
 
 const Config=[

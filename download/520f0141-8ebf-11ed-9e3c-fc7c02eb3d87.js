@@ -524,7 +524,7 @@ function SendToTG(id, msg,reply_markup,token) {
 		if(JSON.parse(resp.body).ok)
 			return true
 		else{
-			console.log("SendToTG failed\n"+resp.body)
+			console.log("SendToTG failed\n"+resp.body+"\n"+msg)
 			delete option.body["parse_mode"]
 			return JSON.parse(request(option).body).ok
 		}

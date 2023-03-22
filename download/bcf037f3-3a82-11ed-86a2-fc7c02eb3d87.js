@@ -32,7 +32,7 @@
 
 监控目标:
 除设置的对象外，默认监控管理员消息
-注1：若要正常监控，除设置监控目标外，还需傻妞监听该目标（在傻妞后台-群组管理，添加监听目标群或者频道,建议同时在禁用群组内添加该群组，防止被钓鱼被ban）
+注1：若要正常监控，除设置监控目标外，还需傻妞监听该目标（在傻妞后台-群组管理，添加监听目标群或者频道,建议同时在禁言群组内添加该群组，防止被钓鱼被ban）
 注2：若使用人形傻妞，建议开启静默，防止被ban，另pagermaid插件shift与人形傻妞冲突，建议不要使用shift，可在开启静默后设置推送
 
 静默：是否针对非管理员静默
@@ -104,7 +104,7 @@ const BlackList=["162726413","5036494307"]
 //口令关键词黑名单,用于屏蔽某些不想监控的口令，仅对非管理员起效
 const JDCodeBlackList=["年兽","年夜饭","助","红包"]
 
-//如果跟返利冲突，是否干掉返利
+//使用傻妞返利与比价的用户，需将本项设置为false
 const FuckRebate=true
 
 //如果线报为短链，是否输出转链链接
@@ -222,7 +222,7 @@ function main() {
 	else if(QLS.length){
 		QLS.forEach((QL,i)=>QLS[i].token=ql.Get_QL_Token(QL.host,QL.client_id,QL.client_secret))
 	}
-	if(!FuckRebate)	//是否冲突处理
+	if(!FuckRebate)	//插件冲突处理
 		s.continue()
 	if (IsTarget() || s.isAdmin()) {//仅对监控目标和管理员消息监控
 	  //try{	
@@ -274,7 +274,9 @@ function main() {
 					Notify("『白眼』获取真实链接:\n"+notify)
 			}
 			//console.log(JSON.stringify(urls))
-			if(urls.find(url=>url.match(/isvj(clou)?d\.com/) || url.match(/(pro(dev)?|shop|h5)\.m\.jd\.com/)))
+			if(FuckRebate)
+				Urls_Decode(urls)
+			else if(urls.find(url=>url.match(/isvj(clou)?d\.com/) || url.match(/(pro(dev)?|shop|h5)\.m\.jd\.com/)))
 				Urls_Decode(urls)
 		}
 		//口令监控
@@ -718,12 +720,10 @@ function Env_Listen(envs,only_one) {
 	let notify = ""
 	let flag=false	//是否有任务加入队列
 	let unlock = true	//是否解锁处理任务队列
-	let enough=false	//用于判断是否继续匹配，注：当only_one为true时，envs中的变量为同一个活动解析得到的不同变量，只在监控任务中匹配其一
+	let ismatched=false	//用于判断是否继续匹配，注：当only_one为true时，envs中的变量为同一个活动解析得到的不同变量，只在监控任务中匹配其一
 	let now = (new Date()).getTime()
 	let Listens = JSON.parse(data)
 	envs.forEach(env=>{
-		if(enough)
-			return
 		if(env.value.match(/^(\w)\1+$/)){
 			notify+=st.ToEasyCopy(s.getPlatform(),"监控结果",env.value)+"疑似错误变量，忽略\n"
 			return
@@ -733,7 +733,7 @@ function Env_Listen(envs,only_one) {
 				Listens[i]["TODO"] = []
 			if (!Listens[i]["DONE"])
 				Listens[i]["DONE"] = []
-			//根据上次任务执行时间,分析处理队列过程中是否不正常退出导致队列没能处理完并开锁
+			//根据上次任务执行时间,分析处理队列过程中是否不正常退出(傻妞重启或者其他原因)导致队列没能处理完并开锁
 			if (Listens[i].LastTime) {
 				let last = (new Date(Listens[i].LastTime)).getTime()
 				if (Listens[i].Interval) {
@@ -761,16 +761,21 @@ function Env_Listen(envs,only_one) {
 				// }
 				//console.log(JSON.stringify(envs[j])+"\n\n"+JSON.stringify(Listens[i].DONE))
 				else if (IsIn(env, Listens[i].TODO) || IsIn(env, Listens[i].DONE)) {
-					if(env.length>1)
-						notify+="【监控结果】:重复变量" + envs[j].value + "，忽略\n"
+					if(envs.length>1)
+						notify+="【监控结果】:重复变量" + env.value + " ，忽略\n"
 					else
 						notify+="【监控结果】:重复变量，忽略\n"
 					return
 				}
+				else if(ismatched){
+					notify+="【监控结果】:触发其他任务，忽略"
+					Listens[i].DONE.push([env])
+					return
+				}
 				else{	//将变量env加入任务Listen[i]的任务队列
 					flag=true
-					if(only_one)
-						enough=true
+					if(only_one && !ismatched)
+						ismatched=true
 					notify+="【监控结果】:加入队列\n"
 					if(Listens[i].TODO.length){
 						//队列第一个任务已存在相同变量名，直接将变量加入队列，否则可能该监控任务可能需多变量，将变量加入前一个任务
@@ -1932,15 +1937,6 @@ var UrlDecodeRule =[
 			trans: [{
 				ori: "-1",
 				redi: "jd_wxKnowledgeActivity_activityUrl"//KR
-			}]
-		},
-
-		{
-			keyword: "https://cjhy-isv.isvjcloud.com/wxKnowledgeActivity/activity",
-			name: "CJ知识超人",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_cjwxKnowledgeActivity_activityId"//kr
 			}]
 		},
 		{
