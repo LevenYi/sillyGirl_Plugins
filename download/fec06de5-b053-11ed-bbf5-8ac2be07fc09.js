@@ -3,7 +3,7 @@
  * @version v1.0.0
 * @create_at 2022-09-19 15:06:22
 * @description 对接homeassistant小爱音箱
-* @title homeassiatant远程控制小爱音箱
+* @title homeassiatant远程控制小爱音箱，不可用于小爱对话
 * @rule 小爱 ?
 * @priority 9
  * @public false
@@ -61,11 +61,10 @@ function xiaoai(addr,token,entity_id,text,silent){
             "entity_id": entity_id,
             "text":text,
             "execute":true,
-           // "silent":silent,
+            "silent":silent,
             "throw":true
         }
     }
-    console.log(JSON.stringify(option.body))
     let resp=request(option)
     if(resp.status==200)
         return true
