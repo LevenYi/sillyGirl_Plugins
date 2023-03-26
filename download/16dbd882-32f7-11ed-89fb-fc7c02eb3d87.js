@@ -195,6 +195,7 @@ function main(){
 		let pin=""
 		let temp=NolanQR()
 		if(temp){
+			console.log("NolanQR在线")
 			if(temp==true)	//超时退出
 				return
 			else
@@ -202,16 +203,22 @@ function main(){
 		}
 		else{
 			temp=RabbitQR()
-			if(!temp){
+			if(temp){
+				console.log("rabbitQR在线")
+				if(temp==true)	//超时退出
+					return
+				else
+					pin=temp
+			}
+			else{
 				s.reply("扫码暂时不可用,已通知管理员尽快修复,您可以使用发送“呆瓜”获取其他登陆方式")
 				return
 			}
 		}
-		pin=temp
 		let bind=new Bucket("pin"+s.getPlatform().toUpperCase())
 		bind.set(pin,s.getUserId())//用户绑定
 		UpdateLoginDate(pin)//更新账号更新时间
-        s.reply(data.message+"\n账号更新中...请等待几分钟后再查询账号信息")
+        s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 		sillyGirl.notifyMasters("报告老板！客户[ "+pin+" ]成功通过nolan扫码登陆\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
 	
 		//更新变量
