@@ -2,8 +2,8 @@
 * @author https://t.me/sillyGirl_Plugin
  * @version v1.0.0
 * @create_at 2022-09-19 15:06:22
-* @description 对接homeassistant小爱音箱
-* @title homeassiatant远程控制小爱音箱，不可用于小爱对话
+* @description 对接homeassistant小爱音箱，不可用于小爱对话
+* @title homeassiatant远程控制小爱音箱
 * @rule 小爱 ?
 * @priority 9
  * @public false
