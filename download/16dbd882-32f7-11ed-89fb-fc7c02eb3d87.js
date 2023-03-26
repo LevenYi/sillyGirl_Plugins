@@ -2,7 +2,7 @@
 * @author https://t.me/sillyGirl_Plugin
 * @version v1.2.0
 * @create_at 2022-09-19 15:06:22
-* @description Nolan短信与扫码，rabbit扫码，需对接过芝士，需安装qinglong与something模块,扫码基于自建服务
+* @description Nolan短信与扫码，rabbit扫码，需对接过芝士，需安装qinglong与something模块
 * @title 京东登陆
 * @rule raw ^(登陆|登录)$
 * @rule raw ^扫码登(陆|录)$
