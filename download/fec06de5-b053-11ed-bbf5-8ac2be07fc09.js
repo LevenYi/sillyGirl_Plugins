@@ -2,8 +2,8 @@
 * @author https://t.me/sillyGirl_Plugin
  * @version v1.0.0
 * @create_at 2022-09-19 15:06:22
-* @description 对接homeassistant小爱音箱，不可用于小爱对话
-* @title homeassiatant远程控制小爱音箱
+* @description 对接homeassistant小爱音箱，用于对其发出指令，不可用于小爱对话
+* @title 远控小爱音箱
 * @rule 小爱 ?
 * @priority 9
  * @public false
@@ -17,6 +17,7 @@
 // 设置访问token，面板-用户资料-长期访问令牌-创建令牌
 // set home_assistant token 你创建的令牌
 
+//小爱音箱是否对指令保持静默
 const silent=false
 /***************************/
 

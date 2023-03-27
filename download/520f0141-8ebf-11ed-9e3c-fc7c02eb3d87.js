@@ -53,7 +53,7 @@ function formatStringLen(strVal, len,padChar){
 }
 
 function CQ_Image(url){
-	return "[CQ:image,cache=0,file="+url+"]"
+	return "[CQ:image,file="+url+",cache=0]"
 }
 
 //tg快捷复制

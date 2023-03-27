@@ -2,7 +2,7 @@
 * @author https://t.me/sillyGirl_Plugin
 * @version v1.2.0
 * @create_at 2022-09-19 15:06:22
-* @description Nolan短信与扫码，rabbit扫码，需对接过芝士，需安装qinglong与something模块
+* @description 京东登陆插件，已对接nark、NolanPro及qrabbit，短信登陆需傻妞对接芝士，并安装qinglong与something模块
 * @title 京东登陆
 * @rule raw ^(登陆|登录)$
 * @rule raw ^扫码登(陆|录)$
@@ -22,17 +22,19 @@ const GroupWhiteList=[758657899,152312983]
 //客户黑名单，黑名单客户禁止上车，例:["123213","1434234"]
 const BlackList=[]
 
-//【Nolan】
 //聚合容器序号，用于检查账号有效性
 const DefaultQL=1
 
-
+//【Nolan】
+//设置nark面板地址
+//set jd_cookie nolan_addr ?
 
 //设置nolan Pro面板地址
 //set jd_cookie nolanPro_addr ?
 
 //设置nolan Pro对接机器人的token
 //set jd_cookie nolanPro_token ?
+
 
 //【rabbit】
 //设置rabbit扫码面板地址命令
@@ -192,23 +194,26 @@ function main(){
 			s.reply("您的账号尚未失效，无需重新登陆\n若需添加新账号，请联系管理员或者使用短信登陆")
 			return
 		}
+
 		let pin=""
 		let temp=NolanQR()
 		if(temp){
-			console.log("NolanQR在线")
 			if(temp==true)	//超时退出
 				return
-			else
+			else{
 				pin=temp
+				sillyGirl.notifyMasters("报告老板！客户[ "+pin+" ]成功通过nolanPro扫码登陆\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
+			}
 		}
 		else{
 			temp=RabbitQR()
 			if(temp){
-				console.log("rabbitQR在线")
 				if(temp==true)	//超时退出
 					return
-				else
+				else{
 					pin=temp
+					sillyGirl.notifyMasters("报告老板！客户[ "+pin+" ]成功通过rabbit扫码登陆\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
+				}
 			}
 			else{
 				s.reply("扫码暂时不可用,已通知管理员尽快修复,您可以使用发送“呆瓜”获取其他登陆方式")
@@ -219,7 +224,6 @@ function main(){
 		bind.set(pin,s.getUserId())//用户绑定
 		UpdateLoginDate(pin)//更新账号更新时间
         s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
-		sillyGirl.notifyMasters("报告老板！客户[ "+pin+" ]成功通过nolan扫码登陆\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
 	
 		//更新变量
 		//Update_JDCOOKIE(QLS[DefaultQL-1])
@@ -245,7 +249,6 @@ function main(){
 		}
 	}
 
-	//sillyGirl.notifyMasters("报告老板！客户[ "+env.value.match(/(?<=pin=)[^;]+/)[0]+" ]成功更新账号\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
 	// result=Submit_QL(QLS[DefaultQL-1].host,ql_token,env)
 	// if(result){
 	// 	let pin=env.value.match(/(?<=pin=)[^;]+/)[0]
@@ -291,16 +294,17 @@ function NolanQR(){
 	}
 	let data=getQR(qr_addr+"/qr/GetQRKey")
     if(!data){
-		sillyGirl.notifyMasters("报告老板,Nolan扫码面板疑似挂了")
+		sillyGirl.notifyMasters("报告老板,NolanPro面板疑似挂了")
         return false
     }
 	else if(!data.data.key){
 		console.log("未知错误\n"+JSON.stringify(data))
 		return false
 	}
+	//console.log(data.data.key)
+	console.log("NolanQR在线")
 	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url=https://qr.m.jd.com/p?k="+data.data.key)
-	console.log(data.data.key)
-    s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
+	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
     let limit=100
     while(limit-->0){
 		sleep(1000)
@@ -314,7 +318,7 @@ function NolanQR(){
         try{
             let data=JSON.parse(resp.body)
             if(data.success){	//登陆成功
-				return encodeURI(data.data.username)
+				return data.data.username.indexOf("%")==-1 ? encodeURI(data.data.username) : data.data.username
             }
             else if(data.message=="请先获取二维码"){	//二维码失效
                 break
@@ -354,9 +358,10 @@ function RabbitQR(){
 		console.log("未知错误\n"+JSON.stringify(data))
 		return false
 	}
+	console.log("rabbitQR在线")
+	//console.log(data.QRCodeKey)
 	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url=https://qr.m.jd.com/p?k="+data.QRCodeKey)
-	console.log(data.QRCodeKey)
-    s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
+	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
     let limit=100
     while(limit-->0){
         sleep(1000) 
@@ -677,11 +682,13 @@ function VerifyCode(addr,token,Tel){
 				s.reply("验证码已过期，请重新登陆")
 				return false
 			}
-			else if(i < VerifyTimes-1)
-				s.reply(data.message)
-			else{
-				s.reply("错误次数过多，请重新登陆！")
-				return false
+			else if(data.message.indexOf("错误")){
+				if(i==VerifyTimes-1){
+					s.reply("错误次数过多，请重新登陆！")
+					return false
+				}
+				else
+					s.reply(data.message)
 			}
 		}
 		else{
