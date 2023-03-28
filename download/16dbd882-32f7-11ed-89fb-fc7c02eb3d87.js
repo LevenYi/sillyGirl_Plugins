@@ -87,10 +87,7 @@ function main(){
 		const token=jddb.get("nolanPro_token")
 		let ck=""
 		if(!nark && !nolanPro){
-			if(s.isAdmin())
-				s.reply("请使用命令set jd_cookie nolan_addr http://xx.xx.xx.xx 对接nark")
-			else
-				s.reply("未对接登陆，请联系管理员")
+			s.reply("未对接短信登陆")
 			return
 		}
 		//检查绑定账号是否失效
@@ -102,23 +99,35 @@ function main(){
 		let inp=s.listen(handle,WAIT)
 		if(inp==null){
 			s.reply("输入超时，请重新登陆")
-			return false
+			return
 		}
 		else if(inp.getContent()=="q"){
 			s.reply("已退出")
-			return false
+			return 
 		}
 		else if(inp.getContent().length!=11){
 			s.reply("手机号码错误，请重新登陆")
-			return false
+			return 
 		}
 		else
 			Tel=inp.getContent()
+
 		let tipid=s.reply("请稍候...")
-		let pins=st.GetBind(s.getPlatform(),s.getUserId())	//获取用户已绑定的pin
-		let result=NarkSMS(nark,Tel)	//优先使用nark短信
-		if(!result)
-			result=NolanProSMS(nolanPro,token,Tel)
+		let result=""	
+		if(SendSMS(nark+"/api")){	//优先使用nark短信
+			console.log("nark在线")	
+			result=VerifyCode(nark+"/api",null,Tel)
+		}
+		if(!result){	//使用nolanPro短信
+			if(!token){
+				s.reply("未设置nolanPro机器人token")
+				return 
+			}
+			if(SendSMS(nolanPro+"/sms",token)){	
+				console.log("nolanPro在线")
+				result=VerifyCode(nolanPro+"/sms",token,Tel)
+			}
+		}
 		if(!result){
 			s.reply("短信登陆暂时不可用")
 			return
@@ -127,6 +136,7 @@ function main(){
 			return
 		else{	//登陆成功
 			console.log(result)
+			// let pins=st.GetBind(s.getPlatform(),s.getUserId())	//获取用户已绑定的pin
 			// let pin=result.match(/(?<=pin=)[^;]+/)
 			// if(pins.indexOf(pin)!=-1)
 			// 	sillyGirl.notifyMasters("报告老板！[ "+pin+" ]更新账号\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式:nark短信")
@@ -206,7 +216,7 @@ function main(){
 	// result=Submit_QL(QLS[DefaultQL-1].host,ql_token,env)
 	// if(result){
 	// 	let pin=env.value.match(/(?<=pin=)[^;]+/)[0]
-	//	pin=pin.indexOf("%")==-1?encodeURI(pin):pin
+	//	pin=decodeURI(pin)==pin?encodeURI(pin):pin
 	// 	let bind=new Bucket("pin"+s.getPlatform().toUpperCase())
 	// 	bind.set(pin,s.getUserId())//用户绑定
 	// 	UpdateUserData(pin)//更新账号数据
@@ -234,39 +244,11 @@ function main(){
 	// }
 }
 
-//nark短信登陆
-function NarkSMS(nark,Tel){
-	if(!nark)	//未对接nark
-		return false
-	if(SendSMS(nark+"/api")){
-		console.log("nark在线")	
-		return VerifyCode(nark+"/api",null,Tel)
-	}
-	else
-		return false
-}
 
-//nolanPro短信登陆
-function NolanProSMS(nolanPro,token,Tel){
-	if(!nolanPro)	//未对接nolanPro
-		return false
-	if(!token){
-		s.reply("未设置nolanPro机器人token")
-		return false
-	}
-	if(SendSMS(nolanPro+"/sms",token)){	
-		console.log("nolanPro在线")
-		return 	VerifyCode(nolanPro+"/sms",token,Tel)
-	}
-	else
-		return false
-}
-
-//登陆成功返回pin
 function NolanQR(){
-	let qr_addr=jddb.get("nolanPro_addr")
-	let token=jddb.get("nolanPro_token")
-	if(!qr_addr){
+	const addr=jddb.get("nolanPro_addr")
+	const token=jddb.get("nolanPro_token")
+	if(!addr){
 		console.log("未设置nolan扫码地址")
 		return false
 	}
@@ -274,7 +256,7 @@ function NolanQR(){
 		s.reply("未设置nolan扫码token")
 		return false
 	}
-	let data=getQR(qr_addr+"/qr/GetQRKey")
+	let data=getQR(addr+"/qr/GetQRKey")
     if(!data || !data.success){
 		let tip="报告老板,NolanPro面板疑似挂了\n"
 		tip+=data ? "" :JSON.stringify(data)
@@ -293,7 +275,7 @@ function NolanQR(){
     while(limit-->0){
 		sleep(1000)
         let option={
-    		url:qr_addr+"/qr/CheckQRKey",
+    		url:addr+"/qr/CheckQRKey",
         	method:"post",
 			headers:{"Authorization":"Bearer "+token},
 			body:{"qrkey":data.data.key}
@@ -302,30 +284,28 @@ function NolanQR(){
         try{
             let data=JSON.parse(resp.body)
             if(data.success){	//登陆成功
-				return data.data.username.indexOf("%")==-1 ? encodeURI(data.data.username) : data.data.username
+				return decodeURI(data.data.username)==data.data.username ? encodeURI(data.data.username) : data.data.username
             }
-            else if(data.message=="请先获取二维码"){	//二维码失效
-                break
-            }
-            else
-                console.log(resp.body)
+			else{
+ 				console.log(resp.body)
+				if(data.message=="请先获取二维码")	//二维码失效
+                	break
+			} 
         }
         catch(err){
             console.log(JSON.stringify(resp))
             break
         } 
 	}
-    if(limit<=0){
-        s.reply("超时")
-    }
+    s.reply("超时")
 	return true
 }
 
 //登陆成功返回pin
 function RabbitQR(){
-	let qr_addr=jddb.get("rabbit_qr_addr")
+	let addr=jddb.get("rabbit_qr_addr")
 	let ql_server=jddb.get("rabbit_qr_ql")
-	if(!qr_addr){
+	if(!addr){
 		console.log("未设置rabbit扫码地址")
 		return false
 	}
@@ -333,7 +313,7 @@ function RabbitQR(){
 		s.reply("未设置rabbit上车服务器！\nset jd_cookie rabbit_qr_ql ?\n")
 		return false
 	}
-    let data=getQR(qr_addr+"/api/BeanQrCode")
+    let data=getQR(addr+"/api/BeanQrCode")
     if(!data || data.code!=0){	
 		let tip="报告老板,rabbit扫码面板疑似挂了\n"
 		tip+=data ? "" :JSON.stringify(data)
@@ -352,7 +332,7 @@ function RabbitQR(){
     while(limit-->0){
         sleep(1000) 
     	let resp=request({
-            url:qr_addr+"/api/QrCheck",
+            url:addr+"/api/QrCheck",
             method:"post",
             body:{
                 "token": "",
@@ -363,23 +343,21 @@ function RabbitQR(){
         try{
             let data=JSON.parse(resp.body)
             if(data.code==200){	//登陆成功
-				return data.pin.indexOf("%")==-1?encodeURI(data.pin):data.pin
+				return decodeURI(data.pin)==data.pin ? encodeURI(data.pin):data.pin
             }
-            else if(data.code==54){	//二维码失效
-                s.reply(data.msg)	
-                break
+			else{
+				console.log(resp.body)
+				if(data.code==54)	//二维码失效
+                	break
             }
-            else
-                console.log(resp.body)
+               
         }
         catch(err){
             console.log(JSON.stringify(resp))
             break
         } 
     }
-    if(limit<=0){
-        s.reply("超时")
-    }
+    s.reply("超时")
 	return true
 }
 
@@ -663,6 +641,8 @@ function VerifyCode(addr,token,Tel){
 }
 
 function SendSMS(addr,token){
+	if(!addr)
+		return false
 	let resp=request({
    		url:addr+"/SendSMS",
     	method:"post",
