@@ -1,8 +1,8 @@
 /**
 * @author https://t.me/sillyGirl_Plugin
-* @version v1.2.0
+* @version v1.2.1
 * @create_at 2022-09-19 15:06:22
-* @description 京东登陆插件，已对接nark、NolanPro及qrabbit，短信登陆需傻妞对接芝士，并安装qinglong与something模块
+* @description 京东登陆插件，已对接nark、NolanPro及qrabbit，需傻妞对接芝士，并安装qinglong与something模块
 * @title 京东登陆
 * @rule raw ^(登陆|登录)$
 * @rule raw ^扫码登(陆|录)$
@@ -26,7 +26,7 @@ const BlackList=[]
 const DefaultQL=1
 
 //【Nolan】
-//设置nark面板地址
+//设置nark面板地址，例：set jd_cookie nolan_addr http://127.0.0.1:5710
 //set jd_cookie nolan_addr ?
 
 //设置nolan Pro面板地址
@@ -63,12 +63,11 @@ const handle=function(s){
 
 function main(){
 	if(BlackList.indexOf(s.getUserId())!=-1){
-		//s.reply("禁止上车，请联系管理员")//不需要通知请注释本行 
+		// s.reply("禁止上车，请联系管理员")//不需要通知请注释本行 
 		return
 	}
 	else if(s.getChatId() && GroupWhiteList.indexOf(s.getChatId())==-1){
-		if(s.isAdmin())
-			//s.reply("本群禁止上车")//不需要通知请注释本行
+		// s.reply("本群禁止上车")//不需要通知请注释本行
 		return
 	}
 	// if(!s.isAdmin()){
@@ -116,61 +115,25 @@ function main(){
 		else
 			Tel=inp.getContent()
 		let tipid=s.reply("请稍候...")
-		if(nolanPro){	//已对接nolanPro
-			if(!token){
-				s.reply("未设置nolanPro机器人token")
-				return
-			}
-			if(SendSMS(nolanPro+"/sms",token)){	//先尝试使用nolanPro登陆
-			//if(true){
-				console.log("nolanPro在线")	
-				let result=VerifyCode(nolanPro+"/sms",token,Tel)
-				if(!result)
-					return
-				else{
-					console.log(result)
-					s.setContent(result)
-					s.continue()
-					// let pin=result
-					// let bind=new Bucket("pin"+s.getPlatform().toUpperCase())
-					// bind.set(pin,s.getUserId())//用户绑定
-					// UpdateLoginDate(pin)//更新账号更新时间
-        			// s.reply("登陆成功，账号更新中...请等待几分钟后再查询账号信息")
-					// sillyGirl.notifyMasters("报告老板！客户[ "+pin+" ]成功通过nolan短信登陆\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
-				}
-			}
-			else if(nark && SendSMS(nark+"/api")){	//nolanPro不可用且对接了nark，则尝试使用nark登陆
-				console.log("nolanPro不可用，nark在线")	
-				let result=VerifyCode(nark+"/api",null,Tel)
-				if(!result)
-					return
-				else{	
-					console.log(result)
-					s.setContent(result)
-					s.continue()				
-				}
-			}
-			else{
-				s.reply("短信登陆暂时不可用")
-				return
-			}
+		let pins=st.GetBind(s.getPlatform(),s.getUserId())	//获取用户已绑定的pin
+		let result=NarkSMS(nark,Tel)	//优先使用nark短信
+		if(!result)
+			result=NolanProSMS(nolanPro,token,Tel)
+		if(!result){
+			s.reply("短信登陆暂时不可用")
+			return
 		}
-		else{	//仅对接了nark
-			if(SendSMS(nark+"/api")){
-				console.log("nark在线")	
-				let result=VerifyCode(nark+"/api",null,Tel)
-				if(!result)
-					return
-				else{	
-					console.log(result)
-					s.setContent(result)
-					s.continue()				
-				}
-			}
-			else{
-				s.reply("短信登陆暂时不可用")
-				return
-			}
+		else{
+			console.log(result)
+			// let pin=result.match(/(?<=pin=)[^;]+/)
+			// if(pins.indexOf(pin)!=-1)
+			// 	sillyGirl.notifyMasters("报告老板！[ "+pin+" ]更新账号\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式:nark短信")
+			// else
+			// 	sillyGirl.notifyMasters("报告老板！[ "+pin+" ]添加账号\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式:nark短信")			
+			// UpdateUserData(pin)	//更新账号数据	
+			
+			s.setContent(result)
+			s.continue()	
 		}
 	}
 	else if(s.getContent()=="打开扫码"){
@@ -188,56 +151,45 @@ function main(){
     		s.reply('维护中...')
 			return
 		}
+		let pins=st.GetBind(s.getPlatform(),s.getUserId())	//获取用户已绑定的pin
 		//检查绑定账号是否失效，本部分代码将导致已登陆用户账号未失效前无法添加新账号，可联系管理员触发扫码或者注释本部分代码
-		let pins=st.GetBind(s.getPlatform(),s.getUserId())
 		if(!s.isAdmin() && pins.length && !NeedLogin(pins,QLS[DefaultQL-1])){
 			s.reply("您的账号尚未失效，无需重新登陆\n若需添加新账号，请联系管理员或者使用短信登陆")
 			return
 		}
 
 		let pin=""
-		let temp=NolanQR()
-		if(temp){
-			if(temp==true)	//超时退出
-				return
-			else{
-				pin=temp
-				sillyGirl.notifyMasters("报告老板！客户[ "+pin+" ]成功通过nolanPro扫码登陆\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
-			}
+		let result=NolanQR()
+		if(!result)
+			result=RabbitQR()
+		if(!result){
+			s.reply("扫码暂时不可用,已通知管理员尽快修复,您可以使用发送“呆瓜”获取其他登陆方式")
+			return
 		}
-		else{
-			temp=RabbitQR()
-			if(temp){
-				if(temp==true)	//超时退出
-					return
-				else{
-					pin=temp
-					sillyGirl.notifyMasters("报告老板！客户[ "+pin+" ]成功通过rabbit扫码登陆\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
-				}
-			}
-			else{
-				s.reply("扫码暂时不可用,已通知管理员尽快修复,您可以使用发送“呆瓜”获取其他登陆方式")
-				return
-			}
-		}
-		let bind=new Bucket("pin"+s.getPlatform().toUpperCase())
-		bind.set(pin,s.getUserId())//用户绑定
-		UpdateLoginDate(pin)//更新账号更新时间
+		else if(result===true)	//超时退出
+			return
+		else
+			pin=result
+		if(pins.indexOf(pin)!=-1)
+			sillyGirl.notifyMasters("报告老板！[ "+pin+" ]更新账号\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式:nolanPro扫码")
+		else
+			sillyGirl.notifyMasters("报告老板！[ "+pin+" ]添加账号\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式:nolanPro扫码")			
+		UpdateUserData(pin)	//更新账号数据
         s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 	
 		//更新变量
 		//Update_JDCOOKIE(QLS[DefaultQL-1])
 		return
 	}
-	else if(s.getContent().indexOf("wskey")!=-1){
+	else if(s.getContent().indexOf("wskey")!=-1){	//提交wskey
 		s.recallMessage(Number(s.getMessageId()).toString())
 		sleep(400)
 		env.name="JD_WSCK"
 		env.value=s.getContent().match(/pin=[^;]+; ?wskey=[^;]+;/)[0]
 	}
-	else{
+	else{	//提交ck
 		let ck=s.getContent().match(/pt_key=[^;]+; ?pt_pin=[^;]+;/)[0]
-		if(st.JD_UserInfo(ck) || JD_isLogin(ck)){//检查ck有效性
+		if(st.JD_UserInfo(ck) || JD_isLogin(ck)){	//检查ck有效性
 			s.recallMessage(Number(s.getMessageId()).toString())
 			sleep(400)
 			env.name="JD_COOKIE"
@@ -255,7 +207,7 @@ function main(){
 	//	pin=pin.indexOf("%")==-1?encodeURI(pin):pin
 	// 	let bind=new Bucket("pin"+s.getPlatform().toUpperCase())
 	// 	bind.set(pin,s.getUserId())//用户绑定
-	// 	UpdateLoginDate(pin)//更新账号更新时间
+	// 	UpdateUserData(pin)//更新账号数据
 	// 	if(result==1)
 	// 		sillyGirl.notifyMasters("报告老板！新客户[ "+pin+" ]成功添加账号\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
 	// 	else if(result==2)
@@ -280,6 +232,34 @@ function main(){
 	// }
 }
 
+//nark短信登陆
+function NarkSMS(nark,Tel){
+	if(!nark)	//未对接nark
+		return false
+	if(SendSMS(nark+"/api")){
+		console.log("nark在线")	
+		return VerifyCode(nark+"/api",null,Tel)
+	}
+	else
+		return false
+}
+
+//nolanPro短信登陆
+function NolanProSMS(nolanPro,token,Tel){
+	if(!nolanPro)	//未对接nolanPro
+		return false
+	if(!token){
+		s.reply("未设置nolanPro机器人token")
+		return false
+	}
+	if(SendSMS(nolanPro+"/sms",token)){	
+		console.log("nolanPro在线")
+		return 	VerifyCode(nolanPro+"/sms",token,Tel)
+	}
+	else
+		return false
+}
+
 //登陆成功返回pin
 function NolanQR(){
 	let qr_addr=jddb.get("nolanPro_addr")
@@ -293,8 +273,10 @@ function NolanQR(){
 		return false
 	}
 	let data=getQR(qr_addr+"/qr/GetQRKey")
-    if(!data){
-		sillyGirl.notifyMasters("报告老板,NolanPro面板疑似挂了")
+    if(!data || !data.success){
+		let tip="报告老板,NolanPro面板疑似挂了\n"
+		tip+=data ? "" :JSON.stringify(data)
+		sillyGirl.notifyMasters(tip)
         return false
     }
 	else if(!data.data.key){
@@ -350,8 +332,10 @@ function RabbitQR(){
 		return false
 	}
     let data=getQR(qr_addr+"/api/BeanQrCode")
-    if(!data){
-		sillyGirl.notifyMasters("报告老板,Rabbit扫码面板疑似挂了")
+    if(!data || data.code!=0){	
+		let tip="报告老板,rabbit扫码面板疑似挂了\n"
+		tip+=data ? "" :JSON.stringify(data)
+		sillyGirl.notifyMasters(tip)
         return false
     }
 	else if(!data.QRCodeKey){
@@ -397,6 +381,7 @@ function RabbitQR(){
 	return true
 }
 
+//获取登陆二维码
 function getQR(addr,token){
    let option={
     	url:addr,
@@ -468,8 +453,9 @@ function NeedLogin(pins,QL){
 
 
 
-//更新账号更新时间
-function UpdateLoginDate(pin){
+//更新用户数据
+function UpdateUserData(pin){
+	//更新用户更新时间
 	let date=(new Date()).toISOString()
 	let config={
 		"ID":pin,
@@ -486,6 +472,9 @@ function UpdateLoginDate(pin){
 		config=JSON.parse(data)
 	config.LoginedAt=date
 	jdNotify.set(pin,JSON.stringify(config))
+	//更新绑定关系
+	let bind=new Bucket("pin"+s.getPlatform().toUpperCase())
+	bind.set(pin,s.getUserId())//用户绑定
 }
 
 function JD_isLogin(ck){
@@ -504,18 +493,20 @@ function JD_isLogin(ck){
 }
 
 function VerifyCard(addr,token,Tel){
-	let url=addr.indexOf("sms")==-1 ? addr+"/VerifyCardCode" : addr+"/VerifyCard"
+	let url=addr.indexOf("sms")==-1 ? addr+"/VerifyCardCode" : addr+"/VerifyCard"	//兼容nark与nolanPro
 	s.reply("您的账号需验证身份,请输入你的身份证前2位与后4位:")
 	for(i=0;i<VerifyTimes;i++){
 		inp=s.listen(handle,WAIT)
 		if(inp == null){
-			if(i == VerifyTimes-1)
+			if(i == VerifyTimes-1){
 				s.reply("您已超时，请重新登录")
+				return
+			}
 			continue
 		}
 		else if(inp.getContent()=="q"){
 			s.reply("已退出")
-			return false
+			return true
 		}
 		let option={
    			url:url,
@@ -554,16 +545,16 @@ function VerifyCard(addr,token,Tel){
 }
 
 function VerifyDevice(addr,token,Tel){
+	let url=addr.indexOf("sms")==-1 ? addr+"/VerifyCardCode" : addr+"/VerifyCard"	//兼容nark与nolanPro
 	s.reply("您的账号需验证设备，请在三分钟内前往京东APP>设置>账户安全 新设备登录>确认登录\n\n请在完成如上操作后,回复“已确认”")
 	let inp=s.listen(handle,3*60*1000)
-	let url=addr.indexOf("sms")==-1 ? addr+"/VerifyCardCode" : addr+"/VerifyCard"
 	if(!inp){
 		s.reply("超时")
-		return false
+		return true
 	}
 	else if(inp.getContent()=="q"){
 		s.reply("已退出")
-		return false
+		return true
 	}
 	let resp=request({
    		url:url,
@@ -588,17 +579,17 @@ function VerifyDevice(addr,token,Tel){
 }
 
 function VerifySendSMS(addr,token,Tel,message){
-	let url=addr.indexOf("sms")==-1 ? addr+"/VerifyCardCode" : addr+"/VerifyCard"
+	let url=addr.indexOf("sms")==-1 ? addr+"/VerifyCardCode" : addr+"/VerifyCard"	//兼容nark与nolanPro
 	let tip="您的账号需进行短信验证，请在三分钟内使用手机"+message.phone+"向"+message.uplink_tophone+"发送"+message.uplink_tocontent
 	tip+="\n请在完成如上操作后,回复“已确认”"
 	s.reply(tip)
 	if(!inp){
 		s.reply("超时")
-		return false
+		return true
 	}
 	else if(inp.getContent()=="q"){
 		s.reply("已退出")
-		return false
+		return true
 	}
 	let resp=request({
    		url:url,
@@ -631,14 +622,14 @@ function VerifyCode(addr,token,Tel){
 		if(inp==null){
 			if(i == VerifyTimes-1){
 				s.reply("您已超时，请重新登录")
-				return false
+				return true
 			}
 			else
 				continue
 		}
 		else if(inp.getContent()=="q"){
 			s.reply("已退出")
-			return false
+			return true
 		}
 		if(inp.getContent().length!=6){
 			s.reply("验证码错误，请重新输入")
@@ -657,7 +648,7 @@ function VerifyCode(addr,token,Tel){
 		}
 		resp=request(option)
 		if(resp.status!=200){
-			s.reply("登陆失败")
+			s.reply("登陆失败:"+resp.status)
 			console.log(JSON.stringify(option)+"\n\n"+JSON.stringify(resp))
 			return false
 		}
@@ -674,15 +665,15 @@ function VerifyCode(addr,token,Tel){
 			return VerifySendSMS(addr,token,Tel,message)
 		}
 		else if(data.message){
-			if(data.message.indexOf('Object reference')!=-1){
-				s.reply('您的账号暂不支持短信登录')
-				return false
-			}
-			else if(data.message=="验证码已过期，请重新获取"){
+			// if(data.message.indexOf('Object reference')!=-1){
+			// 	s.reply('您的账号暂不支持短信登录')
+			// 	return false
+			// }
+			if(data.message.indexOf("过期")!=-1){
 				s.reply("验证码已过期，请重新登陆")
-				return false
+				return true
 			}
-			else if(data.message.indexOf("错误")){
+			else if(data.message.indexOf("错误")!=-1){
 				if(i==VerifyTimes-1){
 					s.reply("错误次数过多，请重新登陆！")
 					return false
@@ -757,10 +748,7 @@ function Submit_QL(host,token,env){
 	let index=envs.findIndex(Ele => Ele.name == env.name && Ele.value.match(/(?<=pin=)[^;]+/)[0] == pin)
 	if(index==-1){
 		env.remarks=s.getPlatform()+":"+s.getUserId()
-		if(ql.Add_QL_Envs(host,token,[env]))
-			return 1
-		else
-			return 0
+		return ql.Add_QL_Envs(host,token,[env])
 	}
 	else{
 		if(envs[index].id)
@@ -771,12 +759,7 @@ function Submit_QL(host,token,env){
 			remarks=envs[index].remarks
 		else
 			remarks=s.getPlatform()+":"+s.getUserId()
-		if(ql.Update_QL_Env(host,token,id,env.name,env.value,remarks)){
-			ql.Enable_QL_Envs(host,token,[id])
-			return 2
-		}
-		else
-			return 0
+		return  ql.Update_QL_Env(host,token,id,env.name,env.value,remarks) && ql.Enable_QL_Envs(host,token,[id])
 	}
 }
 

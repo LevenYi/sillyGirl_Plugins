@@ -13,9 +13,14 @@
 
 /*************有概率导致QQ冻结，自行配置通知项目**************/
 //为降低京东限流与企鹅冻结概率，整个通知过程将花费较长时间，每个账号将花费15-25秒不等
+
+//使用群通知，不使用群通知则设置为空""
+const NotifyGroup="qq@152312983"
+
 //【过期资产】
 //通知开关
 const NotifyAssets=true
+
 //过期资产最小提醒金额
 const NUM=3
 
@@ -138,7 +143,23 @@ function main(){
 
 				if(flag && record.indexOf(pin)==-1){	//通知
 					console.log(tip)
-					st.NotifyPin(pin,tip)
+					if(NotifyGroup){
+						let to=NotifyGroup.split("@")
+						let users=st.GetBind2(pin)
+						users.forEach(user=>{
+							if(user.type!=to[0])
+								return
+							sillyGirl.push({
+								platform:user.type,
+								userID:user.id,
+								groupCode:to[1],
+								content:tip
+							})
+						})
+					}
+					else{
+						st.NotifyPin(pin,tip)
+					}
 					record.push(pin)
 				}
 				sleep(Math.random() * 10000+15000)

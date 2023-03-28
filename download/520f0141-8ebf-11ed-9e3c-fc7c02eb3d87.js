@@ -14,9 +14,11 @@ module.exports={
 	NotifyMainKey,
 	NotifyMasters,
 	GetBind,
+	GetBind2,
 	ToHyperLink,
 	ToEasyCopy,
 	CQ_Image,
+	Push,
 
 	USER_AGENT,
 	JD_UserInfo,
@@ -52,6 +54,18 @@ function formatStringLen(strVal, len,padChar){
 	return strVal
 }
 
+
+
+//向type平台群cid(非群聊则cid为0)的用户uid推送msg信息
+function Push(type,uid,cid,msg){
+	let s = (new SillyGirl()).newSender({
+    	platform: type,
+    	user_id: uid,
+    	chat_id: cid,
+	})
+	s.reply(msg)
+}
+
 function CQ_Image(url){
 	return "[CQ:image,file="+url+",cache=0]"
 }
@@ -77,6 +91,20 @@ function GetBind(imtype,uid){
 		if(db.get(allpins[i])==uid)
 			pin.push(allpins[i])
 	return pin
+}
+
+//获取绑定pin的用户
+function GetBind2(pin){
+	let types=["qq","wx","tg"]	//平台
+	let users=[]
+	types.forEach(type=>{
+		let db=new Bucket("pin"+type.toUpperCase())
+		let id=db.get(pin)
+		if(id){
+			users.push({type,id})
+		}
+	})
+	return users
 }
 
 //管理员通知
