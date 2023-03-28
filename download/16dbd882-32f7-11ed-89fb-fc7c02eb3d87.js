@@ -123,7 +123,9 @@ function main(){
 			s.reply("短信登陆暂时不可用")
 			return
 		}
-		else{
+		else if(result==true)	//超时或者手动选择退出
+			return
+		else{	//登陆成功
 			console.log(result)
 			// let pin=result.match(/(?<=pin=)[^;]+/)
 			// if(pins.indexOf(pin)!=-1)
@@ -500,9 +502,10 @@ function VerifyCard(addr,token,Tel){
 		if(inp == null){
 			if(i == VerifyTimes-1){
 				s.reply("您已超时，请重新登录")
-				return
+				return true
 			}
-			continue
+			else
+				continue
 		}
 		else if(inp.getContent()=="q"){
 			s.reply("已退出")
@@ -529,9 +532,9 @@ function VerifyCard(addr,token,Tel){
 		if(data.success){
 			return data.data.ck?data.data.ck:data.data.username
 		}
-		else if(data.message){
+		else if(data.message.index("错误")!=-1){
 			if(i < VerifyTimes-1)
-				s.reply(data.message+"，请重新输入")
+				s.reply(data.message)
 			else{
 				s.reply("错误次数过多，请重新登陆！")
 				return false
@@ -544,9 +547,9 @@ function VerifyCard(addr,token,Tel){
 	}
 }
 
-function VerifyDevice(addr,token,Tel){
+function VerifyCheck(addr,token,Tel,tip){
 	let url=addr.indexOf("sms")==-1 ? addr+"/VerifyCardCode" : addr+"/VerifyCard"	//兼容nark与nolanPro
-	s.reply("您的账号需验证设备，请在三分钟内前往京东APP>设置>账户安全 新设备登录>确认登录\n\n请在完成如上操作后,回复“已确认”")
+	s.reply(tip)
 	let inp=s.listen(handle,3*60*1000)
 	if(!inp){
 		s.reply("超时")
@@ -572,41 +575,6 @@ function VerifyDevice(addr,token,Tel){
 		return data.data.ck?data.data.ck:data.data.username
 	else{
 		s.reply("登录失败")
-		console.log(resp.body)
-		//s.notifyMasters("客户登录失败"+JSON.stringify(resp))
-		return false
-	}
-}
-
-function VerifySendSMS(addr,token,Tel,message){
-	let url=addr.indexOf("sms")==-1 ? addr+"/VerifyCardCode" : addr+"/VerifyCard"	//兼容nark与nolanPro
-	let tip="您的账号需进行短信验证，请在三分钟内使用手机"+message.phone+"向"+message.uplink_tophone+"发送"+message.uplink_tocontent
-	tip+="\n请在完成如上操作后,回复“已确认”"
-	s.reply(tip)
-	if(!inp){
-		s.reply("超时")
-		return true
-	}
-	else if(inp.getContent()=="q"){
-		s.reply("已退出")
-		return true
-	}
-	let resp=request({
-   		url:url,
-    	method:"post",
-		body:{
- 			"Phone": Tel,
- 			"QQ": s.getUserId(),
- 			"qlkey": 0,
-  			"Code": "1",
-			"botApitoken":token
-		}
-	})
-	let data=JSON.parse(resp.body)
-	if(data.success)
-		return data.data.ck?data.data.ck:data.data.username
-	else{
-		s.reply("登录失败"+data.message)
 		console.log(resp.body)
 		//s.notifyMasters("客户登录失败"+JSON.stringify(resp))
 		return false
@@ -659,10 +627,14 @@ function VerifyCode(addr,token,Tel){
 			return VerifyCard(addr,token,Tel)
 		}
 		else if(data.data.status==555 && data.data.mode=="HISTORY_DEVICE"){	//验证设备
-			return VerifyDevice(addr,token,Tel)
+			let tip="您的账号需验证设备，请在三分钟内前往京东APP>设置>账户安全 新设备登录>确认登录\n\n请在完成如上操作后,回复“已确认”"
+			return VerifyCheck(addr,token,Tel,tip)
 		}
 		else if(data.data.status==555 && data.data.mode=="DANGEROUS_UP"){	//发送短信验证
-			return VerifySendSMS(addr,token,Tel,message)
+			let message=data.data.message
+			let tip="您的账号需进行短信验证，请在三分钟内使用手机"+message.phone+"向"+message.uplink_tophone+"发送"+message.uplink_tocontent
+			tip+="\n请在完成如上操作后,回复“已确认”"
+			return VerifyCheck(addr,token,Tel,tip)
 		}
 		else if(data.message){
 			// if(data.message.indexOf('Object reference')!=-1){
