@@ -183,9 +183,9 @@ function main(){
 		else
 			pin=result
 		if(pins.indexOf(pin)!=-1)
-			sillyGirl.notifyMasters("报告老板！[ "+pin+" ]更新账号\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：nolanPro扫码")
+			sillyGirl.notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：nolanPro扫码")
 		else
-			sillyGirl.notifyMasters("报告老板！[ "+pin+" ]添加账号\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：nolanPro扫码")			
+			sillyGirl.notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：nolanPro扫码")			
 		UpdateUserData(pin)	//更新账号数据
         s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 	
@@ -221,9 +221,9 @@ function main(){
 	// 	bind.set(pin,s.getUserId())//用户绑定
 	// 	UpdateUserData(pin)//更新账号数据
 	// 	if(result==1)
-	// 		sillyGirl.notifyMasters("报告老板！新客户[ "+pin+" ]成功添加账号\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
+	// 		sillyGirl.notifyMasters("报告老板，新客户[ "+pin+" ]成功添加账号！\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
 	// 	else if(result==2)
-	// 		sillyGirl.notifyMasters("报告老板！老客户[ "+pin+" ]成功更新账号\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
+	// 		sillyGirl.notifyMasters("报告老板，老客户[ "+pin+" ]成功更新账号！\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
 	// 	s.reply("上车成功！\n账号更新中...请等待几分钟后查询账号信息")
 	// 	//更新变量
 	// 	if(env.name=="JD_WSCK")
