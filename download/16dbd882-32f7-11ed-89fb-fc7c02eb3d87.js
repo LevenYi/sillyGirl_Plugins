@@ -304,7 +304,7 @@ function NolanQR(){
 	//console.log(data.data.key)
 	console.log("NolanQR在线")
 	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url=https://qr.m.jd.com/p?k="+data.data.key)
-	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
+	s.reply("请使用 京东app扫码 或 点击下方链接（支持截图扫码）\n"+qr+"\nhttps://qr.m.jd.com/p?k="+data.data.key)
     let limit=100
     while(limit-->0){
 		sleep(1000)
@@ -361,7 +361,7 @@ function RabbitQR(){
 	console.log("rabbitQR在线")
 	//console.log(data.QRCodeKey)
 	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url=https://qr.m.jd.com/p?k="+data.QRCodeKey)
-	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
+	s.reply("请使用 京东app扫码 或 点击下方链接（支持截图扫码）\n"+qr+"\nhttps://qr.m.jd.com/p?k="+data.QRCodeKey)
     let limit=100
     while(limit-->0){
         sleep(1000) 
