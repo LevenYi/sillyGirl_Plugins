@@ -1,13 +1,13 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @create_at 2022-09-07 18:30:34
-* @description 每天自动调整变量顺序需填写相关配置,须安装somethong与qinglong模块
-* @title 雨露均沾
-* @rule 动一动
-* @cron 20 12 * * *
-* @admin true
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @create_at 2022-09-07 18:30:34
+ * @description 每天自动调整变量顺序需填写相关配置,须安装somethong与qinglong模块
+ * @title 雨露均沾
+ * @rule 动一动
+ * @cron 20 12 * * *
+ * @admin true
  * @public false
-* @version v2.1.3
+ * @version v2.1.3
 */ 
 
 //上面触发命令与定时规则可自行修改
@@ -15,7 +15,7 @@
 
 /******************************配置区域*****************************/
 //每次调整顺序时的移动数量
-const MoveNum=2
+const MoveNum=5
 
 
 //调整模式，1为欧气模式，2为雨露均沾模式
@@ -27,7 +27,7 @@ const SelectMode=2
 //填写位置不动的变量序号，-1表示该容器不调整顺序
 //例：单容器[[1,2,3,4,5]]
 //例：多容器[[1,2,3],[-1],[]]，容器1环境变量1-3不动，容器2所有变量位置不动，容器3无车头,填写容器数量及顺序必须与傻妞中的容器数量及顺序保持一致
-const NotMove=[[1,2,3,4,5,6,7]]
+const NotMove=[[1,2,3,4,5,6]]
 
 
 //通知模式，0表示不通知，1表示通知管理员默认内容，2表示除通知管理员外再另外在客户群组通知

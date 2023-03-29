@@ -1,16 +1,16 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @create_at 2022-09-07 18:34:55
-* @description 例：修改命令 $ql cron run ? $运行 ?
-* @title 命令重定向
-* @platform qq wx tg pgm sxg
-* @rule raw 修改命令 \$[^\$]+\$[^\$]+
-* @rule 查看命令
-* @rule 删除命令 ?
-* @rule raw [\s\S]+
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @create_at 2022-09-07 18:34:55
+ * @description 例：修改命令 $ql cron run ? $运行 ?
+ * @title 命令重定向
+ * @platform qq wx tg pgm sxg
+ * @rule raw 修改命令 \$[^\$]+\$[^\$]+
+ * @rule 查看命令
+ * @rule 删除命令 ?
+ * @rule raw [\s\S]+
  * @public false
-* @admin false
-* @version v2.2.0
+ * @admin false
+ * @version v2.2.0
 */
 
 //修改命令样例：修改命令 $ql cron run ? $运行 ?

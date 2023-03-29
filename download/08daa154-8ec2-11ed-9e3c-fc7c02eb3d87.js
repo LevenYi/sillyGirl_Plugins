@@ -1,12 +1,12 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @version v1.1.0
-* @create_at 2022-09-08 15:06:22
-* @description 频道监控
-* @title 频道监控
-* @rule ?
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @version v1.1.0
+ * @create_at 2022-09-08 15:06:22
+ * @description 频道监控
+ * @title 频道监控
+ * @rule ?
  * @public false
-* @disable false
+ * @disable false
 */
 
 const Config=[

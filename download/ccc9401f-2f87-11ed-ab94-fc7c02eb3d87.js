@@ -1,14 +1,14 @@
 /**
-* @author https://t.me/sillyGirl_Plugin
-* @create_at 2022-09-10 12:49:37
-* @description 各种京东自动通知，具体查看备注，须安装qinglong与something模块
-* @version v1.0.3
-* @title 京东提醒
-* @platform qq wx tg pgm web cron
-* @rule 京东提醒
-* @cron 36 10 * * *
+ * @author https://t.me/sillyGirl_Plugin
+ * @create_at 2022-09-10 12:49:37
+ * @description 各种京东自动通知，具体查看备注，须安装qinglong与something模块
+ * @version v1.0.3
+ * @title 京东提醒
+ * @platform qq wx tg pgm web cron
+ * @rule 京东提醒
+ * @cron 36 10 * * *
  * @public false
-* @admin true
+ * @admin true
 */
 
 /*************有概率导致QQ冻结，自行配置通知项目**************/

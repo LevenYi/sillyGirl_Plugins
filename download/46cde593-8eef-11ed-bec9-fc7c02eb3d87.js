@@ -1,13 +1,13 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @version v1.0.1
-* @create_at 2022-09-22 14:36:01
-* @description 执行shell命令，基于自建服务
-* @title shell
-* @rule sh ?
-* @rule 升级
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @version v1.0.1
+ * @create_at 2022-09-22 14:36:01
+ * @description 执行shell命令，基于自建服务
+ * @title shell
+ * @rule sh ?
+ * @rule 升级
  * @public false
-* @admin true
+ * @admin true
 */
 const s = sender
 const sillyGirl=new SillyGirl()

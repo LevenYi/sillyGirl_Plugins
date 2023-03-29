@@ -1,15 +1,15 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @version v1.0.1
-* @create_at 2022-09-08 15:06:22
-* @description 自用打卡
-* @title 定时任务
-* @rule ^session_id=
-* @rule 执行定时
-* @cron 34 10 * * *
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @version v1.0.1
+ * @create_at 2022-09-08 15:06:22
+ * @description 自用打卡
+ * @title 定时任务
+ * @rule ^session_id=
+ * @rule 执行定时
+ * @cron 34 10 * * *
  * @public false
-* @admin true
-* @disable false
+ * @admin true
+ * @disable false
 */
 //触发命令可在上面rule项修改，定时规则可在上面cron项修改
 
@@ -20,8 +20,8 @@ const Delay=1
 
 //可在""中间填入自动执行定时任务时的推送渠道
 const NotifyTo={
-		platform:"tg",//推送平台,选填qq/tg/wx
-        userId:"1748961147",//推送到的账号的id
+		platform:"qq",//推送平台,选填qq/tg/wx
+        userId:"3176829386",//推送到的账号的id
 	}
 
 const ql=require("qinglong")
@@ -48,7 +48,7 @@ function main(){
     // }
 	if(s.getContent()=="执行定时"||s.getPlatform()=="cron"){
         cdd()
-        head_auto_change()
+        //head_auto_change()
         if(s.getPlatform()=="cron"){
             NotifyTo["content"]=message
             sillyGirl.push(NotifyTo)
@@ -91,8 +91,8 @@ function main(){
         }
         else{
             try{
-                users[choose-1].session_id=s.getContent()
-                db.set("otto",JSON.stringify(users))
+                users[Number(choose)-1].session_id=s.getContent()
+                db.set("cdd",JSON.stringify(users))
                 s.reply("更新成功")
             }
             catch(err){
@@ -106,7 +106,7 @@ function main(){
 
 function head_auto_change(){
     let nochange=[]  //维持不动的车头账号
-    let autonum=15  //自动更换的车头账号数量
+    let autonum=16  //自动更换的车头账号数量
     let envname="SYJ_HELP_PIN"  //修改的变量
     let envvalue=[]
     let sep="&"
@@ -170,7 +170,9 @@ function sign(user){
         console.log(resp.body)
 		let result=JSON.parse(resp.body)	
 		if(result.success){
-            message+=user.name+":打卡成功\n"
+            message+=user.name+":成功打卡("+result.info.total_days+"天)\n"
+            if(stage.indexOf(result.info.total_days)!=-1)
+                message+="已达成阶段成就，可领取会员！\n"
         }
         else{
             message+=user.name+":"+result.status_message+"\n"

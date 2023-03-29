@@ -1,14 +1,14 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @version v1.0.0
-* @create_at 2022-09-08 15:06:22
-* @description 获取京东短链真实链接,直接发送短链即可
-* @title 京东短链转长链
-* @rule raw jd [\s\S]*https://u\.jd\.com/\w+[\s\S]*
-* @admin true
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @version v1.0.0
+ * @create_at 2022-09-08 15:06:22
+ * @description 获取京东短链真实链接,直接发送短链即可
+ * @title 京东短链转长链
+ * @rule raw jd [\s\S]*https://u\.jd\.com/\w+[\s\S]*
+ * @admin true
  * @public false
-* @priority 9
-* @disable false
+ * @priority 9
+ * @disable false
 */
 
 const s = sender

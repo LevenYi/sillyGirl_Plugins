@@ -1,10 +1,10 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @version v1.0.0
-* @create_at 2022-09-08 15:06:22
-* @description openAI人工智障，需设置token
-* @title openAI
-* @rule ai ?
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @version v1.0.0
+ * @create_at 2022-09-08 15:06:22
+ * @description openAI人工智障，需设置token
+ * @title openAI
+ * @rule ai ?
  * @public false
 */
 

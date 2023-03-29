@@ -1,10 +1,10 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @module true
-* @create_at 2021-09-09 16:30:33
-* @description 一些通用函数和网络接口以及数据
-* @version v1.0.6
-* @title something
+/** 
+ * @author https://t.me/sillyGirl_Plugin
+ * @module true
+ * @create_at 2021-09-09 16:30:33
+ * @description 一些通用函数和网络接口以及数据
+ * @version v1.0.6
+ * @title something
  * @public false
 */
 

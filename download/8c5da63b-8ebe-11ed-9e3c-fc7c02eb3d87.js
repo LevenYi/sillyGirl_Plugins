@@ -1,11 +1,11 @@
 /*
-* @author https://t.me/sillyGirl_Plugin
-* @module true
-* @create_at 2021-09-09 16:30:33
-* @description 青龙模块(可能仅支持部分版本青龙)
-* @version v1.0.4
+ * @author https://t.me/sillyGirl_Plugin
+ * @module true
+ * @create_at 2021-09-09 16:30:33
+ * @description 青龙模块(可能仅支持部分版本青龙)
+ * @version v1.0.4
  * @public false
-* @title qinglong
+ * @title qinglong
 */
 
 

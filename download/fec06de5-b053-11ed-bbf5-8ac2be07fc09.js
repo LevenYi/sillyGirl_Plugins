@@ -1,13 +1,13 @@
 /**
-* @author https://t.me/sillyGirl_Plugin
+ * @author https://t.me/sillyGirl_Plugin
  * @version v1.0.0
-* @create_at 2022-09-19 15:06:22
-* @description 对接homeassistant小爱音箱，用于对其发出指令，不可用于小爱对话
-* @title 远控小爱音箱
-* @rule 小爱 ?
-* @priority 9
+ * @create_at 2022-09-19 15:06:22
+ * @description 对接homeassistant小爱音箱，用于对其发出指令，不可用于小爱对话
+ * @title 远控小爱音箱
+ * @rule 小爱 ?
+ * @priority 9
  * @public false
-* @disable false
+ * @disable false
 */
 
 /*********配置************/

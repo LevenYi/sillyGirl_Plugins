@@ -1,12 +1,12 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @version v1.0.0
-* @create_at 2022-09-08 15:06:22
-* @description 查询本人绑定京东账户最近x天的收入详情，须安装something与qinglong模块，例:最近30天收入
-* @title 京豆详情
-* @platform qq wx tg pgm sxg
-* @rule 最近\d+天收入
-* @rule 豆
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @version v1.0.0
+ * @create_at 2022-09-08 15:06:22
+ * @description 查询本人绑定京东账户最近x天的收入详情，须安装something与qinglong模块，例:最近30天收入
+ * @title 京豆详情
+ * @platform qq wx tg pgm sxg
+ * @rule 最近\d+天收入
+ * @rule 豆
  * @public false
 */
 

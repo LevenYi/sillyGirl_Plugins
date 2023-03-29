@@ -1,28 +1,28 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @create_at 2022-09-07 18:24:50
-* @description 芝士功能补全，须安装something与qinglong模块
-* @title 芝士plus
-* @platform qq wx tg pgm sxg
-* @rule raw 交换\s\d+\s\d+
-* @rule raw \S+,JD_COOKIE已失效。
-* @rule raw 移动\s\S+\s\d+
-* @rule 备份青龙变量
-* @rule 恢复青龙变量
-* @rule 通知失效
-* @rule 删除失效
-* @rule 执行 ?
-* @rule raw 豆\d+
-* @rule raw 豆\s[\d]+\s[\d]+
-* @rule 保存昵称
-* @rule ck去重
-* @rule 查询\S+
-* @rule 查找 ?
-* @rule 查绑 ?
-* @rule 拉库
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @create_at 2022-09-07 18:24:50
+ * @description 芝士功能补全，须安装something与qinglong模块
+ * @title 芝士plus
+ * @platform qq wx tg pgm sxg
+ * @rule raw 交换\s\d+\s\d+
+ * @rule raw \S+,JD_COOKIE已失效。
+ * @rule raw 移动\s\S+\s\d+
+ * @rule 备份青龙变量
+ * @rule 恢复青龙变量
+ * @rule 通知失效
+ * @rule 删除失效
+ * @rule 执行 ?
+ * @rule raw 豆\d+
+ * @rule raw 豆\s[\d]+\s[\d]+
+ * @rule 保存昵称
+ * @rule ck去重
+ * @rule 查询\S+
+ * @rule 查找 ?
+ * @rule 查绑 ?
+ * @rule 拉库
  * @public false
-* @admin true
-* @version v1.8.4
+ * @admin true
+ * @version v1.8.4
 */
 
 /***********青龙管理******************
