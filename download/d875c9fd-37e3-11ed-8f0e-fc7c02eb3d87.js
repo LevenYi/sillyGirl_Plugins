@@ -1,14 +1,14 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @version v1.0.1
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @version v1.0.1
  * @create_at 2022-09-22 14:36:01
-* @description qbittorent远程下载,需填写qb地址及账户密码，使用命令:直接发送磁链
-* @title qbittorent
-* @rule raw .*(magnet:\?xt=urn:btih:)[0-9a-fA-F]{40}.*
-* @rule raw .*(bc://bt/)[0-9a-fA-F=]+.*
-* @rule 查看下载
+ * @description qbittorent远程下载,需填写qb地址及账户密码，使用命令:直接发送磁链
+ * @title qbittorent
+ * @rule raw .*(magnet:\?xt=urn:btih:)[0-9a-fA-F]{40}.*
+ * @rule raw .*(bc://bt/)[0-9a-fA-F=]+.*
+ * @rule 查看下载
  * @public false
-* @admin true
+ * @admin true
 */
 
 /***********配置命令************* */

@@ -1,12 +1,12 @@
 /**
  * @author https://t.me/sillyGirl_Plugin
- * @version v1.2.1
+ * @version v1.2.2
  * @create_at 2022-09-19 15:06:22
  * @description 京东登陆插件，已对接nark、NolanPro及qrabbit，需傻妞对接芝士，并安装qinglong与something模块
  * @title 京东登陆
  * @rule raw ^(登陆|登录)$
  * @rule raw ^扫码登(陆|录)$
- * @rule raw (打开|关闭)扫码
+ * @rule raw ^(打开|关闭)扫码$
  * @priority 9
  * @public false
  * @disable false
@@ -47,7 +47,8 @@ const DefaultQL=1
 
 //【提交ck】
 //短信登陆后上传ck的容器(对应“青龙管理”的容器序号，若将ck交由芝士处理，本项设置为0)
-//本项设置与扫码无关,nolan Pro扫码ck分发由Pro负责，rabbit扫码ck分发见上文【rabbit】设置
+//注1：若将ck交由芝士处理，便于ck分发以及可以即时查询账号信息，若由本插件上传ck，将无法即时更新账号状态，即虽然ck有效但查询仍旧提示无效，需过几分钟才能正常查询
+//注2：本项设置与扫码无关,nolan Pro扫码ck分发由Pro负责，rabbit扫码ck分发见上文【rabbit】设置
 const qlc=1
 
 //【短信登陆方式优先级】
@@ -145,12 +146,12 @@ function main(){
 			}
 		}
 	}
-	else if(s.getContent()=="打开扫码"){
+	else if(s.isAdmin() && s.getContent()=="打开扫码"){
 		jddb.set("qr_switch",1)
 		s.reply("ok")
 		return
 	}
-	else if(s.getContent()=="关闭扫码"){
+	else if(s.isAdmin() && s.getContent()=="关闭扫码"){
 		jddb.set("qr_switch",0)
 		s.reply("ok")
 		return
@@ -173,7 +174,7 @@ function main(){
 			if(!result)
 				result=RabbitQR()
 		}
-		else{	//优先使用nolanPro扫码
+		else{	//优先使用rabbit扫码
 			result=RabbitQR()
 			if(!result)
 				result=NolanProQR()
@@ -206,36 +207,6 @@ function main(){
 			return
 		}
 	}
-
-	// result=Submit_QL(QLS[DefaultQL-1].host,ql_token,env)
-	// if(result){
-	// 	let pin=env.value.match(/(?<=pin=)[^;]+/)[0]
-	//	pin=decodeURI(pin)==pin?encodeURI(pin):pin
-	// 	let bind=new Bucket("pin"+s.getPlatform().toUpperCase())
-	// 	bind.set(pin,s.getUserId())//用户绑定
-	// 	UpdateUserData(pin)//更新账号数据
-	// 	if(result==1)
-	// 		sillyGirl.notifyMasters("报告老板，新客户[ "+pin+" ]成功添加账号！\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
-	// 	else if(result==2)
-	// 		sillyGirl.notifyMasters("报告老板，老客户[ "+pin+" ]成功更新账号！\n--来自["+s.getPlatform()+":"+s.getUserId()+"]")
-	// 	s.reply("上车成功！\n账号更新中...请等待几分钟后查询账号信息")
-	// 	//更新变量
-	// 	if(env.name=="JD_WSCK")
-	// 		Update_JDCOOKIE(QLS[DefaultQL-1])
-	// 	return
-	// }
-	// else{
-	// 	s.reply("提交失败，请联系管理员")
-	// 	if(s.getContent()=="登陆"||s.getContent()=="登录" && env.value){
-	// 		sillyGirl.push({
-    // 			platform: s.getPlatform(),
-    // 			userId: s.getUserId(),
-    // 			content: env.value,
-	// 		})
-	// 		s.reply("获取的ck已私聊推送给您，或者您可以稍后将ck发给机器人尝试再次提交")
-	// 	}
-	// 	return
-	// }
 }
 
 function NolanProSms(nolanPro,token,Tel){
@@ -260,9 +231,9 @@ function NolanProSms(nolanPro,token,Tel){
 				else
 					s.reply("提交失败，请尝试手动提交或者联系管理员\n"+result)
 				if(pins.indexOf(pin)!=-1)
-					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：Nark短信")
+					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
 				else
-					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：Nark短信")
+					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPr短信")
 			}
 		}		
 		return result	
@@ -331,12 +302,12 @@ function NolanProQR(){
 		return false
 	}
 	//console.log(data.data.key)
-	console.log("NolanQR在线")
+	console.log("NolanPro在线")
 	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url=https://qr.m.jd.com/p?k="+data.data.key)
 	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
     let limit=100
     while(limit-->0){
-		sleep(1000)
+		sleep(1500)
         let option={
     		url:addr+"/qr/CheckQRKey",
         	method:"post",
@@ -357,7 +328,7 @@ function NolanProQR(){
 				return pin
             }
 			else{
- 				console.log(resp.body)
+				console.log(resp.body)
 				if(data.message=="请先获取二维码")	//二维码失效
                 	break
 			} 
@@ -394,13 +365,13 @@ function RabbitQR(){
 		console.log("未知错误\n"+JSON.stringify(data))
 		return false
 	}
-	console.log("rabbitQR在线")
+	console.log("qrabbit在线")
 	//console.log(data.QRCodeKey)
 	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url=https://qr.m.jd.com/p?k="+data.QRCodeKey)
 	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
     let limit=100
     while(limit-->0){
-        sleep(1000) 
+        sleep(1500) 
     	let resp=request({
             url:addr+"/api/QrCheck",
             method:"post",
@@ -424,7 +395,7 @@ function RabbitQR(){
             }
 			else{
 				console.log(resp.body)
-				if(data.code==54)	//二维码失效
+				if(data.code==502)	//二维码失效
                 	break
             }
         }

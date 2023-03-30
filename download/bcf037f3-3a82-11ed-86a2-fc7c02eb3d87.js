@@ -1,27 +1,27 @@
-/*
-* @author https://t.me/sillyGirl_Plugin
-* @create_at 2022-12-07 18:35:08
-* @description 口令解析、链接解析、变量转换、变量监控多合一，须安装something与qinglong模块，安装之后务必查看插件内详细说明与配置
-* @title 白眼
-* @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
-* @rule raw [\s\S]*\.jd\.com[\s\S]*
-* @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+[^\\]"[\s\S]*
-* @rule raw ImportWhiteEye=[\S\s]+
-* @rule 导出白眼
-* @rule 恢复ql spy
-* @rule 监控管理
-* @rule 监控状态
-* @rule 监控自检
-* @rule 监控排序
-* @rule 监控移动 ? ?
-* @rule 清空监控队列
-* @rule 清空监控记录
-* @rule 清空白眼数据
-* @rule 天王盖地虎
+/**
+ * @author https://t.me/sillyGirl_Plugin
+ * @create_at 2022-12-07 18:35:08
+ * @description 口令解析、链接解析、变量转换、变量监控多合一，须安装something与qinglong模块，安装之后务必查看插件内详细说明与配置
+ * @title 白眼
+ * @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
+ * @rule raw [\s\S]*\.jd\.com[\s\S]*
+ * @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+[^\\]"[\s\S]*
+ * @rule raw ImportWhiteEye=[\S\s]+
+ * @rule 导出白眼
+ * @rule 恢复ql spy
+ * @rule 监控管理
+ * @rule 监控状态
+ * @rule 监控自检
+ * @rule 监控排序
+ * @rule 监控移动 ? ?
+ * @rule 清空监控队列
+ * @rule 清空监控记录
+ * @rule 清空白眼数据
+ * @rule 天王盖地虎
  * @public false
-* @disable false
-* @priority 1
-* @version v1.4.4
+ * @disable false
+ * @priority 1
+ * @version v1.4.4
 */
 
 
@@ -224,6 +224,55 @@ function main() {
 	}
 	if(!FuckRebate)	//插件冲突处理
 		s.continue()
+	if(s.isAdmin()){
+		if (msg == "迁移ql spy") {
+			s.reply("已废弃")
+			//Migrate_qlspy()
+		}
+		else if (msg == "恢复ql spy") {
+			Recovery_qlspy()
+		}
+		else if (msg == "导出白眼")
+			Export_Spy()
+		else if (msg.match(/^ImportWhiteEye=\S+/) != null)
+			s.reply(Import_Spy(msg.match(/(?<=ImportWhiteEye=)[\s\S]+/g)[0]))
+		else if(msg=="天王盖地虎"){
+			let data=db.get("spy_targets_new")
+			if(!data)
+				targets=[]
+			else
+				targets=JSON.parse(data)
+			if(!targets.find(value=>value.id==s.getChatId()||value.id==s.getUserId())){
+				if(s.getChatId())
+					targets.push({name:s.getChatId(),id:s.getChatId()})
+				else
+					targets.push({name:s.getUserId(),id:s.getUserId()})
+				db.set("spy_targets_new",JSON.stringify(targets))
+				s.reply("宝塔镇河妖")
+			}
+			else
+				s.reply("唧唧复唧唧")
+		}
+		else if (msg == "监控管理")
+			Spy_Manager()
+		else if (msg == "清空监控队列") 
+			Spy_Clear()
+		else if (msg == "清空监控记录")
+			Spy_RecordReset()
+		else if (msg == "监控状态")
+			Spy_Status()
+		else if(msg=="监控自检")
+			Spy_Check()
+		else if(msg=="监控排序")
+			Spy_Sort()
+		else if(msg.indexOf("监控移动")!=-1)
+			Spy_Move(s.param(1)-1,s.param(2)-1)
+		else if (msg == "清空白眼数据") {
+			SaveData("", "", "", "", "")
+			db.set("env_listens_backup", "")
+			s.reply("已删除白眼监控任务、静默设置、监控目标、变量转换、自定义链接解析、和ql spy备份数据")
+		}
+	}
 	if (IsTarget() || s.isAdmin()) {//仅对监控目标和管理员消息监控
 	  //try{	
 		//变量监控
@@ -288,73 +337,6 @@ function main() {
 	// 		message+= "\n"+"发生错误，请联系开发者\n"+err
 	// 		return
 	//   }
-	}
-	//console.log(message.replace(/_/,"\\_"))
-	if (!s.isAdmin()) {//其他命令为管理员命令
-		if(message)
-			Notify(message)
-		return
-	}
-
-
-	if (msg == "迁移ql spy") {
-		s.reply("已废弃")
-		//Migrate_qlspy()
-	}
-	else if (msg == "恢复ql spy") {
-		Recovery_qlspy()
-	}
-
-	else if (msg == "导出白眼")
-		Export_Spy()
-
-	else if (msg.match(/^ImportWhiteEye=\S+/) != null)
-		s.reply(Import_Spy(msg.match(/(?<=ImportWhiteEye=)[\s\S]+/g)[0]))
-
-	else if(msg=="天王盖地虎"){
-		let data=db.get("spy_targets_new")
-		if(!data)
-			targets=[]
-		else
-			targets=JSON.parse(data)
-		
-		if(!targets.find(value=>value.id==s.getChatId()||value.id==s.getUserId())){
-			if(s.getChatId())
-				targets.push({name:s.getChatId(),id:s.getChatId()})
-			else
-				targets.push({name:s.getUserId(),id:s.getUserId()})
-			db.set("spy_targets_new",JSON.stringify(targets))
-			s.reply("宝塔镇河妖")
-		}
-		else
-			s.reply("唧唧复唧唧")
-	}
-
-	else if (msg == "监控管理")
-		Spy_Manager()
-
-	else if (msg == "清空监控队列") {
-		Spy_Clear()
-	}
-
-	else if (msg == "清空监控记录")
-		Spy_RecordReset()
-
-	else if (msg == "监控状态")
-		Spy_Status()
-	
-	else if(msg=="监控自检")
-		Spy_Check()
-	
-	else if(msg=="监控排序")
-		Spy_Sort()
-	
-	else if(msg.indexOf("监控移动")!=-1)
-		Spy_Move(s.param(1)-1,s.param(2)-1)
-	else if (msg == "清空白眼数据") {
-		SaveData("", "", "", "", "")
-		db.set("env_listens_backup", "")
-		s.reply("已删除白眼监控任务、静默设置、监控目标、变量转换、自定义链接解析、和ql spy备份数据")
 	}
 	if(message)
 		Notify(message)
