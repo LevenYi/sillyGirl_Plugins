@@ -303,8 +303,9 @@ function NolanProQR(){
 	}
 	//console.log(data.data.key)
 	console.log("NolanPro在线")
-	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url=https://qr.m.jd.com/p?k="+data.data.key)
-	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
+	let loginurl="https://qr.m.jd.com/p?k="+data.data.key
+	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
+	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr+"或者浏览器打开以下链接后唤醒京东APP确认登陆\n"+loginurl)
     let limit=100
     while(limit-->0){
 		sleep(1500)
@@ -367,8 +368,9 @@ function RabbitQR(){
 	}
 	console.log("qrabbit在线")
 	//console.log(data.QRCodeKey)
-	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url=https://qr.m.jd.com/p?k="+data.QRCodeKey)
-	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
+	let loginurl="https://qr.m.jd.com/p?k="+data.QRCodeKey
+	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
+	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr+"或者浏览器打开以下链接后唤醒京东APP确认登陆\n"+loginurl)
     let limit=100
     while(limit-->0){
         sleep(1500) 
