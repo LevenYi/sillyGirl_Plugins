@@ -9,6 +9,7 @@
 */
 
 //请在openAI官网登陆完成后，点击右上角头像-View API keys创建token，并使用命令'set otto openAI_token ?'设置token
+//本插件非chatgpt，调用openai的text-davinci-003模型
 
 const s=sender
 

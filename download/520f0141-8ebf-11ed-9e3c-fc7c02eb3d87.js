@@ -541,7 +541,7 @@ function SendToTG(id, msg,reply_markup,token) {
 		method: "post",
 		body: {
 			"chat_id": id,
-			"parse_mode": "Markdown",
+			//"parse_mode": "Markdown",
 			"text": msg
 		}
 	}
