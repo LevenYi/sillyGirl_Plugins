@@ -859,7 +859,7 @@ function EnvExist(envs,env){
 //在环境变量中找到变量名或者备注为string，或者value含string的变量
 function Find_env(envs,string){
 	for(i=0;i<envs.length;i++){
-		if(envs[i].value.match(/(?<=pin=)\S+(?=;)/g)==string|| envs[i].remarks==string||envs[i].name==string)
+		if(envs[i].value.match(/(?<=pin=)\S+(?=;)/g)==string|| envs[i].remarks.indexOf(string)!=-1||envs[i].name==string)
 			return i
 	}
 	return -1

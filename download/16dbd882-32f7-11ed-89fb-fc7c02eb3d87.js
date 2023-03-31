@@ -210,6 +210,8 @@ function main(){
 }
 
 function NolanProSms(nolanPro,token,Tel){
+	if(!nolanPro)
+		return false
 	if(SendSMS(nolanPro+"/sms",token,Tel)){	
 		console.log("nolanPro在线")
 		result=VerifyCode(nolanPro+"/sms",token,Tel)
@@ -245,6 +247,8 @@ function NolanProSms(nolanPro,token,Tel){
 }
 
 function NarkSms(nark,Tel){
+	if(!nark)
+		return false
 	if(SendSMS(nark+"/api",null,Tel)){	
 		console.log("nark在线")	
 		result=VerifyCode(nark+"/api",null,Tel)
@@ -318,6 +322,7 @@ function NolanProQR(){
 		let resp=request(option)
         try{
             let data=JSON.parse(resp.body)
+			console.log(resp.body)
             if(data.success){	//登陆成功
 				let pin=decodeURI(data.data.username)==data.data.username ? encodeURI(data.data.username) : data.data.username
 				if(pins.indexOf(pin)!=-1)
@@ -329,7 +334,6 @@ function NolanProQR(){
 				return pin
             }
 			else{
-				console.log(resp.body)
 				if(data.message=="请先获取二维码")	//二维码失效
                 	break
 			} 
@@ -565,7 +569,7 @@ function VerifyCard(addr,token,Tel){
 		if(data.success){
 			return data.data.ck?data.data.ck:data.data.username
 		}
-		else if(data.message.index("错误")!=-1){
+		else if(data.message.indexOf("错误")!=-1){
 			if(i < VerifyTimes-1)
 				s.reply(data.message)
 			else{
