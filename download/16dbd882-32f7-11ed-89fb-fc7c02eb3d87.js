@@ -109,7 +109,7 @@ function main(){
 		// 	s.reply("您的账号尚未失效，无需重新登陆")
 		// 	return
 		// }
-		s.reply("请输入京东登陆手机号码(回复q退出)：")
+		s.reply("请输入京东登陆手机号码\n(小提示：晚上8点后登陆成功概率更高哦~可回复q退出)：")
 		let inp=s.listen(handle,WAIT)
 		if(inp==null){
 			s.reply("输入超时，请重新登陆")
@@ -470,6 +470,8 @@ function Update_JDCOOKIE(QL){
 
 //检查pins中是否存在失效账号
 function NeedLogin(pins,QL){
+	if(!pins.length)	//新用户，尚未未绑定账号
+		return false
 	let envs=ql.Get_QL_Envs(QL.host,QL.token)
 	if(!envs){
 		console.log("获取青龙变量失败")
