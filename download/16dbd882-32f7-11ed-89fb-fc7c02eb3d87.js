@@ -1,6 +1,6 @@
 /**
  * @author https://t.me/sillyGirl_Plugin
- * @version v1.2.2
+ * @version v1.2.3
  * @create_at 2022-09-19 15:06:22
  * @description 京东登陆插件，已对接nark、NolanPro及qrabbit，需傻妞对接芝士，并安装qinglong与something模块
  * @title 京东登陆
@@ -109,7 +109,7 @@ function main(){
 		// 	s.reply("您的账号尚未失效，无需重新登陆")
 		// 	return
 		// }
-		s.reply("请输入京东登陆手机号码\n(小提示：晚上8点后登陆成功概率更高哦~可回复q退出)：")
+		s.reply("请输入京东登陆手机号码(可回复q退出):\n小提示：晚上8点后登陆成功概率更高哦~")
 		let inp=s.listen(handle,WAIT)
 		if(inp==null){
 			s.reply("输入超时，请重新登陆")
@@ -294,7 +294,7 @@ function NolanProQR(){
 		s.reply("未设置nolan扫码token")
 		return false
 	}
-	let data=getQR(addr+"/qr/GetQRKey")
+	let data=getQR(addr+"/qr/GetQRKey",token)
     if(!data || !data.success){
 		let tip="报告老板,NolanPro面板疑似挂了\n"
 		tip+=data ? JSON.stringify(data) : ""
@@ -315,10 +315,14 @@ function NolanProQR(){
 		sleep(1500)
         let option={
     		url:addr+"/qr/CheckQRKey",
+			headers:{"Content-Type":"application/json"},
         	method:"post",
-			headers:{"Authorization":"Bearer "+token},
 			body:{"qrkey":data.data.key}
-    	} 
+    	}
+		// if(token){	//bot验证，添加后将入Pro bot容器，需自行维护wskey转换与ck分发
+		// 	option.headers["Authorization"]="Bearer "+token
+		// 	option.body["botApitoken"]=token
+		// } 
 		let resp=request(option)
         try{
             let data=JSON.parse(resp.body)
@@ -380,6 +384,7 @@ function RabbitQR(){
         sleep(1500) 
     	let resp=request({
             url:addr+"/api/QrCheck",
+			headers:{"Content-Type":"application/json"},
             method:"post",
             body:{
                 "token": "",
@@ -418,11 +423,14 @@ function RabbitQR(){
 function getQR(addr,token){
    let option={
     	url:addr,
+		headers:{"Content-Type":"application/json"},
         method:"post",
 		body:{}
     } 
-	if(token)
-		option.headers={"Authorization":"Bearer "+token}
+	if(token){
+		option.headers["Authorization"]="Bearer "+token
+		option.body["botApitoken"]=token
+	}
 	let resp=request(option)
 	if(resp.status==200)
 		return JSON.parse(resp.body)
@@ -552,14 +560,18 @@ function VerifyCard(addr,token,Tel){
 		}
 		let option={
    			url:url,
+			headers:{"Content-Type":"application/json"},
     		method:"post",
 			body:{
  				"Phone": Tel,
  				"QQ": s.getUserId(),
  				"qlkey": 0,
-  				"Code": inp.getContent(),
-				"botApitoken":token
+  				"Code": inp.getContent()
 			}
+		}
+		if(token){
+			option.headers["Authorization"]="Bearer "+token
+			option.body["botApitoken"]=token
 		}
 		let resp=request(option)
 		if(resp.status!=200){
@@ -599,8 +611,9 @@ function VerifyCheck(addr,token,Tel,tip){
 		s.reply("已退出")
 		return true
 	}
-	let resp=request({
+	let option={
    		url:url,
+		headers:{"Content-Type":"application/json"},
     	method:"post",
 		body:{
  			"Phone": Tel,
@@ -609,7 +622,12 @@ function VerifyCheck(addr,token,Tel,tip){
   			"Code": "1",
 			"botApitoken":token
 		}
-	})
+	}
+	if(token){
+		option.headers["Authorization"]="Bearer "+token
+		option.body["botApitoken"]=token
+	}
+	let resp=request(option)
 	let data=JSON.parse(resp.body)
 	if(data.success)
 		return data.data.ck?data.data.ck:data.data.username
@@ -646,14 +664,18 @@ function VerifyCode(addr,token,Tel){
 		}
 		let option={
    			url:addr+"/VerifyCode",
+			headers:{"Content-Type":"application/json"},
     		method:"post",
 			body:{
  				"Phone": Tel,
  				"QQ": s.getUserId(),
  				"qlkey": 0,
-  				"Code": inp.getContent(),
-				"botApitoken":token
+  				"Code": inp.getContent()
 			}
+		}
+		if(token){
+			option.headers["Authorization"]="Bearer "+token
+			option.body["botApitoken"]=token
 		}
 		resp=request(option)
 		if(resp.status!=200){
@@ -707,15 +729,21 @@ function VerifyCode(addr,token,Tel){
 function SendSMS(addr,token,Tel){
 	if(!addr)
 		return false
-	let resp=request({
+	let option={
    		url:addr+"/SendSMS",
+		headers:{"Content-Type":"application/json"},
     	method:"post",
 		body:{
 			"Phone": Tel,
 			"qlkey": 0,
 			"botApitoken":token
 		}
-	})
+	}
+	if(token){
+		option.headers["Authorization"]="Bearer "+token
+		option.body["botApitoken"]=token
+	}
+	let resp=request(option)
 	if(resp.status==200){
 		let data=JSON.parse(resp.body)
 		if(data.success)
