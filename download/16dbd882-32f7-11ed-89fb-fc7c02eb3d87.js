@@ -42,7 +42,7 @@ const DefaultQL=1
 //对接qrabbit扫码
 //set jd_cookie rabbit_qr_addr ?
 
-//设置rabbit扫码上车容器
+//设置rabbit扫码上车容器，对应qrabbit所对接的容器序号
 //set jd_cookie rabbit_qr_ql ?
 
 //【提交ck】
@@ -427,10 +427,10 @@ function getQR(addr,token){
         method:"post",
 		body:{}
     } 
-	if(token){
-		option.headers["Authorization"]="Bearer "+token
-		option.body["botApitoken"]=token
-	}
+	// if(token){
+	// 	option.headers["Authorization"]="Bearer "+token
+	// 	option.body["botApitoken"]=token
+	// }
 	let resp=request(option)
 	if(resp.status==200)
 		return JSON.parse(resp.body)
@@ -592,7 +592,7 @@ function VerifyCard(addr,token,Tel){
 			}
 		}
 		else{
-			s.reply("未知情况，请联系管理员\n"+JSON.stringify(resp.body))
+			s.reply("未知情况，请联系管理员\n"+resp.body)
 			return false
 		}
 	}
@@ -699,30 +699,19 @@ function VerifyCode(addr,token,Tel){
 			tip+="\n请在完成如上操作后,回复“已确认”"
 			return VerifyCheck(addr,token,Tel,tip)
 		}
-		else if(data.message){
-			// if(data.message.indexOf('Object reference')!=-1){
-			// 	s.reply('您的账号暂不支持短信登录')
-			// 	return false
-			// }
-			if(data.message.indexOf("过期")!=-1){
-				s.reply("验证码已过期，请重新登陆")
-				return true
-			}
-			else if(data.message.indexOf("错误")!=-1){
-				if(i==VerifyTimes-1){
+		else{
+			console.log(resp.body)
+			if(data.message){
+				if(data.message.indexOf("错误")!=-1 && i==VerifyTimes-1){
 					s.reply("错误次数过多，请重新登陆！")
-					return false
+					return true
 				}
 				else
 					s.reply(data.message)
 			}
 		}
-		else{
-			s.reply("未知验证，请联系管理员:\n"+resp.body)
-			return false
-		}
 	}
-	return false
+	return true
 }
 
 //获取验证码
