@@ -69,8 +69,8 @@ const s = sender
 const pins=st.GetBind(s.getPlatform(),s.getUserId())	//获取用户已绑定的pin
 const QLS=ql.QLS()
 const sillyGirl=new SillyGirl()
-const WAIT=60*1000
-const VerifyTimes=3	//验证次数
+const WAIT=60*1000	//输入等待时长
+const VerifyTimes=3	//验证重试次数
 
 const handle=function(s){
 	if(s.getChatId())

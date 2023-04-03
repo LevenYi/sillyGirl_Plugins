@@ -160,7 +160,22 @@ function main(){
                 }
             }
         }
-        if(tostop){
+        if(scriptname){
+            notify+="消息中含脚本名【"+scriptname.toString()+"】，可能为线报\n"
+            scriptname.forEach(script=>{
+                let cron=crons.find(cron=>cron.command.indexOf(script)!=-1)
+                if(cron){
+                    let id=cron.id?cron.id:cron._id
+                    if(ids.indexOf(id)==-1 && !cron.pid){
+                        ids.push(id)
+                        names.push(cron.name)
+                    }
+                }
+                else
+                    notify+="脚本"+script+"未找到或者真正运行中\n"
+            })
+        }
+        else if(tostop){
             let temp=[]
             for(let j=0;j<crons.length;j++){
                 if(crons[j].pid && crons[j].command.indexOf(config.stopscript)!=-1)
@@ -176,21 +191,6 @@ function main(){
                     notify+="成功停止【"+temp.map(cron=>cron.name)+"】\n"
                 else console.log("停止"+temp.map(cron=>cron.name)+"失败")
             }
-        }
-        else if(scriptname){
-            notify+="消息中含脚本名【"+scriptname.toString()+"】，可能为线报\n"
-            scriptname.forEach(script=>{
-                let cron=crons.find(cron=>cron.command.indexOf(script)!=-1)
-                if(cron){
-                    let id=cron.id?cron.id:cron._id
-                    if(ids.indexOf(id)==-1 && !cron.pid){
-                        ids.push(id)
-                        names.push(cron.name)
-                    }
-                }
-                else
-                    notify+="脚本"+script+"未找到或者真正运行中\n"
-            })
         }
         else if(tostart){
             for(let j=0;j<crons.length;j++){
