@@ -346,17 +346,25 @@ function NolanProQR(){
 	//console.log(data.data.key)
 	console.log("NolanPro在线")
 	let loginurl="https://qr.m.jd.com/p?k="+data.data.key
-	if(s.getContent().match(/^扫码登(录|陆)$/)){
+	if(s.getContent().match(/^扫码登(录|陆)$/)){	//扫码登陆，生成二维码
 		let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
 		s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
 	}
-	else{
-		let code=st.NolanEncode(loginurl,"登陆")
+	else{	//口令登陆，生成口令
+		let limit=3
+		let code=null
+		while(limit-->0){
+			code=st.NolanEncode(loginurl,"登陆")
+			if(code)
+				break
+			else
+				sleep(3000)
+		}
 		if(code)
 			s.reply("请复制以下口令后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
 		else{
-			console.log("口令生成失败")
-			return false
+			s.reply("口令生成失败，请使用其他登陆方式")
+			return true
 		}
 	}
    	let limit=100
@@ -426,16 +434,24 @@ function RabbitQR(){
 	console.log("qrabbit在线")
 	//console.log(data.QRCodeKey)
 	let loginurl="https://qr.m.jd.com/p?k="+data.QRCodeKey
-	if(s.getContent().match(/^扫码登(录|陆)$/)){
+	if(s.getContent().match(/^扫码登(录|陆)$/)){	//扫码登陆，生成二维码
 		let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
 		s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
 	}
-	else{
-		let code=st.NolanEncode(loginurl,"登陆")
+	else{	//口令登陆，生成口令		
+		let limit=3
+		let code=null
+		while(limit-->0){
+			code=st.NolanEncode(loginurl,"登陆")
+			if(code)
+				break
+			else
+				sleep(3000)
+		}
 		if(code)
 			s.reply("请复制以下口令后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
 		else{
-			console.log("口令生成失败")
+			s.reply("口令生成失败，请使用其他登陆方式")
 			return false
 		}
 	}
