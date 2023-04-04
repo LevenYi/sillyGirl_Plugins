@@ -355,7 +355,7 @@ function NolanProQR(){
 		if(code)
 			s.reply("请复制以下口令后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
 		else{
-			s.console.log("口令生成失败")
+			console.log("口令生成失败")
 			return false
 		}
 	}
@@ -435,7 +435,7 @@ function RabbitQR(){
 		if(code)
 			s.reply("请复制以下口令后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
 		else{
-			s.console.log("口令生成失败")
+			console.log("口令生成失败")
 			return false
 		}
 	}
