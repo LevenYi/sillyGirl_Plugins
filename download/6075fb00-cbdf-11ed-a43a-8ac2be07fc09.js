@@ -13,7 +13,7 @@
  */
 
 let Headers={
-    "authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjbGllbnRJZCI6ImJtc3p5c2w4aGd1Iiwib3BlbklkIjoib2s1bFk0ODlvRG1aLXlFVk5ieUU2SVdHc1poUSIsImRlcElkIjotMSwiaWQiOjEyOTA2NywidGltZSI6MTY2ODA4MTM1OTQzNywidXNlcm5hbWUiOiLpo47nlJ_msLTotbcifQ.CAjxwzIHcDwdYdX5sIq0RBYPtTt37l0tPiBtv4ih_hU"
+    'authorization':'Bearer '+new Bucket('otto').get('cdd_token')
 }
 const s = sender
 
@@ -23,12 +23,18 @@ function main() {
     }
     if(s.getContent()=="霸王餐"){ 
         let acts=getActs()
+        if(!acts.length){
+            s.reply("暂无活动")
+            return
+        }
         let index=null
         let inp=s.listen(60000)
         if(!inp || inp.getContent()=="q")
             return
         else
             index=inp.getContent()-1
+        if(index==NaN)
+            return
         Attend(acts[index],formToken())
     }
     else{
@@ -39,6 +45,8 @@ function main() {
             return
         else
             index=inp.getContent()-1
+        if(index==NaN)
+            return
         let id=acts[index].id
         if(Cancel(id))
             s.reply("ok")
@@ -175,6 +183,7 @@ function getActs(){
                 }
                 else if(now.getTime()>end.getTime()){   //活动已结束
                     console.log(info.informationName+" 已结束"+info.effectiveEndStr)
+                    continue
                 }
                 record.push(info)
                 message+=record.length+"、"+info.informationName
