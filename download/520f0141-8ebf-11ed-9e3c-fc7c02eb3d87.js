@@ -37,26 +37,6 @@ module.exports={
 }
 
 
-function formatStringLen(strVal, len,padChar){
-	if (!strVal) {
-  	  return null
- 	} 
-	let pad=padChar||" "
-  	let count=0
-	for(let i=0;i<strVal.length;i++){
-		if(strVal.charCodeAt(i)>255)
-			count=count+2
-		else
-			count=count+1
-	}
-  //console.log(count)
-	for(i=0;i<len-count;i++)
-    strVal+=padChar
-	return strVal
-}
-
-
-
 //向type平台群cid(非群聊则cid为0)的用户uid推送msg信息
 function Push(type,uid,cid,msg){
 	let s = (new SillyGirl()).newSender({
@@ -490,8 +470,7 @@ function WindfggDecode(code) {
 	let data = request({
 		url: "http://api.windfgg.cf/jd/code",
 		headers: {
-			"User-Agent":
-				"Mozilla/5.0 (Linux; U; Android 11; zh-cn; KB2000 Build/RP1A.201005.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36 HeyTapBrowser/40.7.19.3 uuid/cddaa248eaf1933ddbe92e9bf4d72cb3",
+			"User-Agent":"Mozilla/5.0 (Linux; U; Android 11; zh-cn; KB2000 Build/RP1A.201005.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36 HeyTapBrowser/40.7.19.3 uuid/cddaa248eaf1933ddbe92e9bf4d72cb3",
 			"Content-Type": "application/json;charset=utf-8",
 			"Authorization": "Bearer " + (new Bucket("otto")).get("WindfggToken")
 		},

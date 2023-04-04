@@ -6,7 +6,9 @@
  * @title 京东登陆
  * @rule raw ^(登陆|登录)$
  * @rule raw ^扫码登(陆|录)$
+ * @rule raw ^口令登(录|陆)
  * @rule raw ^(打开|关闭)扫码$
+ * @rule raw ^登(陆|录)检(测|查)$
  * @priority 9
  * @public false
  * @disable false
@@ -59,6 +61,9 @@ const SmsProFirst=true
 //是否优先使用nolanPro
 const QRProFirst=true
 
+//【其他说明】
+//口令登陆等同于扫码登陆，扫码登陆为将登陆链接转换为二维码（基于pwmqr.com），而口令登陆为将登陆链接转换为京东口令(基于nolan公益api)
+//感谢以上服务提供者
 /************************************** */ 
 
 
@@ -146,6 +151,38 @@ function main(){
 			}
 		}
 	}
+	else if(s.isAdmin() && s.getContent().match(/^登(陆|录)检(测|查)$/)){
+		const nark=jddb.get("nolan_addr")
+		const nolanPro=jddb.get("nolanPro_addr")
+		const rabbit=jddb.get("rabbit_qr_addr")
+		const token=jddb.get("nolanPro_token")
+		let message=""
+		let Teltail=(Math.floor(Math.random()*9e7)+1e7).toString()	//生成随机手机尾号
+		let Tel="138"+Teltail
+		let data=null
+		s.reply("请稍候...")
+		console.log("生成随机手机号码:"+Tel)
+		if(SendSMS(nolanPro+"/sms",token,Tel))
+			message+="NolanPro短信：正常\n"
+		else
+			message+="NolanPro短信：失败\n"
+		if(SendSMS(nark+"/api",null,Tel))
+			message+="nark短信：正常\n"
+		else
+			message+="nark短信：失败\n"
+		data=getQR(nolanPro+"/qr/GetQRKey",token)
+    	if(data && data.success)
+			message+="NolanPro扫码：正常\n"
+		else
+			message+="NolanPro扫码：失败\n"
+	 	data=getQR(rabbit+"/api/BeanQrCode")
+    	if(data && data.code==0)
+			message+="rabbit扫码：正常\n"
+		else
+			message+="rabbit扫码：失败\n"
+		message+="\n若提示失败，请查看日志，可能原因包括但不限于未对接、对接失败、面板已挂等"
+		s.reply(message)
+	}
 	else if(s.isAdmin() && s.getContent()=="打开扫码"){
 		jddb.set("qr_switch",1)
 		s.reply("ok")
@@ -156,7 +193,7 @@ function main(){
 		s.reply("ok")
 		return
 	}
-	else if(s.getContent()=="扫码登陆"||s.getContent()=="扫码登录"){
+	else if(s.getContent().match(/^(扫码|口令)登(录|陆)$/)){
 		if(!s.isAdmin() && jddb.get("qr_switch")==0){
     		s.reply('维护中...')
 			return
@@ -309,10 +346,19 @@ function NolanProQR(){
 	//console.log(data.data.key)
 	console.log("NolanPro在线")
 	let loginurl="https://qr.m.jd.com/p?k="+data.data.key
-	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
-	s.reply("请使用京东app扫码（支持截图扫码）\n或者复制以下口令后进入京东APP（需开启京东app读取剪切板权限）\n")
-	s.reply(qr)
-	s.reply(st.NolanEncode(loginurl,"登陆"))	//+"或者浏览器打开以下链接后唤醒京东APP确认登陆\n"+loginurl)
+	if(s.getContent().match(/^扫码登(录|陆)$/)){
+		let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
+		s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
+	}
+	else{
+		let code=st.NolanEncode(loginurl,"登陆")
+		if(code)
+			s.reply("请复制以下口令后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
+		else{
+			s.console.log("口令生成失败")
+			return false
+		}
+	}
    	let limit=100
     while(limit-->0){
 		sleep(1500)
@@ -380,11 +426,20 @@ function RabbitQR(){
 	console.log("qrabbit在线")
 	//console.log(data.QRCodeKey)
 	let loginurl="https://qr.m.jd.com/p?k="+data.QRCodeKey
-	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
-	s.reply("请使用京东app扫码（支持截图扫码）\n或者复制以下口令后进入京东APP（需开启京东app读取剪切板权限）\n")
-	s.reply(qr)
-	s.reply(st.NolanEncode(loginurl,"登陆"))	//+"或者浏览器打开以下链接后唤醒京东APP确认登陆\n"+loginurl)
-    let limit=100
+	if(s.getContent().match(/^扫码登(录|陆)$/)){
+		let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
+		s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
+	}
+	else{
+		let code=st.NolanEncode(loginurl,"登陆")
+		if(code)
+			s.reply("请复制以下口令后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
+		else{
+			s.console.log("口令生成失败")
+			return false
+		}
+	}
+	let limit=100
     while(limit-->0){
         sleep(1500) 
     	let resp=request({
@@ -707,12 +762,18 @@ function VerifyCode(addr,token,Tel){
 		else{
 			console.log(resp.body)
 			if(data.message){
-				if(data.message.indexOf("错误")!=-1 && i==VerifyTimes-1){
-					s.reply("错误次数过多，请重新登陆！")
+				if(data.message.indexOf("错误")!=-1){	//验证码错误
+					if(i==VerifyTimes-1){
+						s.reply("错误次数过多，请重新登陆！")
+						return true
+					}
+					else
+						s.reply(data.message)
+				}
+				else{	//其他错误回报
+					s.reply(data.message)
 					return true
 				}
-				else
-					s.reply(data.message)
 			}
 		}
 	}
