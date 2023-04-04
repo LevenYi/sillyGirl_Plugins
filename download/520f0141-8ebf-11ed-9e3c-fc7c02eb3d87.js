@@ -3,7 +3,7 @@
  * @module true
  * @create_at 2021-09-09 16:30:33
  * @description 一些通用函数和网络接口以及数据
- * @version v1.0.6
+ * @version v1.0.7
  * @title something
  * @public false
 */
@@ -30,6 +30,7 @@ module.exports={
 	WallDecode,
 	WindfggDecode,
 	NolanDecode,
+	NolanEncode,
 
 	SendToTG,
 	GetFile
@@ -525,6 +526,29 @@ function NolanDecode(code) {
 	}
 	catch (err) {
 		return null
+	}
+}
+
+//链接转口令-noaln
+function NolanEncode(url,title,image) {
+	let resp = request({
+		url: "https://api.nolanstore.top/JCommand",
+		method: "post",
+		body: {
+  			"url":url,
+  			"title": title,
+  			"img": image
+		}
+	})
+	try {
+		let data = JSON.parse(resp.body)
+		if (data.code == 0)
+			return data.data
+		else
+			return ""
+	}
+	catch (err) {
+		return ""
 	}
 }
 

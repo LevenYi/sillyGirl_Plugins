@@ -1,8 +1,8 @@
 /**
  * @author https://t.me/sillyGirl_Plugin
- * @version v1.2.3
+ * @version v1.2.4
  * @create_at 2022-09-19 15:06:22
- * @description 京东登陆插件，已对接nark、NolanPro及qrabbit，需傻妞对接芝士，并安装qinglong与something模块
+ * @description 京东登陆插件，已对接nark、nolanPro及qrabbit，需傻妞对接芝士，并安装qinglong与something模块
  * @title 京东登陆
  * @rule raw ^(登陆|登录)$
  * @rule raw ^扫码登(陆|录)$
@@ -169,6 +169,7 @@ function main(){
 
 		let pin=""
 		let result=false
+		let tipid=s.reply("请稍候...")
 		if(QRProFirst){	//优先使用Pro扫码
 			result=NolanProQR()
 			if(!result)
@@ -309,8 +310,10 @@ function NolanProQR(){
 	console.log("NolanPro在线")
 	let loginurl="https://qr.m.jd.com/p?k="+data.data.key
 	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
-	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr+"或者浏览器打开以下链接后唤醒京东APP确认登陆\n"+loginurl)
-    let limit=100
+	s.reply("请使用京东app扫码（支持截图扫码）\n或者复制以下口令后进入京东APP（需开启京东app读取剪切板权限）\n")
+	s.reply(qr)
+	s.reply(st.NolanEncode(loginurl,"登陆"))	//+"或者浏览器打开以下链接后唤醒京东APP确认登陆\n"+loginurl)
+   	let limit=100
     while(limit-->0){
 		sleep(1500)
         let option={
@@ -378,7 +381,9 @@ function RabbitQR(){
 	//console.log(data.QRCodeKey)
 	let loginurl="https://qr.m.jd.com/p?k="+data.QRCodeKey
 	let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
-	s.reply("请使用京东app扫码（支持截图扫码）\n"+qr+"或者浏览器打开以下链接后唤醒京东APP确认登陆\n"+loginurl)
+	s.reply("请使用京东app扫码（支持截图扫码）\n或者复制以下口令后进入京东APP（需开启京东app读取剪切板权限）\n")
+	s.reply(qr)
+	s.reply(st.NolanEncode(loginurl,"登陆"))	//+"或者浏览器打开以下链接后唤醒京东APP确认登陆\n"+loginurl)
     let limit=100
     while(limit-->0){
         sleep(1500) 
