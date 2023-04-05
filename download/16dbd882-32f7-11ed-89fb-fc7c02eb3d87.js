@@ -321,20 +321,6 @@ function NarkSms(nark,Tel){
 	}
 }
 
-function exit(){
-	let exit=false
-	s.listen(6000,function handle(inp){
-		if(inp.getContent()=="q"){
-			exit=true
-			return
-		}
-	})
-	if(exit){
-		s.reply("已退出")
-		return true
-	}
-}
-
 function NolanProQR(){
 	const addr=jddb.get("nolanPro_addr")
 	const token=jddb.get("nolanPro_token")
@@ -381,11 +367,10 @@ function NolanProQR(){
 			return true
 		}
 	}
-	if(exit())
-		return true
+
 	//轮询是否登陆成功
-   	let limit=100
-    while(limit-->0){
+	let limit=100
+	while(limit-->0){
 		sleep(1500)
         let option={
     		url:addr+"/qr/CheckQRKey",
@@ -398,9 +383,9 @@ function NolanProQR(){
 		// 	option.body["botApitoken"]=token
 		// } 
 		let resp=request(option)
-        try{
-            let data=JSON.parse(resp.body)
+		if(resp.status==200){
 			console.log(resp.body)
+            let data=JSON.parse(resp.body)
             if(data.success){	//登陆成功
 				let pin=decodeURI(data.data.username)==data.data.username ? encodeURI(data.data.username) : data.data.username
 				if(pins.indexOf(pin)!=-1)
@@ -415,11 +400,7 @@ function NolanProQR(){
 				if(data.message=="请先获取二维码")	//二维码失效
                 	break
 			} 
-        }
-        catch(err){
-            console.log(JSON.stringify(resp))
-            return true
-        } 
+		}
 	}
     s.reply("超时")
 	return true
@@ -472,8 +453,7 @@ function RabbitQR(){
 			return false
 		}
 	}
-	if(exit())
-		return true
+
 	//轮询是否登陆成功
 	let limit=100
     while(limit-->0){
@@ -488,8 +468,8 @@ function RabbitQR(){
                 "QRCodeKey": data.QRCodeKey
             }
         })
-        try{
-            let data=JSON.parse(resp.body)
+		if(resp.status==200){
+			let data=JSON.parse(resp.body)
             if(data.code==200){	//登陆成功
 				let pin=decodeURI(data.pin)==data.pin ? encodeURI(data.pin):data.pin
 				if(pins.indexOf(pin)!=-1)
@@ -506,11 +486,7 @@ function RabbitQR(){
                 	break
             }
         }
-        catch(err){
-            console.log(JSON.stringify(resp))
-            return true
-        } 
-    }
+	}
     s.reply("超时")
 	return true
 }
