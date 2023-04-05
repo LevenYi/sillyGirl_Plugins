@@ -3,12 +3,13 @@
  * @rule 霸王餐
  * @rule 取消霸王餐
  * @origin 自用
- * @create_at 2020-09-11 19:14:23
+ * @create_at 2022-09-11 19:14:23
  * @description 餐大大自动查询霸王餐
  * @author 自用
  * @version v1.0.1
  * @public false
  * @disable false
+ * @cron 1-59/20 * * * *
  * @icon https://hi.kejiwanjia.com/wp-content/uploads/2022/01/%E4%B8%8B%E8%BD%BD-1.jpeg
  */
 
@@ -16,12 +17,13 @@ let Headers={
     'authorization':'Bearer '+new Bucket('otto').get('cdd_token')
 }
 const s = sender
+const silly=new SillyGirl()
 
 function main() {
     if(s.getPlatform()=="cron"){
-        
+        getActs()
     }
-    if(s.getContent()=="霸王餐"){ 
+    else if(s.getContent()=="霸王餐"){ 
         let acts=getActs()
         if(!acts.length){
             s.reply("暂无活动")
@@ -67,7 +69,7 @@ function Attended(){
         let data=JSON.parse(resp.body)
         if(data.code==1){
             let message=""
-            console.log("店铺数量:"+data.data.records.length)
+            //console.log("店铺数量:"+data.data.records.length)
             for(let i=0;i< data.data.records.length;i++){
                 let info=data.data.records[i]
                 if(info.transactionStatus!=1)
@@ -159,13 +161,19 @@ function getActs(){
         let data=JSON.parse(resp.body)
         if(data.code==1){
             let message=""
+            let notify=""
             //console.log("店铺数量:"+data.data.records.length)
             for(let i=0;i< data.data.records.length;i++){
                 let info=data.data.records[i]
                 let rule=info.rules.find(rule=>rule.ruleType==2)    //会员返利规则
                 let start=new Date(info.effectiveStart+":00")    //活动开始时间
                 let end=new Date(info.effectiveEnd+":00")    //活动结束时间
-                //console.log(info.informationName+info.distance+":"+rule.amountOne+"-"+rule.amountTwo)
+                let rulestr="" //满减规则
+                let temp=""
+                if(rule.choiceRule==1)
+                    rulestr+=":"+rule.amountOne+"-"+rule.amountOne
+                else
+                    rulestr+=":"+rule.amountOne+"-"+rule.amountTwo
                 if(info.distance>4)
                     break
                 else if(!info.surplus){  //跳过无名额的店铺
@@ -173,12 +181,12 @@ function getActs(){
                     continue
                 }
                 //choiceRule(返利规则): 1(设置返利上限amountOne，此时amountTwo为0)     2(满amountOne返amountTwo)
-                else if(rule.amountOne<15){  //跳过返利太少的或者门槛太低的店铺
-                    console.log(info.informationName+" 满减太少:"+rule.amountOne+"-"+rule.amountTwo)
+                else if(rule.choiceRule==1 && rule.amountOne<13){  //跳过返利太少的或者门槛太低的店铺
+                    console.log(info.informationName+" 满减太少"+rulestr)
                     continue
                 }
-                else if(rule.amountTwo<10 && rule.choiceRule==2){ //跳过返利太少的店铺
-                    console.log(info.informationName+" 满减太少:"+rule.amountOne+"-"+rule.amountTwo)
+                else if(rule.choiceRule==2 && rule.amountTwo<13){ //跳过返利太少的店铺
+                    console.log(info.informationName+" 满减太少:"+rulestr)
                     continue
                 }
                 else if(now.getTime()>end.getTime()){   //活动已结束
@@ -186,16 +194,24 @@ function getActs(){
                     continue
                 }
                 record.push(info)
-                message+=record.length+"、"+info.informationName
+                temp+=record.length+"、"+info.informationName
                 if(now.getTime()<start.getTime())   //活动尚未开始
-                    message+="("+info.effectiveStartStr+")"
-                if(rule.choiceRule==1)
-                    message+=":"+rule.amountOne+"-"+rule.amountOne
+                    temp+="("+info.effectiveStartStr+")"
+                temp+=rulestr+"("+info.surplus+")\n\n"
+                if((info.amountOne>=30||info.amountTwo>=30)&&s.getPlatform()=="cron"){
+                    notify+=temp
+                }
                 else
-                    message+=":"+rule.amountOne+"-"+rule.amountTwo
-                message+="("+info.surplus+")\n\n"
+                    message+=temp
             }
-            s.reply(message)
+            if(s.getPlatform()!="cron")
+                s.reply(message)
+            else
+                silly.push({
+		            platform:"qq",//推送平台,选填qq/tg/wx
+                    userId:"3176829386",//推送到的账号的id
+                    content:message
+	        })
         }
     }
     return record
