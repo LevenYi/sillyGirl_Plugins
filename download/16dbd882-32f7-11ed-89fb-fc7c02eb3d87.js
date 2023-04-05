@@ -321,6 +321,20 @@ function NarkSms(nark,Tel){
 	}
 }
 
+function exit(){
+	let exit=false
+	s.listen(6000,function handle(inp){
+		if(inp.getContent()=="q"){
+			exit=true
+			return
+		}
+	})
+	if(exit){
+		s.reply("已退出")
+		return true
+	}
+}
+
 function NolanProQR(){
 	const addr=jddb.get("nolanPro_addr")
 	const token=jddb.get("nolanPro_token")
@@ -348,7 +362,7 @@ function NolanProQR(){
 	let loginurl="https://qr.m.jd.com/p?k="+data.data.key
 	if(s.getContent().match(/^扫码登(录|陆)$/)){	//扫码登陆，生成二维码
 		let qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
-		s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
+		s.reply("请使用京东app扫码（支持截图扫码,输入q退出登陆）\n"+qr)
 	}
 	else{	//口令登陆，生成口令
 		let limit=3
@@ -361,12 +375,15 @@ function NolanProQR(){
 				sleep(3000)
 		}
 		if(code)
-			s.reply("请复制以下口令后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
+			s.reply("请复制以下口令后进入京东APP（需开启京东app读取剪切板权限,输入q退出登陆）:\n\n"+code)
 		else{
 			s.reply("口令生成失败，请使用其他登陆方式")
 			return true
 		}
 	}
+	if(exit())
+		return true
+	//轮询是否登陆成功
    	let limit=100
     while(limit-->0){
 		sleep(1500)
@@ -455,6 +472,9 @@ function RabbitQR(){
 			return false
 		}
 	}
+	if(exit())
+		return true
+	//轮询是否登陆成功
 	let limit=100
     while(limit-->0){
         sleep(1500) 
