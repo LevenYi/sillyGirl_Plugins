@@ -146,17 +146,18 @@ function main(){
         else
             s.reply("正在搜索，请稍候...")
         console.log("id:"+searchjob)
-        let limit=10
+        let limit=10,maxnum=20
         let results=[]
         while(limit-->0){
             sleep(3000)
             let temp=searchResult(host,ck,searchjob,20,results.length)
-            results=results.concat(temp)
             if(temp.length){
-                console.log("搜索引擎(找到"+temp.length+")："+temp[0].descrLink.match(/https?:\/\/[^\/]+/))
+                console.log("搜索引擎"+temp[0].descrLink.match(/https?:\/\/[^\/]+/))
+                console.log(results.length+"+"+temp.length)
                 //console.log(JSON.stringify(temp))
             }
-            if(results.length>20)
+            results=results.concat(temp)
+            if(results.length>maxnum)
                 break
         } 
         //删除搜索任务   
@@ -174,14 +175,16 @@ function main(){
             s.reply("未搜索到资源")
             return
         }  
-        if(results.length>20)   //搜索到的资源过多时仅输出前20项，防止输出失败
-            results=results.slice(0,19)  
+        if(results.length>maxnum)   //搜索到的资源过多时仅输出前20项，防止输出失败
+            results=results.slice(0,maxnum)  
         results.forEach((result,i)=>msg+=(i+1)+"、"+result.fileName+" "+TranSize(result.fileSize*1024)+"\n")
         s.reply(msg)
         //console.log(msg)
         let inp=s.listen(60000)
-        if(!inp || isNaN(Number(inp.getContent())))
+        if(!inp || isNaN(Number(inp.getContent())) || Math.abs(inp.getContent())>maxnum){
+            s.reply("未选择或者输入有误")
             return
+        }
         if(addTorr(host,ck,results[inp.getContent()-1].fileUrl))    
             s.reply("任务添加成功")
         else
