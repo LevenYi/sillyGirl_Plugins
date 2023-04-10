@@ -8,6 +8,7 @@
  * @priority 9
  * @public false
  * @disable false
+ * @admin true
 */
 
 /*********配置************/

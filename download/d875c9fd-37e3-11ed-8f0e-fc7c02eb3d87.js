@@ -1,22 +1,26 @@
 /**
  * @author https://t.me/sillyGirl_Plugin
- * @version v1.0.1
+ * @version v1.1.0
  * @create_at 2022-09-22 14:36:01
- * @description qbittorent远程下载,需填写qb地址及账户密码，使用命令:直接发送磁链
+ * @description qbittorent远程下载
  * @title qbittorent
  * @rule raw .*(magnet:\?xt=urn:btih:)[0-9a-fA-F]{40}.*
  * @rule raw .*(bc://bt/)[0-9a-fA-F=]+.*
  * @rule 查看下载
+ * @rule 下载 ?
  * @public false
  * @admin true
 */
 
 /***********配置命令************* */
-//qbittorent ip及端口，set qbittorent host http://127.0.0.1:8080
+// 对接qbittorrent面板
+//设置qbittorent ip及端口，set qbittorent host http://127.0.0.1:8080
+//设置qbittorent登陆用户名:set qbittorent username admin
+//设置qbittorent登陆密码:set qbittorent password adminadmin
 
-//qbittorent登陆用户名:set qbittorent username admin
-
-//qbittorent登陆密码:set qbittorent password adminadmin
+// 使用方式：
+// 发送磁链直接下载，或者使用"下载 ?"命令搜索资源下载
+// 使用"查看下载"命令管理下载任务
 
 /******************************* */
 
@@ -39,7 +43,7 @@ function main(){
     let ck=qb.get("cookie")
     let data=[]
     if(ck){
-        data=Get_AllTorr(host,ck)
+        data=getTorr(host,ck)
         if(!data){
             ck=Login(host,uname,pwd)
             qb.set("cookie",ck)
@@ -47,7 +51,7 @@ function main(){
     }
     else{
         ck=Login(host,uname,pwd)
-        data=Get_AllTorr(host,ck)
+        data=getTorr(host,ck)
         qb.set("cookie",ck)
     }
     if(!ck){
@@ -58,6 +62,8 @@ function main(){
     if(s.getContent()=="查看下载"){
         let notify="序号 任务名 资源大小 下载进度 速率 状态\n----------------------------------\n"
         let display_state=["downloading","pausedDL","queuedDL","stalledDL","metaDL","error"]
+        if(!data)
+            data=getTorr(host,ck)
         //console.log(JSON.stringify(data))
         data.forEach((session,index)=>{
             if(display_state.indexOf(session.state) == -1)
@@ -88,7 +94,7 @@ function main(){
             return
         if(Number(inp.getContent())){
             let session=data[Math.abs(Number(inp.getContent()))-1].hash
-            if(Del_Torr(host,ck,session,true))
+            if(delTorr(host,ck,session,true))
                 s.reply("删除成功")
             else
                 s.reply("删除失败")
@@ -99,7 +105,7 @@ function main(){
                 hash="all"
             else
                 hash=data[n-1].hash
-            if(Resume_Torr(host,ck,hash))
+            if(resumeTorr(host,ck,hash))
                 s.reply("启动成功")
             else
                 s.reply("启动失败")
@@ -110,7 +116,7 @@ function main(){
                 hash="all"
             else
                 hash=data[n-1].hash
-            if(Pause_Torr(host,ck,hash))
+            if(pauseTorr(host,ck,hash))
                 s.reply("停止成功")
             else
                 s.reply("停止失败")
@@ -120,22 +126,85 @@ function main(){
             s.continue()
         }
     }
-    else{
-        if(Add_Torr(host,ck,s.getContent())){
-            s.reply("任务添加成功")
+    else if(s.getContent().match(/^下载 /)){
+        // let status=searchStatus(host,ck)
+        // if(status)
+        //     console.log(JSON.stringify(status))
+        // status.forEach(statu=>{
+        //     if(searchDel(host,ck,statu.id))
+        //         console.log("删除成功"+statu.id)
+        //     else
+        //         console.log("删除失败"+statu.id)
+        // })
+        // return
+        let searchjob=searchStart(host,ck,s.param(1))
+        let msg=""
+        if(!searchjob){
+            s.reply("搜索启动失败")
             return
         }
+        else
+            s.reply("正在搜索，请稍候...")
+        console.log("id:"+searchjob)
+        let limit=10
+        let results=[]
+        while(limit-->0){
+            sleep(3000)
+            let temp=searchResult(host,ck,searchjob,20,results.length)
+            results=results.concat(temp)
+            if(temp.length){
+                console.log("搜索引擎(找到"+temp.length+")："+temp[0].descrLink.match(/https?:\/\/[^\/]+/))
+                //console.log(JSON.stringify(temp))
+            }
+            if(results.length>20)
+                break
+        } 
+        //删除搜索任务   
+        let searchjobs=searchStatus(host,ck)
+        // if(searchjobs)
+        //     console.log(JSON.stringify(searchjobs))
+        searchjobs.forEach(job=>{
+            if(searchDel(host,ck,job.id))
+                console.log("删除成功:"+job.id)
+            else
+                console.log("删除失败:"+job.id)
+        })
+
+        if(!results.length){
+            s.reply("未搜索到资源")
+            return
+        }  
+        if(results.length>20)   //搜索到的资源过多时仅输出前20项，防止输出失败
+            results=results.slice(0,19)  
+        results.forEach((result,i)=>msg+=(i+1)+"、"+result.fileName+" "+TranSize(result.fileSize*1024)+"\n")
+        s.reply(msg)
+        //console.log(msg)
+        let inp=s.listen(60000)
+        if(!inp || isNaN(Number(inp.getContent())))
+            return
+        if(addTorr(host,ck,results[inp.getContent()-1].fileUrl))    
+            s.reply("任务添加成功")
+        else
+            s.reply("任务添加失败")
+    }
+    else{
+        if(addTorr(host,ck,s.getContent()))
+            s.reply("任务添加成功")
         else
             s.reply("任务添加失败")
     } 
 }
 
+//文件大小转换
 function TranSize(size){
     let units=1024
     let count=0
-    while(size/units>units){
+    while(true){
         size=size/units
-        count++
+        if(size<1000)
+            break
+        else
+            count++
     }
     size=size.toString().substring(0,4)
     if(count==0)
@@ -154,6 +223,7 @@ function TranSize(size){
         return "too big or error"
 }
 
+//登陆
 function Login(host,name,password){
     let resp=request({
    		url:host+"/api/v2/auth/login",
@@ -171,8 +241,114 @@ function Login(host,name,password){
         return null
     }
 }
+/***************资源搜索***************** */
+//获取搜索任务状态
+function searchStatus(host,ck,id){
+    let url=host+"/api/v2/search/status"
+    if(id)
+        url+="?id="+id
+    let resp=request({
+   		url:url,
+    	method:"get",
+		headers:{
+			"Content-Type":"application/x-www-form-urlencoded",
+            "Cookie":ck
+		}
+	})
+    try{
+        return JSON.parse(resp.body)
+    }catch(err){
+        console.log(JSON.stringify(resp))
+        return false
+    } 
+}
 
-function Resume_Torr(host,ck,hashes){
+//开始搜索searchValue，默认使用所有搜索引擎搜索所有类型资源，返回搜索任务id
+function searchStart(host,ck,searchValue){
+    let resp=request({
+   		url:host+"/api/v2/search/start",
+    	method:"post",
+		headers:{
+			"Content-Type":"application/x-www-form-urlencoded",
+            "Cookie":ck
+
+		},
+		body:"pattern="+encodeURI(searchValue)+ "&category=all&plugins=enabled" 
+	})
+    try{
+        return JSON.parse(resp.body).id
+    }catch(err){
+        console.log(JSON.stringify(resp))
+        return false
+    }
+}
+//获取搜索任务id的搜索结果
+function searchResult(host,ck,id,limit,offset){
+    let resp=request({
+   		url:host+"/api/v2/search/results",
+    	method:"post",
+		headers:{
+			"Content-Type":"application/x-www-form-urlencoded",
+            "Cookie":ck
+
+		},
+		body:"id="+ id + "&limit="+limit+"&offset="+offset
+	})
+    try{
+        let data=JSON.parse(resp.body)
+        if(data.status=="Running")
+            return data.results
+        else{
+            console.log(resp.body)
+            return false
+        }
+    }catch(err){
+        console.log(JSON.stringify(resp))
+        return false
+    }
+}
+
+//停止搜索任务
+function searchStop(host,ck,id){
+    let resp=request({
+   		url:host+"/api/v2/search/stop?id="+id,
+    	method:"post",
+		headers:{
+			"Content-Type":"application/x-www-form-urlencoded",
+            "Cookie":ck
+
+		}
+	})
+    if(resp.status==200)
+        return true
+    else{
+        console.log(JSON.stringify(resp))
+        return false
+    }
+}
+
+//删除搜索任务
+function searchDel(host,ck,id){
+    let resp=request({
+   		url:host+"/api/v2/search/delete?id="+id,
+    	method:"get",
+		headers:{
+			"Content-Type":"application/x-www-form-urlencoded",
+            "Cookie":ck
+
+		}
+	})
+    if(resp.status==200)
+        return true
+    else{
+        console.log(JSON.stringify(resp))
+        return false
+    }
+}
+
+/***************下载***************** */
+//继续下载
+function resumeTorr(host,ck,hashes){
     let resp=request({
    		url:host+"/api/v2/torrents/resume?hashes="+hashes,
     	method:"get",
@@ -190,7 +366,8 @@ function Resume_Torr(host,ck,hashes){
     }
 }
 
-function Pause_Torr(host,ck,hashes){console.log(hashes)
+//暂停下载
+function pauseTorr(host,ck,hashes){console.log(hashes)
     let resp=request({
    		url:host+"/api/v2/torrents/pause?hashes="+hashes,
     	method:"get",
@@ -209,7 +386,8 @@ function Pause_Torr(host,ck,hashes){console.log(hashes)
     }
 }
 
-function Del_Torr(host,ck,hashes,deleteFiles){
+//删除下载任务
+function delTorr(host,ck,hashes,deleteFiles){
     let resp=request({
    		url:host+"/api/v2/torrents/delete?hashes="+hashes+"&deleteFiles="+deleteFiles,
     	method:"get",
@@ -228,7 +406,8 @@ function Del_Torr(host,ck,hashes,deleteFiles){
     }
 }
 
-function Get_DownloadngTorr(host,ck){
+//获取下载任务(正在下载)
+function getDLingTorr(host,ck){
     let resp=request({
    		url:host+"/api/v2/torrents/info?filter=downloading",
     	method:"get",
@@ -246,7 +425,8 @@ function Get_DownloadngTorr(host,ck){
     }
 }
 
-function Get_AllTorr(host,ck){
+//获取所有下载任务
+function getTorr(host,ck){
     let resp=request({
    		url:host+"/api/v2/torrents/info?filter=all",
     	method:"get",
@@ -264,7 +444,8 @@ function Get_AllTorr(host,ck){
     }
 }
 
-function Add_Torr(host,ck,urls){
+//添加下载任务
+function addTorr(host,ck,urls){
     let resp=request({
    		url:host+"/api/v2/torrents/add",
     	method:"post",
