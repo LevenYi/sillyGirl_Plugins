@@ -424,11 +424,11 @@ function Bean_Info(QLS,n,m){
 		return
 	}
 	let envs=ql.Get_QL_Envs(ql_host,ql_token)
-	let pin=envs[m-1].value.match(/(?<=pin=)[^;]+/)
 	if(m>envs.length)
 		return "查询序号大于容器变量数量，退出"
 	else if(envs[m-1].name!="JD_COOKIE")
 		return "查询序号变量非京东CK，退出"
+	let pin=envs[m-1].value.match(/(?<=pin=)[^;]+/)
 	info=st.JD_BeanInfo(envs[m-1].value,1)
 	if(info==null){
 		//s.reply(pin)

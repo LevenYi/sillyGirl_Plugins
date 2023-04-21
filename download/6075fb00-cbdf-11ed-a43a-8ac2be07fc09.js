@@ -2,6 +2,7 @@
  * @title 餐大大
  * @rule 霸王餐
  * @rule 取消霸王餐
+ * @rule 霸王餐 ?
  * @origin 自用
  * @create_at 2022-09-11 19:14:23
  * @description 餐大大自动查询霸王餐
@@ -9,19 +10,51 @@
  * @version v1.0.1
  * @public false
  * @disable false
- * @cron 1-59/20 * * * *
+ * @cron 30-59/1 10 * * *
+ * @cron 1-59/10 11-22 * * *
+ * @admin  true
  * @icon https://hi.kejiwanjia.com/wp-content/uploads/2022/01/%E4%B8%8B%E8%BD%BD-1.jpeg
  */
-
+const db=new Bucket('otto')
 let Headers={
-    'authorization':'Bearer '+new Bucket('otto').get('cdd_token')
+    'authorization':'Bearer '+db.get('cdd_token')
 }
 const s = sender
 const silly=new SillyGirl()
-
+const to={
+	platform:"qq",  //推送平台,选填qq/tg/wx
+    userId:"3176829386",    //推送到的账号的id
+    content:""
+}
 function main() {
     if(s.getPlatform()=="cron"){
-        getActs()
+    //if(s.getContent()=="霸王餐"){ 
+        let acts=getActs()
+        let attened=Attended()
+        let autoattend=db.get("cdd_auto").split("&")
+        //console.log(JSON.stringify(acts))
+        autoattend.forEach(shop=>{
+            let act=attened.find(act=>act.releaseInformationDO.title.indexOf(shop)!=-1)
+            if(act){
+                console.log(shop+"已参与")
+                return
+            }
+            act=acts.find(act=>act.title.indexOf(shop)!=-1)
+            //console.log(JSON.stringify(act))
+            if(!act){
+                console.log(shop+"暂无活动")
+                return
+            }
+            else if(Attend(act,formToken())){
+                to.content="已自动报名霸王餐："+act.title
+                silly.push(to)
+            }
+        })
+
+    }
+    else if(s.getContent().match(/^霸王餐 /)){
+        db.set("cdd_auto",s.param(1))
+        s.reply("ok")
     }
     else if(s.getContent()=="霸王餐"){ 
         let acts=getActs()
@@ -35,7 +68,7 @@ function main() {
             return
         else
             index=inp.getContent()-1
-        if(index==NaN)
+        if(isNaN(index))
             return
         Attend(acts[index],formToken())
     }
@@ -77,9 +110,14 @@ function Attended(){
                 record.push(info)
                 let temp=info.releaseInformationDO
                 let rule=temp.rules.find(rule=>rule.ruleType==2)
-                message+=record.length+"、"+temp.title+":"+rule.amountOne+"-"+rule.amountTwo+"\n\n"
+                if(rule.choiceRule==1)
+                    rulestr=rule.amountOne+"-"+rule.amountOne
+                else
+                    rulestr=rule.amountOne+"-"+rule.amountTwo
+                message+=record.length+"、"+temp.title+":"+rulestr+"\n\n"
             }
-            s.reply(message)
+            if(s.getPlatform()!="cron")
+                s.reply(message)
         }
     }
     return record   
@@ -156,13 +194,13 @@ function Attend(act,token){
 function getActs(){
     let record=[]   //记录输出的店铺活动
     let now=new Date()
-    let resp = request("https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/releaseInformation/selectPageAll/?orderValue=1&current=1&text&lat=23.01376874727772&lng=113.89298058539543&all=0&active=0&type&use=0&size=20") 
+    let resp = request("https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/releaseInformation/selectPageAll/?orderValue=1&current=1&text&all=0&active=0&type&use=0&size=20"+db.get("cdd_location")) 
     if(resp.status==200){
         let data=JSON.parse(resp.body)
         if(data.code==1){
             let message=""
             let notify=""
-            //console.log("店铺数量:"+data.data.records.length)
+            //console.log(JSON.stringify(data.data.records))
             for(let i=0;i< data.data.records.length;i++){
                 let info=data.data.records[i]
                 let rule=info.rules.find(rule=>rule.ruleType==2)    //会员返利规则
@@ -194,24 +232,25 @@ function getActs(){
                     continue
                 }
                 record.push(info)
-                temp+=record.length+"、"+info.informationName
+                let namet=info.informationName.split("】")
+                let name=namet.length==2?namet[1]:namet[0]
+                temp+=record.length+"、【"+info.forumNameStr+"】"+name
                 if(now.getTime()<start.getTime())   //活动尚未开始
                     temp+="("+info.effectiveStartStr+")"
                 temp+=rulestr+"("+info.surplus+")\n\n"
-                if((info.amountOne>=30||info.amountTwo>=30)&&s.getPlatform()=="cron"){
+                if((rule.amountOne>=30||rule.amountTwo>=30) && s.getPlatform()=="cron"){
                     notify+=temp
                 }
-                else
-                    message+=temp
+                 message+=temp
             }
             if(s.getPlatform()!="cron")
                 s.reply(message)
-            else
-                silly.push({
-		            platform:"qq",//推送平台,选填qq/tg/wx
-                    userId:"3176829386",//推送到的账号的id
-                    content:message
-	        })
+            // else
+            //     silly.push({
+		    //         platform:"qq",  //推送平台,选填qq/tg/wx
+            //         userId:"3176829386",    //推送到的账号的id
+            //         content:notify
+	        // })
         }
     }
     return record

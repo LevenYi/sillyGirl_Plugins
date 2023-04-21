@@ -2,8 +2,8 @@
  * @author https://t.me/sillyGirl_Plugin
  * @version v1.1.0
  * @create_at 2022-09-22 14:36:01
- * @description qbittorent远程下载
- * @title qbittorent
+ * @description qbittorrent远程下载
+ * @title qbittorrent
  * @rule raw .*(magnet:\?xt=urn:btih:)[0-9a-fA-F]{40}.*
  * @rule raw .*(bc://bt/)[0-9a-fA-F=]+.*
  * @rule 查看下载
@@ -14,9 +14,9 @@
 
 /***********配置命令************* */
 // 对接qbittorrent面板
-//设置qbittorent ip及端口，set qbittorent host http://127.0.0.1:8080
-//设置qbittorent登陆用户名:set qbittorent username admin
-//设置qbittorent登陆密码:set qbittorent password adminadmin
+//设置qbittorrent ip及端口，set qbittorent host http://127.0.0.1:8080
+//设置qbittorrent登陆用户名:set qbittorent username admin
+//设置qbittorrent登陆密码:set qbittorent password adminadmin
 
 // 使用方式：
 // 发送磁链直接下载，或者使用"下载 ?"命令搜索资源下载
@@ -43,7 +43,7 @@ function main(){
     let ck=qb.get("cookie")
     let data=[]
     if(ck){
-        data=getTorr(host,ck)
+        data=torrInfo(host,ck,"all")
         if(!data){
             ck=Login(host,uname,pwd)
             qb.set("cookie",ck)
@@ -51,7 +51,7 @@ function main(){
     }
     else{
         ck=Login(host,uname,pwd)
-        data=getTorr(host,ck)
+        data=torrInfo(host,ck,"all")
         qb.set("cookie",ck)
     }
     if(!ck){
@@ -63,7 +63,7 @@ function main(){
         let notify="序号 任务名 资源大小 下载进度 速率 状态\n----------------------------------\n"
         let display_state=["downloading","pausedDL","queuedDL","stalledDL","metaDL","error"]
         if(!data)
-            data=getTorr(host,ck)
+            data=torrInfo(host,ck,"all")
         //console.log(JSON.stringify(data))
         data.forEach((session,index)=>{
             if(display_state.indexOf(session.state) == -1)
@@ -72,20 +72,14 @@ function main(){
             let size=(session.size/1024/1024/1024).toString().substring(0,4)
             let progress=(session.progress*100).toString().substring(0,3)
             let speed=(session.dlspeed/1024).toString().substring(0,4)
-            notify+=fmt.sprintf("%2v、【%v】\n%5vGB %5v%% %5vKB/s ",index+1,name,size,progress,speed)
-            if(session.state=="pausedDL")
-                notify+=" 暂停\n\n"
-            else if(session.state=="queuedDL")
-                notify+="排队\n\n"
-            else if(session.state=="stalledDL")
-                notify+="未连接\n\n"
-            else if(session.state=="metaDL")
-                notify+="获取种子\n\n"
-            else if(session.state=="error")
-                notify+=" 错误\n\n"
-             else
-                notify+="\n\n"
-            //     notify+=session.name+ "其他状态\n"
+            const status={
+                "pausedDL":"暂停",
+                "queuedDL":"排队",
+                "stalledDL":"下载种子",
+                "metaDL":"获取元数据",
+                "error":"错误"
+            }
+            notify+=fmt.sprintf("【%2v】 %v\n%5vGB %5v%% %5vKB/s %s\n\n",index+1,name,size,progress,speed,status[session.state])
         })
         notify+="----------------------------------\n[-删除] [!暂停] [#开始]"
         s.reply(notify)
@@ -94,7 +88,7 @@ function main(){
             return
         if(Number(inp.getContent())){
             let session=data[Math.abs(Number(inp.getContent()))-1].hash
-            if(delTorr(host,ck,session,true))
+            if(torrDel(host,ck,session,true))
                 s.reply("删除成功")
             else
                 s.reply("删除失败")
@@ -105,7 +99,7 @@ function main(){
                 hash="all"
             else
                 hash=data[n-1].hash
-            if(resumeTorr(host,ck,hash))
+            if(torrRes(host,ck,hash))
                 s.reply("启动成功")
             else
                 s.reply("启动失败")
@@ -116,7 +110,7 @@ function main(){
                 hash="all"
             else
                 hash=data[n-1].hash
-            if(pauseTorr(host,ck,hash))
+            if(torrPau(host,ck,hash))
                 s.reply("停止成功")
             else
                 s.reply("停止失败")
@@ -146,7 +140,7 @@ function main(){
         else
             s.reply("正在搜索，请稍候...")
         console.log("id:"+searchjob)
-        let limit=10,maxnum=20
+        let limit=10,maxnum=20  //轮询次数限制与输出资源数量限制
         let results=[]
         while(limit-->0){
             sleep(3000)
@@ -177,7 +171,7 @@ function main(){
         }  
         if(results.length>maxnum)   //搜索到的资源过多时仅输出前20项，防止输出失败
             results=results.slice(0,maxnum)  
-        results.forEach((result,i)=>msg+=(i+1)+"、"+result.fileName+" "+TranSize(result.fileSize*1024)+"\n")
+        results.forEach((result,i)=>msg+="【"+(i+1)+"】 "+result.fileName+" "+TranSize(result.fileSize)+"\n")
         s.reply(msg)
         //console.log(msg)
         let inp=s.listen(60000)
@@ -185,43 +179,35 @@ function main(){
             s.reply("未选择或者输入有误")
             return
         }
-        if(addTorr(host,ck,results[inp.getContent()-1].fileUrl))    
+        if(torrAdd(host,ck,results[inp.getContent()-1].fileUrl))    
             s.reply("任务添加成功")
         else
             s.reply("任务添加失败")
     }
     else{
-        if(addTorr(host,ck,s.getContent()))
+        if(torrAdd(host,ck,s.getContent()))
             s.reply("任务添加成功")
         else
             s.reply("任务添加失败")
     } 
 }
 
-//文件大小转换
+//文件大小转换，size单位比特
 function TranSize(size){
-    let units=1024
+    const SIZE=["B","KB","MB","GB","TB","PB"]
+    const units=1024
     let count=0
     while(true){
-        size=size/units
         if(size<1000)
             break
-        else
+        else{
+            size=size/units
             count++
+        }
     }
     size=size.toString().substring(0,4)
-    if(count==0)
-        return size+"B"
-    else if(count==1)
-        return size+"KB"
-    else if(count==2)
-        return size+"MB"
-    else if(count==3)
-        return size+"GB"
-    else if(count==4)
-        return size+"TB"
-    else if(count==5)
-        return size+"PB"
+    if(count<SIZE.length)
+        return size+SIZE[count]
     else
         return "too big or error"
 }
@@ -267,7 +253,7 @@ function searchStatus(host,ck,id){
 }
 
 //开始搜索searchValue，默认使用所有搜索引擎搜索所有类型资源，返回搜索任务id
-function searchStart(host,ck,searchValue){
+function searchStart(host,ck,searchValue,category,plugins){
     let resp=request({
    		url:host+"/api/v2/search/start",
     	method:"post",
@@ -351,7 +337,7 @@ function searchDel(host,ck,id){
 
 /***************下载***************** */
 //继续下载
-function resumeTorr(host,ck,hashes){
+function torrRes(host,ck,hashes){
     let resp=request({
    		url:host+"/api/v2/torrents/resume?hashes="+hashes,
     	method:"get",
@@ -370,7 +356,7 @@ function resumeTorr(host,ck,hashes){
 }
 
 //暂停下载
-function pauseTorr(host,ck,hashes){console.log(hashes)
+function torrPau(host,ck,hashes){console.log(hashes)
     let resp=request({
    		url:host+"/api/v2/torrents/pause?hashes="+hashes,
     	method:"get",
@@ -390,7 +376,7 @@ function pauseTorr(host,ck,hashes){console.log(hashes)
 }
 
 //删除下载任务
-function delTorr(host,ck,hashes,deleteFiles){
+function torrDel(host,ck,hashes,deleteFiles){
     let resp=request({
    		url:host+"/api/v2/torrents/delete?hashes="+hashes+"&deleteFiles="+deleteFiles,
     	method:"get",
@@ -409,29 +395,11 @@ function delTorr(host,ck,hashes,deleteFiles){
     }
 }
 
-//获取下载任务(正在下载)
-function getDLingTorr(host,ck){
-    let resp=request({
-   		url:host+"/api/v2/torrents/info?filter=downloading",
-    	method:"get",
-		headers:{
-			"Content-Type":"application/x-www-form-urlencoded",
-            "Cookie":ck
 
-		}
-	})
-    if(resp.status==200)
-        return JSON.parse(resp.body)
-    else{
-        console.log("qbittorent Resume failed\n"+JSON.stringify(resp))
-        return null
-    }
-}
-
-//获取所有下载任务
-function getTorr(host,ck){
+//获取下载任务
+function torrInfo(host,ck,filter){
     let resp=request({
-   		url:host+"/api/v2/torrents/info?filter=all",
+   		url:host+"/api/v2/torrents/info?filter="+(filter?filter:"all"),
     	method:"get",
 		headers:{
 			"Content-Type":"application/x-www-form-urlencoded",
@@ -448,7 +416,7 @@ function getTorr(host,ck){
 }
 
 //添加下载任务
-function addTorr(host,ck,urls){
+function torrAdd(host,ck,urls){
     let resp=request({
    		url:host+"/api/v2/torrents/add",
     	method:"post",
@@ -462,7 +430,7 @@ function addTorr(host,ck,urls){
     if(resp.body=="Ok.")
         return true
     else{
-        console.log("qbittorent AddTorrent failed\n"+JSON.stringify(resp))
+        console.log("qbittorent torrAddent failed\n"+JSON.stringify(resp))
         return false
     }
 }
