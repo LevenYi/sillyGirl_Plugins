@@ -6,7 +6,7 @@
  * @title 饿了么
  * @rule elm ?
  * @rule 饿了么
- * @priority 10
+ * @priority 100
  * @public false
 */
 
@@ -87,7 +87,6 @@ function main(){
         s.reply("变量获取失败")
         return
     }
-
     if(s.getContent()=="饿了么"){
         let elm_ids=db.keys()
         let eids=[]
@@ -137,36 +136,25 @@ function main(){
         s.recallMessage(s.getMessageId())
 
         let e_uid=ck.match(/(?<=USERID=)\d+/)[0]
-        let find=false
-        for(let i=0;i<envs.length;i++){
-            if(envs[i].name==EnvName){
-                let eid=envs[i].value.match(/(?<=USERID=)\d+/)
-                if(eid && eid[0]==e_uid){
-                    find=true
-                    if(envs[i].id)
-                        env_id=envs[i].id
-                    else
-                        env_id=envs[i]._id
-                    if(ql.Update_QL_Env(Host,token,env_id,envs[i].name,ck,envs[i].remarks)){
-                        UpdateBind(e_uid)
-                        s.reply("更新成功")
-                        return
-                    }
-                }
-            }
-        }
-        if(!find){
-            if(ql.Add_QL_Envs(Host,token,[{
-                    name:EnvName,
-                    value:ck,
-                    remarks:s.getPlatform()+":"+s.getUserId()
-                }])){
+        let env=envs.find(env=>env.name==EnvName&&env.value.match(/(?<=USERID=)\d+/)==e_uid)
+        if(env){    //已存在该ck，更新
+            if(ql.Update_QL_Env(Host,token,env.id?env.id:env._id,env.name,ck,env.remarks?env.remarks:s.getPlatform()+":"+s.getUserId())){
                 UpdateBind(e_uid)
-                s.reply("添加成功")
-                return
+                s.reply("更新成功")
             }
+            else
+                s.reply("更新失败")
         }
-        s.reply("提交失败")
+        else if(ql.Add_QL_Envs(Host,token,[{
+                name:EnvName,
+                value:ck,
+                remarks:s.getPlatform()+":"+s.getUserId()
+            }])){   //添加新ck
+            UpdateBind(e_uid)
+            s.reply("添加成功")
+        }
+        else
+            s.reply("添加失败")
     }
 }
 

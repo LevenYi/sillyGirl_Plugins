@@ -9,9 +9,7 @@
  * @author 自用
  * @version v1.0.1
  * @public false
- * @disable false
- * @cron 30-59/1 10 * * *
- * @cron 1-59/10 11-22 * * *
+ * @disable 
  * @admin  true
  * @icon https://hi.kejiwanjia.com/wp-content/uploads/2022/01/%E4%B8%8B%E8%BD%BD-1.jpeg
  */
@@ -47,8 +45,8 @@ function main() {
             }
             else if(Attend(act,formToken())){
                 to.content="已自动报名霸王餐："+act.title
-                silly.push(to)
             }
+            silly.push(to)
         })
 
     }
@@ -74,6 +72,10 @@ function main() {
     }
     else{
         let acts=Attended()
+        if(!acts.length){
+            s.reply("没有已参加的活动")
+            return
+        }
         let index=null
         let inp=s.listen(60000)
         if(!inp)
@@ -166,11 +168,12 @@ function Attend(act,token){
         headers:Headers,
         body:{
             "relId":act.rules[1].relId,
-            "longitude":"113.8930676917588",
-            "dimension":"23.013770219598175",
+            "longitude":db.get("cdd_longitude"),
+            "dimension":db.get("cdd_dimension"),
             "formToken":token
         }
     }
+    //console.log(JSON.stringify(option.body))
     let resp=request(option)
     if(resp.status==200){
         let data=JSON.parse(resp.body)
@@ -179,8 +182,11 @@ function Attend(act,token){
             return data.data.orderId
         }
         else{
-            if(data.message)
-                s.reply(data.message)
+            if(data.message){
+                if(s.getPlatform()!="cron")
+                    s.reply(data.message)
+                to.content=data.message
+            }
             else 
                 s.reply(resp.body)
         }
@@ -199,7 +205,7 @@ function getActs(){
         let data=JSON.parse(resp.body)
         if(data.code==1){
             let message=""
-            let notify=""
+            let notify="",log=""
             //console.log(JSON.stringify(data.data.records))
             for(let i=0;i< data.data.records.length;i++){
                 let info=data.data.records[i]
@@ -215,20 +221,20 @@ function getActs(){
                 if(info.distance>4)
                     break
                 else if(!info.surplus){  //跳过无名额的店铺
-                    console.log(info.informationName+":无名额")
+                    log+=info.informationName+":无名额\n"
                     continue
                 }
                 //choiceRule(返利规则): 1(设置返利上限amountOne，此时amountTwo为0)     2(满amountOne返amountTwo)
                 else if(rule.choiceRule==1 && rule.amountOne<13){  //跳过返利太少的或者门槛太低的店铺
-                    console.log(info.informationName+" 满减太少"+rulestr)
+                    log+=info.informationName+" 满减太少"+rulestr+"\n"
                     continue
                 }
                 else if(rule.choiceRule==2 && rule.amountTwo<13){ //跳过返利太少的店铺
-                    console.log(info.informationName+" 满减太少:"+rulestr)
+                    log+=info.informationName+" 满减太少"+rulestr+"\n"
                     continue
                 }
                 else if(now.getTime()>end.getTime()){   //活动已结束
-                    console.log(info.informationName+" 已结束"+info.effectiveEndStr)
+                    log+=info.informationName+" 已结束"+info.effectiveEndStr+"\n"
                     continue
                 }
                 record.push(info)
@@ -243,14 +249,14 @@ function getActs(){
                 }
                  message+=temp
             }
-            if(s.getPlatform()!="cron")
+            console.log(log)
+            if(s.getPlatform()!="cron"){
                 s.reply(message)
-            // else
-            //     silly.push({
-		    //         platform:"qq",  //推送平台,选填qq/tg/wx
-            //         userId:"3176829386",    //推送到的账号的id
-            //         content:notify
-	        // })
+            }
+            // else{
+            //     to.content=notify
+            //     silly.push(to)
+            // }
         }
     }
     return record

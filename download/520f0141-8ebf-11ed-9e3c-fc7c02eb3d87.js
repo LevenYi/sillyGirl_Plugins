@@ -120,14 +120,15 @@ function NotifyPinInGroup(totype,cid,pin,msg){
 		return false
 }
 
-//向绑定pin的用户全平台推送msg，返回该用户所绑定的所有平台
+//向绑定京东pin的用户全平台推送msg，返回该用户所绑定的所有平台
 function NotifyPin(pin,msg){
 	const sillyGirl=new SillyGirl()
 	let types=["qq","tg","wx","sxg","wxmp"]
 	let to=[]
 	types.forEach(type=>{
-		let uid=(new Bucket("pin"+type.toUpperCase())).get(pin)
-		if(uid)
+		let binds=new Bucket("pin"+type.toUpperCase())
+		let uid=binds.get(pin) || binds.get(encodeURI(pin))
+		if(uid)	//name为pin
 			to.push({type:type,id:uid})
 	})		
 	for(let i=0;i<to.length;i++)

@@ -1180,7 +1180,7 @@ function Notify(msg) {
 	}
 	else {//静默推送
 		let temp="--------------------\n"
-		let gname=JSON.parse(db.get("spy_targets_new")).find(target=>target.id==s.getChatId()).name	//线报来源备注名
+		let gname=JSON.parse(db.get("spy_targets_new")).find(target=>target.id==s.getChatId()||target.id==s.getUserId()).name	//线报来源备注名
 		if((s.getPlatform()=="tg" || s.getPlatform()=="pgm") && s.getContent().match(/`[\s\S]*`/)){
 			//console.log("markupdown线报")
 			temp+="【线报】"+s.getContent()+"\n\n"

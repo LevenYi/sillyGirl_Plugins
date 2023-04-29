@@ -218,7 +218,6 @@ function QLS(){
 		}
 		if(!QLS[i].token){
 			console.log(ql.name+"token获取失败,青龙管理容器配置错误或者青龙已挂掉\n")
-			return null
 		}
 	})
 	if(updated)
@@ -414,7 +413,7 @@ function Add_QL_Envs(host,token,envs){
 //成功返回修改后的环境变量对象
 function Update_QL_Env(host,token,id,name,value,remark){
 	let body=null
-	if(typeof(id)=="string")
+	if(isNaN(Number(id)))
 		body={"value": value,"name": name,"remarks": remark,"_id":id}
 	else
 		body={"value": value,"name": name,"remarks": remark,"id":id}
