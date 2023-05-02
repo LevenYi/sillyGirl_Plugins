@@ -24,21 +24,10 @@ app.get("/myip", (req, res) => {
     })
 });
 
-
-app.post("/notify", function (req, res) {
-  //console.log(req.body())
-  let body=decodeURIComponent(req.body().split("payload=")[1]).replace(/\r/g,"")
-  let message=JSON.parse(body.replace(/\n/g,"\\n")).text.trim()  //原始消息，含标题、消息主体、尾戳
-  let temp=message.split("\n")  
-  let title=temp[0] 
-  let author=temp[temp.length-1]
-  temp.splice(0,1)  //删除标题
-  temp.splice(temp.length-1,1)  //删除尾戳
-  let text=temp.join("\n").trim()  //消息主体
+function Notify(title,text){
   temp=text.match(/京东账号[^\n]*/)
   let pin=temp?temp[0].split(/】| /)[1]:""
-  console.log(message)
-  if(pin && message.indexOf("东东农场日常任务")!=-1 && (text.indexOf("已可领取")!=-1||text.indexOf("忘了种植")!=-1)){
+  if(pin && title.indexOf("东东农场日常任务")!=-1 && (text.indexOf("已可领取")!=-1||text.indexOf("忘了种植")!=-1)){
     let jdNotify=new Bucket("jdNotify")
     let userdata=jdNotify.get(encodeURI(pin))
     if(!userdata){
@@ -50,16 +39,30 @@ app.post("/notify", function (req, res) {
             pin=temp.pin
           }
     }
-    let msg=text.replace(/【京东账号\d+】/,"【京东账号】")
+    let msg=text.replace(/京东账号\d+/,"京东账号")
     if(userdata && !JSON.parse(userdata).Fruit){
       //console.log(pin+"\n\n"+msg)
       st.NotifyPin(pin,msg)
     }
   }
-  else if(message.indexOf("京东保价")!=-1){
+  else if(title.indexOf("京东保价")!=-1){
     let msg=text.replace(/【京东账号\d+】/,"【京东账号】")
-    st.NotifyPin(account,msg)
+    st.NotifyPin(pin,msg)
   }
+}
+
+app.post("/notify", function (req, res) {
+  //console.log(req.body())
+  let body=decodeURIComponent(req.body().split("payload=")[1]).replace(/\r/g,"")
+  let message=JSON.parse(body.replace(/\n/g,"\\n")).text.trim()  //原始消息，含标题、消息主体、尾戳
+  let temp=message.split("\n")  
+  let title=temp[0] 
+  let author=temp[temp.length-1]
+  //temp.splice(0,1)  //删除标题
+  temp.splice(temp.length-1,1)  //删除尾戳
+  let text=temp.join("\n").trim()  //消息主体
+  console.log(message)
+  Notify(title,text)
   res.json({
     success:true
   })
