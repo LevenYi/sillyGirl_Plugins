@@ -13,10 +13,15 @@
 
 //填写你的token
 const token="leven"
+
 //通知的消息关键词，&隔开
-const kwm="农场&保价"
+const kwm="农场&保价&失效"
+
 //不通知的消息关键词，&隔开
 const kwb="异常"
+
+//通知时间(小时)，非工作时间内收到青龙推送不进行通知
+const worktime="8-23"
 
 //在青龙配置文件中填写
 //export CHAT_URL="http://傻妞ip及端口/notify?token="
@@ -27,15 +32,21 @@ const st=require("something")
 
 function Notify(message){
   console.log(message)
+  //过滤不通知的消息
   if(kwb.split("&").find(kw=>message.indexOf(kw)!=-1))
+    return
+  //非工作时间不通知
+  let now=new Date()
+  let workhour=worktime.split("-")
+  if(now.getHours()<Number(workhour[0]) || now.getHours()>Number(workhour[1]))
     return
   let title=message.split("\n")[0]
   let account=message.match(/(?<=京东账号\d+(】| ))\S+/) 
   //console.log(JSON.stringify(account))
   if(!account)
     return
-  let pin=account[0]
-  let text=message.replace().replace(/京东账号\d+/,"京东账号").replace(/本通知.*/,"")
+  let pin=account[0]  //所通知的账号
+  let text=message.replace().replace(/京东账号\d+/,"京东账号").replace(/本通知.*/,"") //通知的消息
   let jdNotify=new Bucket("jdNotify") //用户通知设置(芝士)
   let userdata=jdNotify.get(encodeURI(pin))
   if(!userdata){  //没有用户设置数据，可能为昵称，通过芝士plus保存的昵称数据获取pin
@@ -58,9 +69,12 @@ function Notify(message){
         return
       }
       else if(JSON.parse(userdata).Fruit){
-        console.log(pin+"已设置不推送农场")
+        console.log(pin+"该用户已设置不推送农场")
         return
       }
+    }
+    else if(text.indexOf("失效")){  //ck失效
+      text=text.replace(title,"")
     }
     //console.log(pin)
     st.NotifyPin(pin,text)
@@ -70,8 +84,8 @@ function Notify(message){
 app.post("/notify", function (req, res) {
   //console.log(req.body())
   //console.log(req.headers())
-//  try{
-    let body=decodeURIComponent(req.body().split("payload=")[1]).replace(/\r\n/g,"\\n")
+  try{
+    let body=decodeURIComponent(req.body().split("payload=")[1]).replace(/\r/g,"").replace(/\n/g,"\\n")
     let tk=req.originalUrl().match(/(?<=token=)[^&]+/)
     if(tk && tk==token){
       Notify(JSON.parse(body).text.trim())
@@ -81,9 +95,9 @@ app.post("/notify", function (req, res) {
     }
     else
       return res.status(401).json({ error: 'Invalid token' })
-  // }
-  // catch(e){
-  //     console.log(e)
-  //     return res.status(401).json({ error: 'Invalid body' })
-  // }
+   }
+   catch(e){
+       console.log(e)
+       return res.status(401).json({ error: 'Invalid body' })
+   }
 })
