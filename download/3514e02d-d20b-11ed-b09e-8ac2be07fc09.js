@@ -20,7 +20,7 @@ const kwm="农场&保价&失效"
 //不通知的消息关键词，&隔开
 const kwb="异常"
 
-//通知时间(小时)，非工作时间内收到青龙推送不进行通知
+//通知时间(时)，非工作时间内收到青龙推送不进行通知
 const worktime="8-23"
 
 //在青龙配置文件中填写
@@ -41,7 +41,7 @@ function Notify(message){
   if(now.getHours()<Number(workhour[0]) || now.getHours()>Number(workhour[1]))
     return
   let title=message.split("\n")[0]
-  let account=message.match(/(?<=京东账号\d+(】| ))\S+/) 
+  let account=message.match(/(?<=京东账号\d+(】|\s))\S+/) 
   //console.log(JSON.stringify(account))
   if(!account)
     return
@@ -87,7 +87,7 @@ app.post("/notify", function (req, res) {
   try{
     let body=decodeURIComponent(req.body().split("payload=")[1]).replace(/\r/g,"").replace(/\n/g,"\\n")
     let tk=req.originalUrl().match(/(?<=token=)[^&]+/)
-    if(tk && tk==token){
+    if(tk && tk[0]==token){
       Notify(JSON.parse(body).text.trim())
       res.json({
         success:true

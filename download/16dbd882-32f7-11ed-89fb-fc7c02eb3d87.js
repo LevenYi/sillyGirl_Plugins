@@ -108,7 +108,7 @@ function main(){
 		// 	s.reply("您的账号尚未失效，无需重新登陆")
 		// 	return
 		// }
-		s.reply("请输入京东登陆手机号码(可回复q退出):\n小提示：晚上8点后登陆成功概率更高哦~")
+		s.reply("京东呆瓜助手为您服务，请输入手机号码(可回复q退出):")
 		let inp=s.listen(handle,WAIT)
 		if(inp==null){
 			s.reply("输入超时，请重新登陆")
@@ -390,17 +390,14 @@ function NarkSms(Tel){
 }
 
 //生成登陆二维码或者登陆口令并回复用户
-function Reply(loginkey){
+function Reply(loginkey,code){
 	let loginurl="https://qr.m.jd.com/p?k="+loginkey
-	if(s.getContent().match(/^扫码登(录|陆)$/)){	//扫码登陆，生成二维码
-		let qr=image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
-		if(s.getPlatform()=="qq")
-			qr=st.CQ_Image("https://api.pwmqr.com/qrcode/create/?url="+loginurl)
-		s.reply("请使用京东app扫码（支持截图扫码）\n"+qr)
-	}
-	else{	//口令登陆，生成口令
+	let qrurl="https://api.pwmqr.com/qrcode/create/?url="+loginurl
+	//回复登陆二维码
+	s.reply(s.getPlatform()=="qq"?st.CQ_Image(qrurl):image(qrurl))	
+	//回复登陆口令
+	if(!code){	//没有口令，生成口令
 		let limit=3
-		let code=null
 		while(limit-->0){
 			code=st.NolanEncode(loginurl,"登陆")
 			if(code)
@@ -408,14 +405,11 @@ function Reply(loginkey){
 			else
 				sleep(3000)
 		}
-		if(code)
-			s.reply("请复制本段文字后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
-		else{
-			s.reply("口令生成失败，请使用其他登陆方式或稍后重试")
-			return false
-		}
 	}
-	return true
+	if(code)
+		s.reply("请使用京东app扫码\n或者复制本段文字后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
+	else
+		s.reply("登陆口令生成失败")
 }
 
 //nolanPro扫码登陆与口令登陆，服务失效返回false，登陆成功返回pin，超时返回true
@@ -444,8 +438,7 @@ function NolanProQR(){
 	//console.log(data.data.key)
 	console.log("NolanPro在线")
 	let loginkey=data.data.key
-	if(!Reply(loginkey))
-		return false
+	Reply(loginkey)
 
 	//轮询是否登陆成功
 	let limit=100
@@ -457,7 +450,7 @@ function NolanProQR(){
         	method:"post",
 			body:{"qrkey":loginkey}
     	}
-		// if(token){	//bot验证，添加后将入Pro bot容器，需自行维护wskey转换与ck分发
+		// if(token){	//bot验证，添加后将入Pro bot容器，并在登陆成功后返回wskey，需自行维护wskey转换与ck分发
 		// 	option.headers["Authorization"]="Bearer "+token
 		// 	option.body["botApitoken"]=token
 		// } 
@@ -506,8 +499,7 @@ function RabbitQR(){
 	}
 	console.log("qrabbit在线")
 	let loginkey=data.QRCodeKey
-	if(!Reply(loginkey))
-		return false
+	Reply(loginkey,data.jcommond)
 
 	//轮询是否登陆成功
 	let limit=100
@@ -714,12 +706,12 @@ function VerifyCode(Tel,addr,token){
 		//二验
 		else if(data.data.status==555){
 			if(data.data.mode=="USER_ID")
-				s.reply("您的账号需验证身份,请输入您的身份证号前2位与后4位:")
+				s.reply("该账号需验证身份,请输入您的身份证号前2位与后4位:")
 			else if(data.data.mode=="HISTORY_DEVICE")
-				s.reply("您的账号需验证设备，请在三分钟内前往京东APP>设置>账户安全 新设备登录>确认登录\n\n请在完成如上操作后,回复“已确认”")
+				s.reply("该账号需验证设备，请在三分钟内前往京东APP>设置>账户安全 新设备登录>确认登录\n\n请在完成如上操作后,回复“已确认”")
 			else if(data.data.mode=="DANGEROUS_UP"){
 					let info=data.data.message
-					let tip="您的账号需进行短信验证，请在三分钟内使用手机"+info.phone+"编辑短信“"+info.uplink_tocontent+"”发送至"+info.uplink_tophone
+					let tip="该账号需进行短信验证，请在三分钟内使用手机"+info.phone+"编辑短信“"+info.uplink_tocontent+"”发送至"+info.uplink_tophone
 				 	tip+="\n请在完成如上操作后,回复“已确认”"
 					s.reply(tip)
 			}
@@ -753,6 +745,9 @@ function VerifyCode(Tel,addr,token){
 							continue
 						}
 					}
+					else if(data.message.indexOf("账号存在风险")!=-1){
+						s.reply("该账号受京东风控，请晚上8点后重试或者使用其他登陆方式")
+					}
 					else
 						s.reply(data.message)
 				}
@@ -770,6 +765,9 @@ function VerifyCode(Tel,addr,token){
 					s.reply(data.message)
 					continue
 				}
+			}
+			else if(data.message.indexOf("账号存在风险")!=-1){
+				s.reply("该账号受京东风控，请晚上8点后重试或者使用其他登陆方式")
 			}
 			else{
 				s.reply(data.message)

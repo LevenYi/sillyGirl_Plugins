@@ -130,13 +130,15 @@ function NotifyPin(pin,msg){
 		let uid=binds.get(pin) || binds.get(encodeURI(pin))
 		if(uid)	//name为pin
 			to.push({type:type,id:uid})
-	})		
-	for(let i=0;i<to.length;i++)
-		sillyGirl.push({
-			platform:to[i].type,
-			userID:to[i].id,
+	})
+	if(!to.length)
+		console.log(pin+"无绑定")
+	else
+		to.forEach(user=>sillyGirl.push({
+			platform:user.type,
+			userID:user.id,
 			content:msg,
-		})
+		}))	
 	return to
 }
 
