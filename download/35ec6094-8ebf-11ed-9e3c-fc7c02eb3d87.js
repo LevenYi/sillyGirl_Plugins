@@ -168,8 +168,13 @@ function main(){
 	else if(msg=="ck去重")
 		s.reply(Reduce_JDCK_Repetition(QLS))
 
-	else if(msg.indexOf("查绑")!=-1)
-		s.reply(st.GetBind(s.getPlatform(),s.param(1)).join("\n"))
+	else if(msg.indexOf("查绑")!=-1){
+		let pins=st.GetBind(s.getPlatform(),s.param(1))
+		if(pins.length)
+			s.reply(pins.join("\n"))
+		else
+			s.reply("该账号无绑定")
+	}
 
 	else if(msg=="拉库")
 		Repo(QLS)
@@ -489,11 +494,7 @@ function SaveJDUserName(QLS){
 				notify+="【"+pin+"】-"
 				let userInfo=st.JD_UserInfo(envs[j].value)
 				if(userInfo){
-					let find=0
-					for(let k=0;k<names.length;k++)
-						if(names[k].pin==pin)
-							find=1
-					if(!find)
+					if(!names.find(pinname=>pinname.pin==pin))
 						names.push({pin:pin,name:userInfo.userInfo.baseInfo.nickname})
 					notify+="【"+userInfo.userInfo.baseInfo.nickname+"】\n"
 				}
@@ -696,7 +697,7 @@ function Notify_JDCK_disabled(QLS){
 						if(to.length!=0){
 							record.push(pin)//记录已通知pin
 							for(let k=0;k<to.length;k++)
-								notify+="★通知"+to[k].type+"-"+to[k].id+"成功\n"							
+								notify+="★通知"+to[k].type+"-"+to[k].id+"\n"							
 						}
 						else
 							notify+="☆通知失败，该客户未绑定傻妞\n"
@@ -710,7 +711,7 @@ function Notify_JDCK_disabled(QLS){
 							for(l=0;l<gid.length;l++)
 								if(st.NotifyPinInGroup(toType[k],gid[l],pin,"温馨提示，您的账号【"+name+"】已过期，请重新登陆")){
 									record.push(pin)//记录已通知pin
-									notify=notify+"★通知"+toType[k]+"群"+gid[l]+"成功\n"
+									notify=notify+"★通知"+toType[k]+"群"+gid[l]+"\n"
 									sleep(Math.random()*5000+5000)
 								}
 								else notify=notify+"☆通知"+toType[k]+"群失败，该客户未绑定"+toType[k]+"\n"
