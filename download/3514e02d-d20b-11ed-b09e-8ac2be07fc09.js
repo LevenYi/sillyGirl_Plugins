@@ -15,7 +15,7 @@
 const token="leven"
 
 //通知的消息关键词，&隔开
-const kwm="农场&保价&失效"
+const kwm="农场&保价&失效&CK检测"
 
 //不通知的消息关键词，&隔开
 const kwb="异常"
@@ -63,40 +63,55 @@ function Notify(message){
   if(now.getHours()<Number(workhour[0]) || now.getHours()>Number(workhour[1]))
     return
 
-  let title=message.split("\n")[0]
-  let accounts=message.match(/(?<=京东账号\d*(】|\s+))\S+/g) //消息中通知的账号，可能为解码后的pin或者京东昵称
+  let text=message.replace().replace(/账号\d*/g,"账号").replace(/本通知.*/,"").trim() //消息初步处理，删除其中包含的账号位置及消息推送源信息
+  let accounts=text.match(/(?<=账号(🆔)?(】|\s+))\S+/g) //青龙通知的账号，可能为解码后的pin或者京东昵称
+  let pieces=text.split("\n")
+  let title=pieces[0] //青龙通知所使用的标题
+  console.log(text)
   if(!accounts)
     return
+  //console.log(title)
   //console.log(JSON.stringify(accounts))
-  accounts.forEach(account=>{
-    let pin=getPin(account)  //所通知的账号
+  
+
+  if(title=="东东农场日常任务"){
+    let pin=getPin(accounts[0])  //所通知的账号
     if(!pin)
       return
-    let text=message.replace().replace(/京东账号\d*/g,"京东账号").replace(/本通知.*/,"") //通知的消息，删除其中包含的账号位置及消息推送源信息
-    if(text.indexOf("东东农场日常任务")!=-1){
-      let userdata=jdNotify.get(pin)
-      if(!userdata){
-        console.log(pin+"可能未绑定")
-        return
-      }
-      else if(JSON.parse(userdata).Fruit){  //检查该账号所绑定的客户是否已在芝士"账号管理"设置不通知农场信息
-        console.log(pin+"该用户已设置不推送农场")
-        return
-      }
-      st.NotifyPin(pin,text)
+    let userdata=jdNotify.get(pin)
+    if(!userdata){
+      console.log(pin+"可能未绑定")
+      return
     }
-    else if(text.indexOf("失效")!=-1){  //ck可能失效
-      text=text.replace(title,"")
-      st.NotifyPin(pin,text)
+    else if(JSON.parse(userdata).Fruit){  //检查该账号所绑定的客户是否已在芝士"账号管理"设置不通知农场信息
+      console.log(pin+"该用户已设置不推送农场")
+      return
     }
-    else if(text.indexOf("保价")!=-1){
+    st.NotifyPin(pin,text)
+  }
+  else if(title=="京东CK检测"){
+    pieces.forEach(value=>{
+      if(value.indexOf("已失效,自动禁用成功!")!=-1){
+        let account=value.match(/(?<=账号(🆔)?(】|\s+))\S+/g)
+        let pin=getPin(account[0])
+        st.NotifyPin(pin,value)
+        //console.log(JSON.stringify(account))
+      }
+    })
+  }
+  else if(text.indexOf("失效")!=-1){  //ck可能失效
+    text=text.replace(title,"")
+    st.NotifyPin(pin,text)
+  }
+  else if(text.indexOf("保价")!=-1){
+    accounts.forEach(account=>{
       //text=text.replace(title,"") //删除标题
       let temp=text.split(/\s(?=【?京东账号)/g)
       //console.log(pin+"\n\n"+temp.find(msg=>msg.indexOf(account)!=-1))
       st.NotifyPin(pin,temp.find(msg=>msg.indexOf(account)!=-1))
       sleep(2000)
-    }
-  })
+    })
+  }
 }
 
 app.post("/notify", function (req, res) {

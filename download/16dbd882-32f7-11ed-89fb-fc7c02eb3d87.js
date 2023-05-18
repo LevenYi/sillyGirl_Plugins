@@ -57,11 +57,14 @@ const qlc=1
 //依次为nolanPro、nark，不可用的方式填0
 //例:[2,1]表示优先调用nolanPro登陆，nolanPro不可用时自动切换至nark
 //例:[0,1]表示仅使用nark登陆
-const SmsWeight=[1,2]
+const SP=[1,2]
 
 //【扫码登陆优先级】
 //依次为nolanPro、qrabbit,其他同上
-const QRWeight=[1,2]
+const QP=[1,2]
+
+//【是否禁止未失效客户重复登陆】
+const FBA=true
 
 //【其他说明】
 //口令登陆等同于扫码登陆，扫码登陆为将登陆链接转换为二维码（基于pwmqr.com），而口令登陆为将登陆链接转换为京东口令(基于nolan公益api)
@@ -127,8 +130,8 @@ function main(){
 
 		let tipid=s.reply("请稍候...")
 		let Login=[
-			{method:NolanProSms,weight:SmsWeight[0]},
-			{method:NarkSms,weight:SmsWeight[1]}
+			{method:NolanProSms,weight:SP[0]},
+			{method:NarkSms,weight:SP[1]}
 		]
 		Login.sort((a,b)=>b.weight-a.weight)
 		if(!Login.find(login=>{
@@ -185,15 +188,15 @@ function main(){
     		s.reply('维护中...')
 			return
 		}
-		//检查绑定账号是否失效，本部分代码将导致已登陆用户账号未失效前无法添加新账号，可联系管理员触发扫码或者注释本部分代码
-		if(!s.isAdmin() && pins.length && !NeedLogin(pins,QLS[DefaultQL-1])){
+		//检查绑定账号是否失效
+		if(FBA && !s.isAdmin() && pins.length && !NeedLogin(pins,QLS[DefaultQL-1])){
 			s.reply("您的账号尚未失效，无需重新登陆\n若需添加新账号，请联系管理员或者使用短信登陆")
 			return
 		}
 		let tipid=s.reply("请稍候...")
 		let Login=[
-			{method:NolanProQR,weight:QRWeight[0]},
-			{method:RabbitQR,weight:QRWeight[1]}
+			{method:NolanProQR,weight:QP[0]},
+			{method:RabbitQR,weight:QP[1]}
 		]
 		Login.sort((a,b)=>b.weight-a.weight)
 		if(!Login.find(login=>{

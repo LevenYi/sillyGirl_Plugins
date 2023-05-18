@@ -2,7 +2,7 @@
  * @author https://t.me/sillyGirl_Plugin
  * @create_at 2022-09-10 12:49:37
  * @description 各种京东自动通知，具体查看备注，须安装qinglong与something模块
- * @version v1.0.3
+ * @version v1.0.4
  * @title 京东提醒
  * @platform qq wx tg pgm web cron
  * @rule 京东提醒
@@ -19,6 +19,7 @@
 const NotifyGroup=""
 
 //【过期资产】
+//过期京豆接口已失效，仅通知过期红包
 //通知开关
 const NotifyAssets=true
 
@@ -68,6 +69,7 @@ function main(){
 		for(j=0;j<envs.length;j++){
 			if(envs[j].name!="JD_COOKIE")
 				continue
+			//if(j==2)break
 			let pin=envs[j].value.match(/(?<=pin=)[^;]+/)[0]
 			if(envs[j].status==1){
 				console.log("【"+pin+"】:已禁用，跳过")
@@ -87,7 +89,7 @@ function main(){
 						}
 					})
 					console.log(pin+"红包:"+amount+"-"+exredpacket)
-					notify+=pin+"红包:"+amount+"-"+exredpacket+"\n"
+					notify+=pin+"红包:"+formatfloat(amount,2)+"-"+formatfloat(exredpacket,2)+"\n"
 					if(exredpacket>=NUM)
 						tip+="温馨提醒，您的账号【"+GetName(envs[j].value)+"】\n红包余额为"+formatfloat(amount,2)+"，其中"+formatfloat(exredpacket,2)+"元红包将于近期过期\n"
 				}
@@ -154,6 +156,9 @@ function main(){
 
 //将浮点数num格式化至小数点后2位，不进行四舍五入
 function formatfloat(num,decimal){
+	if(!decimal)
+	return num
+	else
 	return Math.floor(num*Math.pow(10,decimal))/Math.pow(10,decimal)
 }
 
