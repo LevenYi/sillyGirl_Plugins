@@ -19,7 +19,7 @@
 const tg = new Bucket("tg")
 const tgbot = new Sender("tg")
 const st=require("something")
-let token = tg.get("token")// 🧧设置Tgbot token指令：set tg token ? ，如需与官方版共存，set tg token2 ？
+let token = tg.get("token")// 🧧设置Tgbot token指令：set tg token ? 
 let url = tg.get("url", "https://api.telegram.org")// 🧧设置代理地址指令：set tg url ? 默认直连官方服务器
 let offset = tg.get("offset")
 tg.watch("token", function (old, now, key) {
@@ -35,38 +35,41 @@ const addr = function () {
     return `${url}/bot${token}`
 }
 
+//将包含CQ码的string转换为对象[{ type:类型(text,image等) , value:文本内容或者图片链接地址等}]
 function CQ2Items(text) {
-    var reg = new RegExp("\\[CQ:([a-zA-Z0-9]+),([^\\[\\]]*)\\]")
-    var msgs = []
-    var values = text.match(reg)
-    if (!values) {
-        text = text.trim()
-        return [{ type: "text", value: text }]
-    }
-    var [item, type, value] = values
-    var obj = { type }
-    for (var kv of value.split(",")) {
-        kv = strings.split(kv, "=", 2)
-        if (kv.length == 2) {
-            obj[kv[0]] = kv[1]
+    //console.log(text)
+    let reg = new RegExp("\\[CQ:([a-zA-Z0-9]+),([^\\[\\]]*)\\]")
+    let CQ=text.match(reg)
+    let result0=[]   //记录转换结果
+    let result=[]   //最终转换结果
+    if(!CQ) //不含CQ码
+        return [{type:"text",value:text.trim()}]
+    //将匹配到的第一个CQ码转换并保存到result0
+    let [ori,type,properties]=CQ    //匹配到的CQ码、CQ码类型、其他CQ码属性text、file等
+    let temp={type} //当前匹配的CQ码的转换结果
+    for(let property of properties.split(",")){
+        let kv=strings.split(property,"=",2)
+        if(kv.length==2){
+            temp[kv[0]]=kv[1]
         }
     }
     if (type == "image" || type == "video") {
-        obj["value"] = obj["url"] ? obj["url"] : obj["file"]
+        temp["value"] = temp["url"] ? temp["url"] : temp["file"]
     }
-    const [text1, text2] = strings.split(text, item, 2)
-    msgs.push(obj)
-    var items = CQ2Items(text1).concat(msgs).concat(CQ2Items(text2))
-    var res = []
-    for (var item_ of items) {
-        if (item_.type == "text") {
-            if (!item_.value || item_.value.match(/^\s+$/)) {
-                continue
-            }
-        }
-        res.push(item_)
-    }
-    return res
+    result0.push(temp)
+
+    //处理text中的其他文本和CQ码
+    let [text1,text2]=text.split(ori)
+    result0=CQ2Items(text1).concat(result0).concat(CQ2Items(text2))
+    //console.log("result0:\n"+JSON.stringify(result0))
+    //去除转换结果中一些空文本对象
+    result0.forEach(cq=>{
+        if(cq.type=="text" && (!cq.value||cq.value.match(/^\s+$/)))
+            return
+        else
+            result.push(cq)
+    })
+    return result
 }
 
 
@@ -84,7 +87,7 @@ tgbot.recall(function (message_id) {
     request({
         url: `${addr()}/deleteMessage`,
         method: "post",
-        goroutine: true,
+        //goroutine: true,
         body: {
             chat_id:k,
             message_id:v,
@@ -115,6 +118,8 @@ sender.listen(["创建键盘 ?"], function (s) {
 tgbot.send(function (msg) {
     //let [a, reply_to_message_id] = msg.message_id.split(".")
     //console.log("tg发送\n"+JSON.stringify(msg))
+    if(!isNaN(Number(msg.chat_id))) //部分版本傻妞bug
+        msg.chat_id=Number(msg.chat_id)
     let body = {}
     let items = CQ2Items(msg.content)
     let contents = []
@@ -132,7 +137,7 @@ tgbot.send(function (msg) {
             videos.push(item.value)
         }
     }
-    // console.log(JSON.stringify({contents, images, videos}))
+   //console.log(JSON.stringify(items))
     let options = undefined
     if (images.length) {
         options = {
@@ -185,7 +190,6 @@ tgbot.send(function (msg) {
                 console.log("Tgbot消息发送失败\n" + JSON.stringify(resp.body))
             }
         }
-
     }
 })
 
@@ -203,7 +207,7 @@ tgbot.request(running, {
 }, function (error, rsp) {
     const { body, status } = rsp
     if (error) {
-        console.log(error)
+        //console.log(error)
     }
     if (status != 200) {//
 
@@ -223,8 +227,8 @@ tgbot.request(running, {
                     chat_id: record.message.chat.type != "private" ? record.message.chat.id : 0,
                     content: record.message.text?record.message.text:record.message.caption
                 })
-                if(record.message.document)
-                    st.GetFile(record.message.file_id)
+                // if(record.message.document)
+                //     st.GetFile(record.message.file_id)
             }
             else{
                 console.log("something wrong!"+JSON.stringify(body))

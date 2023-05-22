@@ -3,13 +3,15 @@
  * @rule 霸王餐
  * @rule 取消霸王餐
  * @rule 霸王餐 ?
+ * @rule 自动霸王餐
  * @origin 自用
  * @create_at 2022-09-11 19:14:23
  * @description 餐大大自动查询霸王餐
  * @author 自用
  * @version v1.0.1
  * @public false
- * @disable 
+ * @cron 4-59/10 9-22 * * *
+ * @disable false
  * @admin  true
  * @icon https://hi.kejiwanjia.com/wp-content/uploads/2022/01/%E4%B8%8B%E8%BD%BD-1.jpeg
  */
@@ -20,17 +22,19 @@ let Headers={
 const s = sender
 const silly=new SillyGirl()
 const to={
-	platform:"qq",  //推送平台,选填qq/tg/wx
-    userId:"3176829386",    //推送到的账号的id
+	platform:"tg",  
+    userId:"1748961147",    
     content:""
 }
 function main() {
     if(s.getPlatform()=="cron"){
     //if(s.getContent()=="霸王餐"){ 
+        if(db.get("cdd_auto_switch")=="1")
+            return
         let acts=getActs()
         let attened=Attended()
         let autoattend=db.get("cdd_auto").split("&")
-        //console.log(JSON.stringify(acts))
+       //acts.forEach(act=>console.log(act.title))
         autoattend.forEach(shop=>{
             let act=attened.find(act=>act.releaseInformationDO.title.indexOf(shop)!=-1)
             if(act){
@@ -44,11 +48,22 @@ function main() {
                 return
             }
             else if(Attend(act,formToken())){
-                to.content="已自动报名霸王餐："+act.title
+                to.content+="\n已自动报名霸王餐："+act.title
             }
+            console.log(to.content)
             silly.push(to)
         })
 
+    }
+    else if(s.getContent()=="自动霸王餐"){
+        if(db.get("cdd_auto_switch")==1){
+            s.reply("已开启自动参加霸王餐："+db.get("cdd_auto"))
+            db.set("cdd_auto_switch","0")
+        }
+        else{
+            s.reply("已关闭自动参加霸王餐："+db.get("cdd_auto"))
+            db.set("cdd_auto_switch","1")
+        }
     }
     else if(s.getContent().match(/^霸王餐 /)){
         db.set("cdd_auto",s.param(1))
@@ -183,9 +198,9 @@ function Attend(act,token){
         }
         else{
             if(data.message){
-                if(s.getPlatform()!="cron")
+                //if(s.getPlatform()!="cron")
                     s.reply(data.message)
-                to.content=data.message
+                //to.content=data.message
             }
             else 
                 s.reply(resp.body)

@@ -15,7 +15,7 @@
 const token="leven"
 
 //通知的消息关键词，&隔开
-const kwm="农场&保价&失效&CK检测"
+const kwm="农场&失效&CK检测"
 
 //不通知的消息关键词，&隔开
 const kwb="异常"
@@ -100,15 +100,17 @@ function Notify(message){
     })
   }
   else if(text.indexOf("失效")!=-1){  //ck可能失效
+    let pin=getPin(accounts[0])  //所通知的账号
     text=text.replace(title,"")
     st.NotifyPin(pin,text)
   }
   else if(text.indexOf("保价")!=-1){
     accounts.forEach(account=>{
+      let pin=getPin(account)
       //text=text.replace(title,"") //删除标题
       let temp=text.split(/\s(?=【?京东账号)/g)
       //console.log(pin+"\n\n"+temp.find(msg=>msg.indexOf(account)!=-1))
-      st.NotifyPin(pin,temp.find(msg=>msg.indexOf(account)!=-1))
+      st.NotifyPin(pin,"京东账号"+temp.find(msg=>msg.indexOf(account)!=-1))
       sleep(2000)
     })
   }
@@ -133,6 +135,6 @@ app.post("/notify", function (req, res) {
   }
   catch(e){
     console.log(e)
-    return res.status(401).json({ error: 'Invalid body' })
+    return res.status(401).json({ error: 'Invalid body\n\n'+e })
   }
 })
