@@ -3,7 +3,7 @@
  * @module true
  * @create_at 2021-09-09 16:30:33
  * @description 一些通用函数和网络接口以及数据
- * @version v1.0.7
+ * @version v1.0.8
  * @title something
  * @public false
 */
@@ -495,7 +495,7 @@ function WindfggDecode(code) {
 //京东口令解析-nolan
 function NolanDecode(code) {
 	let resp = request({
-		url: "https://api.nolanstore.top/JComExchange",
+		url: "https://api.nolanstore.cc/JComExchange",
 		method: "post",
 		body: { "code": code }
 	})
@@ -514,7 +514,7 @@ function NolanDecode(code) {
 //链接转口令-noaln
 function NolanEncode(url,title,image) {
 	let resp = request({
-		url: "https://api.nolanstore.top/JCommand",
+		url: "https://api.nolanstore.cc/JCommand",
 		method: "post",
 		body: {
   			"url":url,
