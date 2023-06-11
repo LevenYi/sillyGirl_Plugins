@@ -767,13 +767,11 @@ function Move_qlEnv(QLS,from,to_index){
 		let from_index=Find_env(envs,from)
 		if(from_index==-1)
 			return "未找到该变量"
-		console.log(`${from_index+1}\n${to_index+1}`)
-		if(envs[from_index]._id)
-			suss=ql.Move_QL_Env(ql_host,ql_token,envs[from_index]._id,from_index,to_index)
-		else
-			suss=ql.Move_QL_Env(ql_host,ql_token,envs[from_index].id,from_index,to_index)			
-		let pin=envs[from_index].value.match(/(?<=pin=)\S+(?=;)/g)
-		if(pin!=null){
+		//console.log(`${from_index+1}\n${to_index+1}`)
+		let id=envs[from_index]._id?envs[from_index]._id:envs[from_index].id		
+		let pin=envs[from_index].value.match(/(?<=pin=)[^;]+/)
+		let suss=ql.Move_QL_Env(ql_host,ql_token,id,from_index,to_index)
+		if(pin){
 			if(!suss)
 				notify="账号"+pin+" 移动失败!"				
 			else
@@ -860,8 +858,15 @@ function EnvExist(envs,env){
 //在环境变量中找到变量名或者备注为string，或者value含string的变量
 function Find_env(envs,string){
 	for(i=0;i<envs.length;i++){
-		if(envs[i].value.match(/(?<=pin=)\S+(?=;)/g)==string|| (envs[i].remarks&&envs[i].remarks.indexOf(string)!=-1) || envs[i].name==string)
+		if(envs[i].name==string)	//根据变量名
 			return i
+		else if(envs[i].remarks&&envs[i].remarks.indexOf(string)!=-1)	//根据备注
+			return i
+		else{
+			let pin=envs[i].value.match(/(?<=pin=)[^;]+/)
+			if(pin && (pin==string || pin==encodeURI(string)))	//根据pin
+				return i
+		}
 	}
 	return -1
 }

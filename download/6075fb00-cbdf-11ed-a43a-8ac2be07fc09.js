@@ -10,7 +10,7 @@
  * @author 自用
  * @version v1.0.1
  * @public false
- * @cron 4-59/10 9-22 * * *
+ * @cron 0-59/10 9-22 * * *
  * @disable false
  * @admin  true
  * @icon https://hi.kejiwanjia.com/wp-content/uploads/2022/01/%E4%B8%8B%E8%BD%BD-1.jpeg
@@ -41,7 +41,7 @@ function main() {
                 console.log(shop+"已参与")
                 return
             }
-            act=acts.find(act=>act.title.indexOf(shop)!=-1)
+            act=acts.find(act=>act.title.indexOf(shop)!=-1 && act.forumNameStr=="美团")
             //console.log(JSON.stringify(act))
             if(!act){
                 console.log(shop+"暂无活动")

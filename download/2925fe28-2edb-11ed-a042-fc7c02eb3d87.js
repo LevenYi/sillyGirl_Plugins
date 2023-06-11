@@ -41,11 +41,9 @@ const db= new Bucket("sillyGirl")
 
 function main(){
 	s.continue()
-	if(!s.isAdmin()){
-		return
-	}
+	//console.log("这是命令重定向")
 	let msg=s.getContent()
-	if(msg.indexOf("修改命令")!=-1){
+	if(s.isAdmin() && msg.indexOf("修改命令")!=-1){
 		let temp=msg.split("$")
 		if(temp.length!=3){
 			s.reply("设置重定向命令格式有误")
@@ -56,11 +54,11 @@ function main(){
 		s.reply(SetRedirect(command1,command2,data))
 	}
 	
-	else if(msg=="查看命令"){
+	else if(s.isAdmin() && msg=="查看命令"){
 		GetAllRedirect()
 	}
 	
-	else if(msg.indexOf("删除命令")!=-1)
+	else if(s.isAdmin() && msg.indexOf("删除命令")!=-1)
 		s.reply(DelRedirect(param(1)))
 	
 	else{

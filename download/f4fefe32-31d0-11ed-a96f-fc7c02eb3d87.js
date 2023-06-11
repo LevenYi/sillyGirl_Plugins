@@ -3,7 +3,7 @@
  * @version v1.0.1
  * @create_at 2022-09-08 15:06:22
  * @description 自用打卡
- * @title 定时任务
+ * @title 自动任务
  * @rule ^session_id=
  * @rule 执行定时
  * @cron 34 10 * * *
@@ -25,7 +25,7 @@ const NotifyTo={
 	}
 
 const ql=require("qinglong")
-const st=require("something")
+//const st=require("something")
 const s = sender
 const sillyGirl=new SillyGirl()
 let message=''
@@ -48,6 +48,7 @@ function main(){
     // }
 	if(s.getContent()=="执行定时"||s.getPlatform()=="cron"){
         cdd()
+        qlcron_auto_chang("JX抽现金2")
         //head_auto_change()
         if(s.getPlatform()=="cron"){
             NotifyTo["content"]=message
@@ -103,6 +104,30 @@ function main(){
 }
 
 
+function qlcron_auto_chang(name){
+    let QLS=ql.QLS()
+    message+="\n\n自动修改任务定时:\n"
+    QLS.forEach(QL=>{
+        let crons=ql.Get_QL_Crons(QL.host,QL.token)
+        if(!crons){ //获取青龙任务失败
+            return
+        }
+        let cron=crons.find(cron=>cron.name==name)
+        if(!cron)   //未找到目标任务
+            return
+        //console.log(JSON.stringify(cron))
+        let temp=cron.schedule.split(" ")
+        let second=Number(temp[0])
+        temp[0]=second>54 ? second+5-60 : second+5
+        let schedule=temp.join(" ")
+        if(ql.Update_QL_Cron(QL.host,QL.token,cron.id ? cron.id :cron._id,cron.name,cron.command,schedule
+        )){
+            message+=QL.name+"容器:"+name+"定时修改为"+schedule+"\n"
+        }
+        else
+            message+=QL.name+"容器:"+name+"定时修改为"+schedule+"失败\n"
+    })
+}
 
 function head_auto_change(){
     let nochange=[]  //维持不动的车头账号
@@ -167,7 +192,6 @@ function sign(user){
     };
     let resp=request(option) 
     try {
-        console.log(resp.body)
 		let result=JSON.parse(resp.body)	
 		if(result.success){
             message+=user.name+":成功打卡("+result.info.total_days+"天)\n"
@@ -175,11 +199,12 @@ function sign(user){
                 message+="已达成阶段成就，可领取会员！\n"
         }
         else{
+            console.log(resp.body)
             message+=user.name+":"+result.status_message+"\n"
         }
     }
     catch (e) {
-		console.log(e+"\n"+resp)
+		console.log(e+"\n\n"+resp)
 	}
 }
 

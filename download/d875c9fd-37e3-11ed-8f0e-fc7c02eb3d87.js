@@ -73,6 +73,7 @@ function main(){
             let progress=(session.progress*100).toString().substring(0,3)
             let speed=(session.dlspeed/1024).toString().substring(0,4)
             const status={
+                "downloading":"下载中",
                 "pausedDL":"暂停",
                 "queuedDL":"排队",
                 "stalledDL":"下载种子",

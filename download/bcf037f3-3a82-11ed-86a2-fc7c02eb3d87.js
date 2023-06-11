@@ -3,9 +3,9 @@
  * @create_at 2022-12-07 18:35:08
  * @description 口令解析、链接解析、变量转换、变量监控多合一，须安装something与qinglong模块，安装之后务必查看插件内详细说明与配置
  * @title 白眼
- * @rule raw [\s\S]*[(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,14})[(|)|#|@|$|%|¥|￥|!|！][\s\S]*
- * @rule raw [\s\S]*\.jd\.com[\s\S]*
- * @rule raw [\s\S]*export\s+[^=]+=[ ]*"[^"]+[^\\]"[\s\S]*
+ * @rule raw [(|)|#|@|$|%|¥|￥|!|！]([0-9a-zA-Z]{10,16})[(|)|#|@|$|%|¥|￥|!|！]
+ * @rule raw https:\/\/.*\.jd\.com
+ * @rule raw export\s+[^=]+=[ ]*"[^"]+[^\\]"
  * @rule raw ImportWhiteEye=[\S\s]+
  * @rule 导出白眼
  * @rule 恢复ql spy
@@ -329,7 +329,8 @@ function main() {
 				Urls_Decode(urls)
 		}
 		//口令监控
-		else if (msg.match(/[(|)|#|@|$|%|¥|￥|!|！][0-9a-zA-Z]{10,14}[(|)|#|@|$|%|¥|￥|!|！]/g) != null) {
+		else if (msg.match(/[(|)|#|@|$|%|¥|￥|!|！][0-9a-zA-Z]{10,16}[(|)|#|@|$|%|¥|￥|!|！]/g) != null) {
+			//console.log("口令监控")
 			JDCODE_Decode(msg)	
 		}
 	//   }
@@ -815,14 +816,14 @@ function JDCODE_Decode(JDCODE) {
 	}
 	let info = st.NolanDecode(JDCODE)
 	if (info == null){
-		info =st.WallDecode(JDCODE)
-		if (info == null){
-			info = st.WindfggDecode(JDCODE)
-			if (info == null){
+	// 	info =st.WallDecode(JDCODE)
+	// 	if (info == null){
+	// 		info = st.WindfggDecode(JDCODE)
+	// 		if (info == null){
 				message+= "\n"+"解析失败"
 				return null
-			}
-		}
+		// 	}
+		// }
 	}
 	//console.log(JSON.stringify(info))
 	message+= "\n"+st.ToHyperLink(s.getPlatform(),info.jumpUrl,info.title)//口令解析结果通知，不需要自行注释

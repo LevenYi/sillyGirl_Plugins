@@ -9,7 +9,6 @@
 */
 
 
-
 module.exports = {
 	//认证
 	Get_QL_Token,
@@ -57,7 +56,8 @@ module.exports = {
 	Modify_QL_Config
 }
 
-//使用样例
+
+//使用样例,仅供参考，可能修改
 function Sample(){
 	let data=null
 	let QL=QLS()[0]
@@ -194,10 +194,10 @@ function Spy_QL_Task (host,token, envs, keywords) {
 
 
 //获取容器信息
-function QLS(){
+function QLS(mainKey,key){
 	let updated=false
-	let db=new Bucket("qinglong")
-	let data=db.get("QLS")
+	let db=new Bucket(mainKey?mainKey:"qinglong")
+	let data=db.get(key?key:"QLS")
 	if(!data)
 		return null
 	else
@@ -226,37 +226,53 @@ function QLS(){
 }
 
 
+function ReqQL(url,method,body,token){
+	let option={
+		url,
+		method,
+		headers:{
+			"accept": "application/json"
+		}
+	}
+	if(body)
+		option.body=body
+	if(token){
+		if(token.token)
+			token=token.token
+		option.headers["Authorization"]="Bearer "+token
+	}
+	
+	let resp=request(option)
+	if(resp.status==200){
+		//console.log(resp.body)
+		let data=JSON.parse(resp.body)
+		if(data.code==200){
+			if(data.data){
+				if(data.data.data)
+					return data.data.data
+				else
+					return data.data
+			}
+			else if(data.dirs)
+				return data.dirs
+			else
+				return true
+		}
+	}
+	console.log(JSON.stringify(option)+"\n\n"+JSON.stringify(resp))
+	return null
+}
+
 /****************用户*******************/
 //获取青龙token
 function Get_QL_Token(host,client_id,client_secret){
-	let resp=request(host+"/open/auth/token?client_id="+client_id+"&client_secret="+client_secret)
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	let url=host+"/open/auth/token?client_id="+client_id+"&client_secret="+client_secret
+	return ReqQL(url,"get",null,null)
 }
 
 //获取青龙登陆信息,未知错误
 function QL_Login(host,name,password){
-	let resp=request({
-		url:host+"/open/user/login",
-		method:"post",
-		headers:{
-			"accept": "application/json"
-		},
-		body:{"name": name,"password": password}
-	})
-	try{
-		s.reply("login---"+data)
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/user/login","post",{"name": name,"password": password},null)
 }
 
 //****************青龙订阅***************** */
@@ -288,49 +304,14 @@ function QL_Login(host,name,password){
 }*/
 //获取青龙订阅，无searchValue返回所有订阅
 function Get_QL_Subs(host,token,searchValue){
-	let option={
-		url:host+"/open/subscriptions",
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	}
+	let url=host+"/open/subscriptions"
 	if(searchValue)
-		option.url+="?searchValue="+encodeURI(searchValue)
-	
-	let resp=request(option)
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+		url+="?searchValue="+encodeURI(searchValue)
+	return ReqQL(url,"get",null,token)
 }
 //立即执行订阅id,id为数组
 function Start_QL_Subs(host,token,id){
-	let resp=request({
-		url:host+"/open/subscriptions/run",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}	
+	return ReqQL(host+"/open/subscriptions/run","put",id,token)
 }
 
 
@@ -349,185 +330,49 @@ function Start_QL_Subs(host,token,id){
 
 //获取青龙环境变量,无searchValue返回所有环境变量对象
 function Get_QL_Envs(host,token,searchValue){
-	let option={
-		url:host+"/open/envs",
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	}
+	let url=host+"/open/envs"
 	if(searchValue)
-		option.url+="?searchValue="+encodeURI(searchValue)
-	let resp=request(option)
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+		url+="?searchValue="+encodeURI(searchValue)
+	return ReqQL(url,"get",null,token)
 }
 
 //根据id获取青龙环境变量详细信息，成功返回环境变量对象
 function Get_QL_Env(host,token,id){
-	let resp=request({
-		url:host+"/open/envs/"+id,
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/envs/"+id,"get",null,token)
 }
 
 //添加青龙变量envs:[{name:变量名,value:变量值,remarks:变量备注}]数组
 //成功返回环境变量对象
 function Add_QL_Envs(host,token,envs){
-	let resp=request({
-		url:host+"/open/envs",
-		method:"post",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:envs
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/envs","post",envs,token)
 }
 
 //修改青龙变量id:变量id,修改为name:变量名,value:变量值,remark:变量备注
 //成功返回修改后的环境变量对象
 function Update_QL_Env(host,token,id,name,value,remark){
-	let body=null
-	if(isNaN(Number(id)))
-		body={"value": value,"name": name,"remarks": remark,"_id":id}
-	else
-		body={"value": value,"name": name,"remarks": remark,"id":id}
-	let resp=request({
-		url:host+"/open/envs",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:body
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	let body={"value": value,"name": name,"remarks": remark?remark:""}
+	isNaN(Number(id))?body["_id"]=id:body["id"]=id
+	return ReqQL(host+"/open/envs","put",body,token)
 }
 
 //删除青龙变量id,id为数组,提交成功即成功，	
 function Delete_QL_Envs(host,token,id){
-	let resp=request({
-		url:host+"/open/envs",
-		method:"delete",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/envs","delete",id,token)
 }
 
 //移动青龙变量_id从位置from至位置to,from与to为数组下标
 function Move_QL_Env(host,token,id,from,to){
-	let resp=request({
-		url:host+"/open/envs/"+id+"/move",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:{"fromIndex": from,"toIndex": to}
-	})	
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/envs/"+id+"/move","put",{"fromIndex": from,"toIndex": to},token)
 }
 
 //禁用青龙变量id,id为数组	
 function Disable_QL_Envs(host,token,id){
-	let resp=request({
-		url:host+"/open/envs/disable",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/envs/disable","put",id,token)
 }
 
 //启用青龙变量id,id为数组	
 function Enable_QL_Envs(host,token,id){
-	let resp=request({
-		url:host+"/open/envs/enable",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/envs/enable","put",id,token)
 }
 
 
@@ -536,373 +381,100 @@ function Enable_QL_Envs(host,token,id){
 
 //获取青龙配置文件列表,成功返回[{title:filename,value:filename}]对象
 function Get_QL_Configs(host,token){
-	let resp=request({
-		url:host+"/open/configs/files",
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/configs/files","get",null,token)
 }
 
 //获取青龙配置文件内容
 function Get_QL_Config(host,token,filename){
-	let resp=request({
-		url:host+"/open/configs/"+filename,
-		method:"get",
-		headers:{
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/configs/"+filename,"get",null,token)
 }
 
 
 //修改配置文件
 function Update_QL_Config(host,token,filename,content){
-	let resp=request({
-		url:host+"/open/configs/save",
-		method:"post",
-		headers:{
-			"Authorization":token.token_type+" "+token.token,
-			"content-Type":"application/json"
-		},
-		body:{"name":filename,"content":content}
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/configs/save","post",{"name":filename,"content":content},token)
 }
 
 
 /****************青龙日志*******************/
 //获取青龙日志件列表,成功返回[{ "name": "","isDir": true, "files": []}]对象数组
 function Get_QL_Logs(host,token){
-	let resp=request({
-		url:host+"/open/logs",
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).dirs	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/logs","get",null,token)
 }
 
 //获取青龙日志内容,成功返回string内容
 function Get_QL_Log(host,token,name,logfile){
-	let resp=request({
-		url:host+"/open/logs/"+name+"/"+logfile,
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	let data=ReqQL(host+"/open/logs/"+name+"/"+logfile,"get",null,token)
+	if(!data)
+		data=ReqQL(host+"/open/logs/"+logfile+"?path="+name,"get",null,token)	//兼容不同版本青龙
+	return data
 }
 
 
 /****************青龙任务*******************/
 //获取青龙定时任务，无searchValue返回所有任务
 function Get_QL_Crons(host,token,searchValue){
-	let option={
-		url:host+"/open/crons",
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	}
+	let url=host+"/open/crons"
 	if(searchValue)
-		option.url+="?searchValue="+encodeURI(searchValue)
-	let resp=request(option)
-	try{
-		let data=JSON.parse(resp.body).data
-		return data.data?data.data:data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-	}
+		url+="?searchValue="+encodeURI(searchValue)
+	return ReqQL(url,"get",null,token)
 }
 
 
 //添加任务
-function Add_QL_Cron(host,token,name,task,cron){
-	let resp=request({
-		url:host+"/open/crons",
-		method:"post",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:{
-			"command": task,
+function Add_QL_Cron(host,token,name,command,cron){
+	return ReqQL(host+"/open/crons","post",{
+			"command": command,
 			"schedule": cron,
 			"name": name
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}	
+		},token)	
 }
 
 //修改任务
 function Update_QL_Cron(host,token,id,name,task,cron){
-	let body=null
-	if(typeof(id)=="string")
-		body={"command": task,"name": name,"schedule": cron,"_id":id}
-	else
-		body={"command": task,"name": name,"schedule": cron,"id":id}
-	let resp=request({
-		url:host+"/open/crons",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:body
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	let body={"command": task,"name": name,"schedule": cron}
+	isNaN(Number(id))?body["_id"]=id:body["id"]=id
+	return ReqQL(host+"/open/crons","put",body,token)
 }
 
 //删除任务数组
 function Delete_QL_Crons(host,token,id){
-	let resp=request({
-		url:host+"/open/crons",
-		method:"delete",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/crons","delete",id,token)
 }
 
 //禁用任务id,id为数组	
 function Disable_QL_Crons(host,token,id){
-	let resp=request({
-		url:host+"/open/crons/disable",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/crons/disable","put",id,token)
 }
 
 //启用任务id,id为数组	
 function Enable_QL_Crons(host,token,id){
-	let resp=request({
-		url:host+"/open/crons/enable",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/crons/enable","put",id,token)
 }
 
 //获取任务日志
 function Get_QL_CronLog(host,token,id){
-	let resp=request({
-		url:host+"/open/crons/"+id+"/log",
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}	
+	return ReqQL(host+"/open/crons/"+id+"/log","get",null,token)
 }
 
 //置顶任务id,id为数组	
 function Pin_QL_Crons(host,token,id){
-	let resp=request({
-		url:host+"/open/crons/pin",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/crons/pin","put",id,token)
 }
 
 //取消置顶任务id,id为数组	
 function Unpin_QL_Crons(host,token,id){
-	let resp=request({
-		url:host+"/open/crons/unpin",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/crons/unpin","put",id,token)
 }
 
 //立即执行任务id,id为数组
 function Start_QL_Crons(host,token,id){
-	let resp=request({
-		url:host+"/open/crons/run",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}	
+	return ReqQL(host+"/open/crons/run","put",id,token)
 }
 
 //停止任务id,id为数组
 function Stop_QL_Crons(host,token,id){
-	let resp=request({
-		url:host+"/open/crons/stop",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:id
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}	
+	return ReqQL(host+"/open/crons/stop","put",id,token)	
 }
 
 //未知
@@ -929,222 +501,70 @@ function Get_QL_CronImport(host,token){
 
 //获取所有脚本,成功返回脚本信息对象
 function Get_QL_Scripts(host,token){
-	let resp=request({
-		url:host+"/open/scripts/files",
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/scripts/files","get",null,token)
 }
 
 //获取脚本内容,parent为路径
 function Get_QL_Script(host,token,filename,parent){
-	let resp=request({
-		url:host+"/open/scripts/"+filename+"?path="+parent,
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/scripts/"+filename+"?path="+parent,"get",null,token)
 }
 
 //添加脚本,文件名，路径，脚本内容，原始文件名(?)
 function Add_QL_Script(host,token,filename,path,content,originFilename){
-	let resp=request({
-		url:host+"/open/scripts",
-		method:"post",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:{
+	let body={
 			"filename": filename,
 			"path": path,
 			"content": content,
 			"originFilename": originFilename
 		}
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}		
+	return ReqQL(host+"/open/scripts","post",body,token)		
 }
 
 //修改脚本文件
 function Update_QL_Script(host,token,filename,path,content){
-	let resp=request({
-		url:host+"/open/scripts",
-		method:"post",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:{
+	let body={
 			"path":path,
 			"filename":filename,
 			"content":content
 		}
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/scripts","put",body,token)
 }
 
 //删除脚本
 function Delete_QL_Script(host,token,filename,path){
-	let resp=request({
-		url:host+"/open/scripts",
-		method:"delete",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:{
+	let body={
 			"filename": filename,
 			"path": path
 		}
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}	
+	return ReqQL(host+"/open/scripts","delete",body,token)
 }
 
 //执行脚本
 function Task_QL_Script(host,token,filename,path){
-	let resp=request({
-		url:host+"/open/scripts/run",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:{
+	let body={
 			"filename": filename,
 			"path": path
 		}
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/scripts/run","put",body,token)
 }
 
 //停止执行脚本,未知错误
 function Stop_QL_Script(host,token,filename,path){
-	let resp=request({
-		url:host+"/open/scripts/stop",
-		method:"put",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		},
-		body:{
+	let body={
 			"filename": filename,
 			"path": path
 		}
-	})
-	try{	
-		if(JSON.parse(resp.body).code==200)
-			return true
-		else{
-			console.log(resp.body)
-			return false
-		}
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return false
-	}
+	return ReqQL(host+"/open/scripts/stop","put",body,token)
 }
 
 
 /****************系统管理*******************/
 //获取青龙版本，未知错误，获取失败
 function Get_QL_Version(host,token){
-	let resp=request({
-		url:host+"/open/system",
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}
+	return ReqQL(host+"/open/system","get",null,token)
 }
 
 //获取青龙日志删除频率,未知错误，获取失败
 function Get_QL_SeqLogClear(host,token){
-	let resp=request({
-		url:host+"/open/system/log/remove",
-		method:"get",
-		headers:{
-			"accept": "application/json",
-			"Authorization":token.token_type+" "+token.token
-		}
-	})
-	try{
-		return JSON.parse(resp.body).data	
-	}
-	catch(err){
-		console.log(JSON.stringify(resp))
-		return null
-	}	
+	return ReqQL(host+"/open/system/log/remove","get",null,token)	
 }
-

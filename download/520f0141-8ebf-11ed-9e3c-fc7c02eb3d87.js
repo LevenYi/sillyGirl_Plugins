@@ -492,12 +492,11 @@ function WindfggDecode(code) {
 	}
 }
 
-//京东口令解析-nolan
-function NolanDecode(code) {
+function NolanServer(server,body){
 	let resp = request({
-		url: "https://api.nolanstore.cc/JComExchange",
+		url: "https://api.nolanstore.cc/"+server,
 		method: "post",
-		body: { "code": code }
+		body: body
 	})
 	try {
 		let data = JSON.parse(resp.body)
@@ -508,30 +507,21 @@ function NolanDecode(code) {
 	}
 	catch (err) {
 		return null
-	}
+	}	
+}
+
+//京东口令解析-nolan
+function NolanDecode(code) {
+	return NolanServer("JComExchange",{ "code": code })
 }
 
 //链接转口令-noaln
 function NolanEncode(url,title,image) {
-	let resp = request({
-		url: "https://api.nolanstore.cc/JCommand",
-		method: "post",
-		body: {
+	return NolanServer("JCommand",{
   			"url":url,
   			"title": title,
   			"img": image
-		}
-	})
-	try {
-		let data = JSON.parse(resp.body)
-		if (data.code == 0)
-			return data.data
-		else
-			return ""
-	}
-	catch (err) {
-		return ""
-	}
+		})
 }
 
 

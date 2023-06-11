@@ -6,7 +6,7 @@
  * @title 京东提醒
  * @platform qq wx tg pgm web cron
  * @rule 京东提醒
- * @cron 36 10 * * *
+ * @cron 36 21 * * *
  * @public false
  * @disable false
  * @admin true
@@ -89,9 +89,13 @@ function main(){
 						}
 					})
 					console.log(pin+"红包:"+amount+"-"+exredpacket)
-					notify+=pin+"红包:"+formatfloat(amount,2)+"-"+formatfloat(exredpacket,2)+"\n"
-					if(exredpacket>=NUM)
+					if(exredpacket>=NUM){
 						tip+="温馨提醒，您的账号【"+GetName(envs[j].value)+"】\n红包余额为"+formatfloat(amount,2)+"，其中"+formatfloat(exredpacket,2)+"元红包将于近期过期\n"
+						notify+="★"
+					}
+					else
+						notify+="☆"
+					notify+=pin+"红包:"+formatfloat(amount,2)+"-"+formatfloat(exredpacket,2)+"\n"
 				}
 				else{
 					console.log(pin+"红包数据获取失败或者无红包")
