@@ -6,6 +6,7 @@
  * @title 自动任务
  * @rule ^session_id=
  * @rule 执行定时
+ * @rule ip
  * @cron 34 10 * * *
  * @public false
  * @admin true
@@ -101,6 +102,31 @@ function main(){
             }
         }
     }
+    else if(s.getContent()=="ip"){
+        const otto=new Bucket("otto")
+        let data=request("https://myip.ipip.net/")
+        s.reply(data.body)
+        let ip=data.body.match(/[\d\.]+/)
+        let url="http://v2.api.juliangip.com/dynamic/replaceWhiteIp?"
+        let params="new_ip="+ip+"&reset=1&trade_no=1376777816253377"
+        let temp=params+"&key="+otto.get("jlkey")
+        let sign=request({
+            url:"http://127.0.0.1:3000/md5",
+            method:"post",
+            body:{
+                text:temp
+            }
+        }).body
+        url+=params+"&sign="+sign
+        // console.log(temp+"\n\n"+sign)
+        // console.log(url)
+        // console.log(request(url).body)
+        data=JSON.parse(request(url).body)
+        if(data.code==200)
+            s.reply("ok")
+        else
+            s.reply("false")
+    }
 }
 
 
@@ -118,7 +144,16 @@ function qlcron_auto_chang(name){
         //console.log(JSON.stringify(cron))
         let temp=cron.schedule.split(" ")
         let second=Number(temp[0])
-        temp[0]=second>54 ? second+5-60 : second+5
+        let minute=Number(temp[1])
+        if(second>54){
+            second=second+5-60
+            minute++
+        }
+        else
+            second+=5
+        
+        temp[0]=second
+        temp[1]=minute
         let schedule=temp.join(" ")
         if(ql.Update_QL_Cron(QL.host,QL.token,cron.id ? cron.id :cron._id,cron.name,cron.command,schedule
         )){
@@ -156,25 +191,140 @@ function head_auto_change(){
 
 
 function cdd(){
-    let data=(new Bucket("otto")).get("cdd")
+    const otto=new Bucket("otto")
+
+    //微信签到
+    let data=otto.get("cdd")
     if(!data)
         return "无账号数据"
     let users=JSON.parse(data)
-    // let users=[
-    //     {
-    //         name:"大号",
-    //         ck:"session_id=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbnRyeV9sb2dpbiI6MSwiZXhwIjoxNjc1MDc5ODM5LjA0NzUzMiwiY29ycF9pZF9zdHIiOiIxNzQ1NjU5NDk1MjA1MTY5MTUzIiwiY29ycF9pZCI6MTc0NTY1OTQ5NTIwNTE2OTE1MywiZXVfaWFfb3BlbmlkIjoib1VwSnF3YTFTb3FseVU5MGFudl9IVk1lSW8zbyIsImV1X2xvZ2luX3N0YXR1cyI6InMiLCJldV9leHRfaWQiOiJ3bWdpelVEUUFBM3F5OWxBbVVzT1BXLWpsZXUtZWpaUSIsImNoZWNrX2luOnJqemlnM2F4NTp1bmlvbmlkIjoib1VwSnF3YTFTb3FseVU5MGFudl9IVk1lSW8zbyJ9.lSUR-jvm4RWyRemxwxlonBzM1j3ZAhjjqZJY_oSfr_s"
-    //     },
-    //             {
-    //         name:"小号",
-    //         ck:"session_id=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbnRyeV9sb2dpbiI6MSwiZXhwIjoxNjc2NDAyMzA1LjIyNDM1OCwiY29ycF9pZF9zdHIiOiIxNzQ1NjU5NDk1MjA1MTY5MTUzIiwiY29ycF9pZCI6MTc0NTY1OTQ5NTIwNTE2OTE1MywiZXVfaWFfb3BlbmlkIjoib1VwSnF3ZkdEXzBxZTFwYzF6aUdwNFhSdlFrQSIsImV1X2xvZ2luX3N0YXR1cyI6InMiLCJldV9leHRfaWQiOiJ3bWdpelVEUUFBSWR1YjVaWWY2eVFXUDFFX0dsd2VWZyIsImNoZWNrX2luOnJqemlnM2F4NTp1bmlvbmlkIjoib1VwSnF3ZkdEXzBxZTFwYzF6aUdwNFhSdlFrQSJ9.X2_VQqvWV4-Kimgu2GoFI4Y7KoeKkWH2PAGMzaukWMM"
-    //     }
-    // ]
-    users.forEach(user=>sign(user))
-    return message
+    users.forEach(user=>wx_signtask(user))
+    return
+
+    //APP任务
+    let headers={
+        'authorization':'Bearer '+otto.get('cdd_token')
+    }
+    //签到
+    app_signtask(headers)
+    //执行任务
+    let tasklist=app_tasklist(headers)  //任务列表
+    if(!tasklist){
+        message+"app任务列表获取失败"
+        return
+    }
+    tasklist.forEach((task,i)=>{
+        let temp=[] //最新任务列表
+        let info=task   //当前任务信息
+        if(info.userStatus==0){    //报名
+            console.log(JSON.stringify(info))
+            if(!app_tasksign(headers,task.id)){
+                console.log(task.name+"报名失败")
+                return
+            }
+            else{
+                console.log(task.name+"报名成功")     
+                sleep(500)
+                temp=app_tasklist(headers)
+                info=temp.find(ele=>ele.id==task.id)
+            }
+        }
+        if(info.userStatus==1){ //更新用户参与信息以获取userTaskId
+            console.log(JSON.stringify(info))
+            let type=0
+            if(info.name=="美团红包天天领")
+                type=4
+            else if(info.name=="饿了么红包天天领")
+                type=5
+            if(type){
+                app_userinfo(headers,type)
+                sleep(1500)
+                temp=app_tasklist(headers)
+                info=temp.find(ele=>ele.id==task.id)
+            }
+        }
+        if(info.userStatus==2){ //领取任务奖励
+            console.log(JSON.stringify(info))
+            sleep(500)
+            if(task.userTaskId && app_reward(headers,task.userTaskId)){
+                message+=task.name+"奖励领取成功\n"
+            }
+            else
+                message+=task.name+"奖励领取失败\n"
+        }
+    })
 }
 
-function sign(user){
+//更新用户报名信息
+function app_userinfo(headers,type){
+    let data=JSON.parse(request({
+        url:"https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/userUseInfo",
+        headers,
+        method:"post",
+        body:{"type":type}
+  
+    }).body)
+    return data.code==1?true:false   
+}
+
+//任务报名
+function app_tasksign(headers,taskid){
+    let data=JSON.parse(request({
+        url:"https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/sysTask/signTask/"+taskid,
+        headers,
+        method:"get"    
+    }).body)
+    return data.code==1?true:false
+}
+//领取奖励
+function app_reward(headers,userTaskId){
+    let data=JSON.parse(request({
+        url:"https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/sysTask/receiveRewards",
+        headers,
+        method:"post",
+        body:{"userTaskId":userTaskId,"phone":"","address":"","userName":""}
+  
+    }).body)
+    return data.code==1?true:false
+}
+//任务列表
+function app_tasklist(headers){
+    let data=JSON.parse(request({
+        url:"https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/sysTask/selectAllTask",
+        headers,
+        method:"get"    
+    }).body)
+    if(data.code==1)
+        return data.data.records
+    else
+        return null
+}
+//签到
+function app_signtask(headers){
+    let data=JSON.parse(request({
+        url:"https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/userSignTask",
+        headers,
+        method:"post",
+        body:{}
+    }).body)
+    if(data.code==1)
+        message+="app签到成功\n"
+    else
+        message+="app签到:"+data.message+"\n"
+}
+
+function formToken(){
+    let resp=request("https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/user/getFormToken")
+    if(resp.status==200){
+        let data=JSON.parse(resp.body)
+        if(data.code==1)
+            return data.data
+    }
+    return ""
+}
+
+//微信签到
+function wx_signtask(user){
     let stage=[5,10,20,30,50,80,120,170,230,270]
     let option={
 	    url: "https://jptduwapqj.ugc.wb.miemie.la/api/check_in_act/check_in?act_hid=rjzig3ax5",

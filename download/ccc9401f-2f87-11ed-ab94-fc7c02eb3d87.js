@@ -6,7 +6,7 @@
  * @title 京东提醒
  * @platform qq wx tg pgm web cron
  * @rule 京东提醒
- * @cron 36 21 * * *
+ * @cron 36 20 * * *
  * @public false
  * @disable false
  * @admin true
@@ -16,7 +16,7 @@
 //为降低京东限流与企鹅冻结概率，整个通知过程将花费较长时间，每个账号将花费15-25秒不等
 
 //使用群通知，不使用群通知则设置为空""
-const NotifyGroup=""
+const NotifyGroup="qq@758657899"
 
 //【过期资产】
 //过期京豆接口已失效，仅通知过期红包
@@ -24,7 +24,7 @@ const NotifyGroup=""
 const NotifyAssets=true
 
 //过期资产最小提醒金额
-const NUM=3
+const NUM=4
 
 //【农场领取】
 //通知开关
@@ -84,7 +84,7 @@ function main(){
 				if(redpackets_data && redpackets_data.length){
 					redpackets_data.forEach(info=>{
 						amount+=info.balance
-						if(info.endTime-now<2*24*60*60*1000){	//统计两天内的过期红包金额
+						if(info.endTime-now<1*24*60*60*1000){	//统计两天内的过期红包金额
 							exredpacket+=info.balance
 						}
 					})
@@ -130,24 +130,14 @@ function main(){
 				console.log(tip)
 				if(NotifyGroup){	//群通知
 					let to=NotifyGroup.split("@")
-					let users=st.GetBind2(pin)	//获取pin所绑定的平台及用户id
-					users.forEach(user=>{
-						if(user.type!=to[0])
-							return
-						sillyGirl.push({
-							platform:user.type,
-							userID:user.id,
-							groupCode:to[1],
-							content:tip
-						})
-					})
+					st.NotifyPinInGroup(to[0],to[1],pin,tip)
 				}
 				else{	//一对一通知
 					st.NotifyPin(pin,tip)
 				}
 				record.push(pin)
 			}
-			sleep(Math.random() * 10000+15000)
+			sleep(Math.random() * 30000+15000)
 		}
 	}
 	//通知管理员

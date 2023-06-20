@@ -279,7 +279,7 @@ function QL_Login(host,name,password){
 /*{
             "id": 4,
             "name": "KR",
-            "url": "https://github.com/KingRan/KR.git",
+            "url": "https://github.com/XXX",
             "schedule": "2 23 * * *",
             "interval_schedule": null,
             "type": "public-repo",
@@ -295,9 +295,9 @@ function QL_Login(host,name,password){
             "pull_option": null,
             "pid": 12934,
             "is_disabled": null,
-            "log_path": "KingRan_KR/2023-01-18-23-02-00.log",
+            "log_path": "YYY/2023-01-18-23-02-00.log",
             "schedule_type": "crontab",
-            "alias": "KingRan_KR",
+            "alias": "ZZZ",
             "proxy": null,
             "createdAt": "2023-01-16T15:52:19.105Z",
             "updatedAt": "2023-01-18T15:02:03.896Z"
