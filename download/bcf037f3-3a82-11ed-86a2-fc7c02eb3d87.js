@@ -21,7 +21,7 @@
  * @public false
  * @disable false
  * @priority 10
- * @version v1.4.4
+ * @version v1.4.6
 */
 
 
@@ -144,6 +144,7 @@ const outputOriURL=true
 2023-1-17 v1.4.3 增加监控排序与移动功能,更新部分内置规则
 2023-2-12 v1.4.4 修复多容器队列更新问题
 2023-3-10 v1.4.5 添加支持短链,更新部分内置规则
+2023-6-28 v1.4.6 更新部分内置规则
 
 /*****************数据存储******************/
 
@@ -2030,7 +2031,16 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /(interactsaas|interact)\/index\?activityType=(10006|10070)/,
+			keyword: /interactsaas\/(index)?\?activityType=(10001|10002|10003|10004)/,
+			name: "loreal签到抽奖",
+			script:"KingRan_KR",
+			trans: [{
+				ori: "-1",
+				redi: "jd_lzkj_loreal_sign_url"//kr
+			}]
+		},
+		{
+			keyword: /(interactsaas|interact)\/(index)?\?activityType=(10006|10070)/,
 			name: "loreal邀请入会有礼",
 			script:"KingRan_KR/jd_lzkj_loreal_invite.js",
 			trans: [{
@@ -2039,7 +2049,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=(10020|10021|10026|10080)/,
+			keyword: /interactsaas\/(index)?\?activityType=(10020|10021|10026|10080)/,
 			name: "loreal幸运抽奖",
 			script:"KingRan_KR/jd_lzkj_loreal_draw.js",
 			trans: [{
@@ -2048,7 +2058,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10024/,
+			keyword: /interactsaas\/(index)?\?activityType=10024/,
 			name: "loreal加购有礼",
 			script:"KingRan_KR/jd_lzkj_loreal_cart.js",
 			trans: [{
@@ -2057,12 +2067,39 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10069/,
+			keyword: /interactsaas\/(index)?\?activityType=10069/,
 			name: "loreal关注有礼",
-			script:"KingRan_KR/jd_lzkj_loreal_followShop.js",
+			script:"KingRan_KR/jd_lzkj_loreal_lkFollowShop.js",
 			trans: [{
 				ori: "-1",
-				redi: "jd_lzkj_loreal_followShop_url"//kr
+				redi: "jd_lzkj_loreal_lkFollowShop_ur"//kr
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=(10023|10040)/,
+			name: "loreal签到有礼",
+			script:"KingRan_KR/jd_lzkj_loreal_daySign.js",
+			trans: [{
+				ori: "-1",
+				redi: "jd_lzkj_loreal_daySign_url"//kr
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10053/,
+			name: "loreal关注商品有礼",
+			script:"KingRan_KR/jd_lzkj_loreal_followGoods.js",
+			trans: [{
+				ori: "-1",
+				redi: "jd_lzkj_loreal_followGoods_url"//kr
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10054/,
+			name: "loreal上上签抽奖",
+			script:"KingRan_KR/jd_lzkj_loreal_upperSign.js",
+			trans: [{
+				ori: "-1",
+				redi: "jd_lzkj_loreal_upperSign_url"//kr
 			}]
 		},
 
@@ -2244,14 +2281,15 @@ var UrlDecodeRule =[
 				redi: "jd_cjhy_wxMcLevelAndBirthGifts_ids"
 			}]
 		},
-		{
-			keyword: /(cjhy|lzkj)-isv\.isvj(clou)?d\.com\/sign/,
-			name: "超级店铺无线签到",
-			trans: [{
-				ori: "-1",
-				redi: "jd_sevenDay_activityUrl"
-			}]
-		},
+		// {
+		// 	keyword: /(cjhy|lzkj)-isv\.isvj(clou)?d\.com\/sign/,
+		// 	name: "超级店铺无线签到监控版",
+		//  script:"KingRan_KR/jd_sevenDayjk.js"
+		// 	trans: [{
+		// 		ori: "-1",
+		// 		redi: "jd_sevenDay_activityUrl"
+		// 	}]
+		// },
 		{
 			keyword: /cjhy-isv\.isvjcloud\.com\/sign\/signActivity/,
 			name: "CJ超级店铺无线签到",

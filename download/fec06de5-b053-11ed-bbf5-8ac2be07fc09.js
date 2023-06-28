@@ -1,6 +1,6 @@
 /**
  * @author https://t.me/sillyGirl_Plugin
- * @version v1.0.0
+ * @version v1.0.1
  * @create_at 2022-09-19 15:06:22
  * @description 对接homeassistant小爱音箱，用于对其发出指令，不可用于小爱对话
  * @title 远控小爱音箱
@@ -25,16 +25,25 @@ const silent=false
 
 
 const s=sender
+const db=new Bucket("home_assistant")
+const addr=db.get("addr")
+const token=db.get("token")
+var headers={
+    "Authorization":"Bearer "+token,
+    "Content-Type":"application/json"
+}
 
 function main(){
-    let db=new Bucket("home_assistant")
-    let addr=db.get("addr")
-    let token=db.get("token")
     if(!addr || !token){
         s.reply("不看注释别玩了！")
         return
     }
-    let states=getStates(addr,token)
+    let running=APIservices()
+    if(!running || running.message!="API running."){   
+        s.reply("服务异常"+running.message?running.message:"")
+        return
+    }
+    let states=getStates()
     if(!states){
         s.reply("设备状态获取失败")
         return
@@ -44,70 +53,58 @@ function main(){
         s.reply("未找到小爱音箱执行命令实体")
         return
     }
-    if(xiaoai(addr,token,entity.entity_id,s.param(1),silent)){
+    let result=xiaoai(entity.entity_id,s.param(1),silent)
+    console.log(result)
+    if(result){
         s.reply("ok")
     }
     else
         s.reply("操作失败!")
 }
 
-function xiaoai(addr,token,entity_id,text,silent){
+function Req(url,method,body){
     let option={
-        url:addr+"/api/services/xiaomi_miot/intelligent_speaker" ,
-        method:"post",
-        headers:{
-            "Authorization":"Bearer "+token,
-            "Content-Type":"application/json"
-        },
-        body:{
-            "entity_id": entity_id,
-            "text":text,
-            "execute":true,
-            "silent":silent,
-            "throw":true
-        }
+        url,
+        headers,
+        method:"get"
     }
+    if(method)
+        option.method=method
+    if(body)
+        option.body=body
     let resp=request(option)
-    if(resp.status==200)
-        return true
+    if(resp.status==200){
+        if(resp.body)
+            return JSON.parse(resp.body)
+        else
+            return true
+    }
     else{
-        console.log("xiaoai\n"+JSON.stringify(resp))
+        console.log(JSON.stringify(option)+"\n\n"+JSON.stringify(resp))
         return false
     }
 }
 
-function getStates(addr,token){
-    let option={
-        url:addr+"/api/states",
-        headers:{
-            "Authorization":"Bearer "+token,
-            "Content-Type":"application/json"
-        }
-    }
-    let resp=request(option)
-    if(resp.status==200)
-        return JSON.parse(resp.body)
-    else{
-        console.log("getStates\n"+JSON.stringify(resp))
-        return null 
-    }
+function xiaoai(entity_id,text,silent){
+    return Req(addr+"/api/services/xiaomi_miot/intelligent_speaker","post",{
+            "entity_id": entity_id,
+            "text":text,
+            "execute":true,
+            "silent":silent,
+            "throw":false
+        })
 }
 
-function getServices(addr,token){
-    let option={
-        url:addr+"api/services",
-        headers:{
-            "Authorization":"Bearer "+token,
-            "Content-Type":"application/json"
-        }
-    }
-    let resp=request(option)
-    if(resp.status==200)
-        return JSON.parse(resp.body)
-    else{
-        console.log(JSON.stringify(resp))
-        return null
-    }
+function APIservices(){
+    return Req(addr+"/api/")
+}
+
+function getStates(){
+    return Req(addr+"/api/states","get")
+}
+
+function getServices(){
+    return Req(addr+"api/services","get")
 }
 
 main()
