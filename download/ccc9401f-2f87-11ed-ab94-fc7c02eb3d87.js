@@ -145,7 +145,7 @@ function main(){
 		//s.recallMessage(tipid)
 		s.reply(notify)
 	}
-	else sillyGirl.notifyMasters(notify+"\n--京东提醒")
+	//else sillyGirl.notifyMasters(notify+"\n--京东提醒")
 }
 
 //将浮点数num格式化至小数点后2位，不进行四舍五入

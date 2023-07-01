@@ -2049,30 +2049,12 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /interactsaas\/(index)?\?activityType=(10020|10021|10026|10080)/,
+			keyword: /interactsaas\/(index)?\?activityType=(10021|10020|10026|10041|10042|10046|10062|10063|10073|10080)/,
 			name: "loreal幸运抽奖",
 			script:"KingRan_KR/jd_lzkj_loreal_draw.js",
 			trans: [{
 				ori: "-1",
 				redi: "jd_lzkj_loreal_draw_url"//kr
-			}]
-		},
-		{
-			keyword: /interactsaas\/(index)?\?activityType=10024/,
-			name: "loreal加购有礼",
-			script:"KingRan_KR/jd_lzkj_loreal_cart.js",
-			trans: [{
-				ori: "-1",
-				redi: "jd_lzkj_loreal_cart_url"//kr
-			}]
-		},
-		{
-			keyword: /interactsaas\/(index)?\?activityType=10069/,
-			name: "loreal关注有礼",
-			script:"KingRan_KR/jd_lzkj_loreal_lkFollowShop.js",
-			trans: [{
-				ori: "-1",
-				redi: "jd_lzkj_loreal_lkFollowShop_ur"//kr
 			}]
 		},
 		{
@@ -2082,6 +2064,15 @@ var UrlDecodeRule =[
 			trans: [{
 				ori: "-1",
 				redi: "jd_lzkj_loreal_daySign_url"//kr
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10024/,
+			name: "loreal加购有礼",
+			script:"KingRan_KR/jd_lzkj_loreal_cart.js",
+			trans: [{
+				ori: "-1",
+				redi: "jd_lzkj_loreal_cart_url"//kr
 			}]
 		},
 		{
@@ -2100,6 +2091,15 @@ var UrlDecodeRule =[
 			trans: [{
 				ori: "-1",
 				redi: "jd_lzkj_loreal_upperSign_url"//kr
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10069/,
+			name: "loreal关注有礼",
+			script:"KingRan_KR/jd_lzkj_loreal_lkFollowShop.js",
+			trans: [{
+				ori: "-1",
+				redi: "jd_lzkj_loreal_lkFollowShop_ur"//kr
 			}]
 		},
 
