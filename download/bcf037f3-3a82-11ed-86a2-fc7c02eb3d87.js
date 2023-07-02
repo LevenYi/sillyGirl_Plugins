@@ -21,7 +21,7 @@
  * @public false
  * @disable false
  * @priority 10
- * @version v1.4.6
+ * @version v1.4.7
 */
 
 
@@ -145,6 +145,7 @@ const outputOriURL=true
 2023-2-12 v1.4.4 修复多容器队列更新问题
 2023-3-10 v1.4.5 添加支持短链,更新部分内置规则
 2023-6-28 v1.4.6 更新部分内置规则
+2023-7.2 v1.4.7 加强变量去重，防止不同仓库的同一活动重复执行，有概率误判
 
 /*****************数据存储******************/
 
@@ -204,7 +205,7 @@ jd_cookie spy_urldecode_new：链接解析规则
 
 const ql=require("qinglong")
 const st=require("something")
-
+const jdurl_reg = /((pro(dev)?|shop|h5)\.m\.jd)|(isvj(clou)?d)\.com/
 const s = sender
 const db = new Bucket("jd_cookie")
 const LIMIT = 60	//循环次数限制，防止意外死循环
@@ -302,32 +303,31 @@ function main() {
 		}
 		//链接监控
 		else if (msg.match(/https/)) {
-			let urls = msg.match(/https:\/\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\*\+,%;\=]*/g).map(url=>decodeURIComponent(url))
-			if(msg.match("u.jd.com")){	//短链
-				let notify=s.getContent()
-				for(let i=0;i<urls.length;i++){
-        			let temp= request(urls[i]).body.match(/(?<=hrl=')https:\/\/u\.jd\.com[^']+/)
+			let urls = msg.match(/https:\/\/[A-Za-z0-9\-\._~:\/\?#\[\]@!$&'\*\+,%;\=]*/g).map(url=>decodeURIComponent(url))	//所有链接
+			let jdurls=[]	//京东链接
+			let isredi=false	//是否进行过短链重定向
+			urls.forEach(url=>{
+				if(url.match("u.jd.com")){	//短链重定向
+        			let temp= request(url).body.match(/(?<=hrl=')https:\/\/u\.jd\.com[^']+/)
         			if(temp){
-            			let resp=data=request({
-                			url:temp[0],
-                			method:"get",
-                			allowredirects: false, 
-            			})
+            			let resp=request({url:temp[0],allowredirects: false})
             			if(resp.status==302){
-							notify=notify.replace(urls[i],resp.headers["Location"])
+							isredi=true
+							msg=msg.replace(url,resp.headers["Location"])
                 			//console.log(typeof(resp.headers["Location"])+"\n\n"+resp.headers["Location"])
-							urls[i]=resp.headers["Location"][0]
+							url=resp.headers["Location"][0]
             			}
 					}
-        		}
-				if(outputOriURL)
-					Notify("『白眼』获取真实链接:\n"+notify)
-			}
-			//console.log(JSON.stringify(urls))
-			if(FuckRebate)
-				Urls_Decode(urls)
-			else if(urls.find(url=>url.match(/isvj(clou)?d\.com/) || url.match(/(pro(dev)?|shop|h5)\.m\.jd\.com/)))
-				Urls_Decode(urls)
+				}
+				if(url.match(jdurl_reg)){
+					jdurls.push(url)
+				}
+			})
+			//console.log(JSON.stringify(jdurls))
+			if(outputOriURL && isredi)
+				Notify("『白眼』获取原始链接:\n\n"+msg)
+			if(jdurls.find(url=>url.match(jdurl_reg)))
+				Urls_Decode(jdurls)
 		}
 		//口令监控
 		else if (msg.match(/[(|)|#|@|$|%|¥|￥|!|！][0-9a-zA-Z]{10,16}[(|)|#|@|$|%|¥|￥|!|！]/g) != null) {
@@ -1253,25 +1253,23 @@ function EnvsTran(envs){
 //检查env{name:变量名,value:变量值}是否已存在队列[[{name:变量名,value:变量值}]]
 function IsIn(env, TODO) {
 	//	s.reply("env:"+JSON.stringify(env)+"\n\ntodo:"+JSON.stringify(TODO)+"\n\ndone:"+JSON.stringify(DONE))
-	let activityId=null,isurl=false
-	if(env.name.match(/url/i)){
-		isurl=true
-		activityId=env.value.match(/(?<=(actId|code|activityId)=)[^&]+/)
+	let reg = /(?<=(actId|code|activityId)=)[^&]+/
+	let actid=""
+	if(env.name.match(/url/i)){	//链接型变量
+		actid=env.value.match(reg)
+		actid=actid?actid[0]:""
 	}
-	for (let i = 0; i < TODO.length; i++){
-		for (j = 0; j < TODO[i].length; j++){
-			if (TODO[i][j].name == env.name){
-				if(TODO[i][j].value==env.value)
-					return true
-				else if(isurl){
-					let temp=TODO[i][j].value.match(/(?<=(actId|code|activityId)=)[^&]+/)
-					if(activityId && temp && activityId[0]==temp[0])
-						return true
-				}
-			}
+	return TODO.find(envs=>envs.find(history_env=>{
+		if(actid && history_env.name.match(/url/i)){
+			let his_actid=history_env.value.match(reg)
+			if(his_actid && his_actid[0]==actid)
+				return true
 		}
-	}
-	return false
+		else if(history_env.name==env.name && history_env.value==env.value)
+			return true
+		else
+			return false
+	})) ? true : false
 }
 
 //保存数据

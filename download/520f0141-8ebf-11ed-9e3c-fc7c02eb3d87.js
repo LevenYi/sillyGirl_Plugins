@@ -32,8 +32,7 @@ module.exports={
 	NolanDecode,
 	NolanEncode,
 
-	SendToTG,
-	GetFile
+	SendToTG
 }
 
 
@@ -529,7 +528,8 @@ function NolanEncode(url,title,image) {
 
 const tg_url = (new Bucket("tg")).get("url", "https://api.telegram.org")// 🧧设置代理地址指令：set tg url ? 默认直连官方服务器
 
-//让tg机器人给在对话id中发送msg(markdown,markdown语法错误会导致发送失败),reply_markup为高级功能，见tg官方文档,无token时使用傻妞所对接的机器人发送
+//让tg机器人给在对话id中发送msg(慎用,markdown语法错误会导致发送失败),
+//可选参数:reply_markup为高级功能(详情见tg官方文档,token为机器人token(默认使用傻妞所对接的机器人)
 function SendToTG(id, msg,reply_markup,token) {
 	let bot_token=token?token:(new Bucket("tg")).get("token")
 	let option={
@@ -548,7 +548,7 @@ function SendToTG(id, msg,reply_markup,token) {
 		if(JSON.parse(resp.body).ok)
 			return true
 		else{
-			console.log("SendToTG failed\n"+resp.body+"\n"+msg)
+			console.log(JSON.stringify(option)+"\n\n"+resp.body)
 			delete option.body["parse_mode"]
 			return JSON.parse(request(option).body).ok
 		}
@@ -558,25 +558,3 @@ function SendToTG(id, msg,reply_markup,token) {
 	}
 }
 
-function GetFile(id,token){
-	let bot_token=token?token:(new Bucket("tg")).get("token")
-	let resp=request({
-		url: tg_url+"/bot"  + bot_token + "/getFile",
-		method: "post",
-		body: {
-			"file_id": id
-		}
-	})
-	console.log(id+"\n"+bot_token)
-	try{
-		let temp=JSON.parse(resp.body)
-		console.log(resp.body)
-		if(temp.ok){
-			resp=request(tg_url+"/file/bot" + bot_token + temp.result.file_path)
-			return resp.body
-		}
-	}
-	catch(err){
-		return false
-	}
-}
