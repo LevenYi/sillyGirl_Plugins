@@ -87,7 +87,7 @@ function main(){
         let inp=s.listen(20*1000)
         if(inp==null)
             return
-        if(Number(inp.getContent())){
+        if(Number(inp.getContent()) < 0){
             let session=data[Math.abs(Number(inp.getContent()))-1].hash
             if(torrDel(host,ck,session,true))
                 s.reply("删除成功")
@@ -213,7 +213,17 @@ function TranSize(size){
         return "too big or error"
 }
 
-//登陆
+function ReqQb(url,method,headers,body){
+    let option={url}
+    if(method)
+        option.method=method
+    if(headers)
+        option.headers=headers
+    if(body)
+        option.body=body
+}
+
+/***************登陆***************** */
 function Login(host,name,password){
     let resp=request({
    		url:host+"/api/v2/auth/login",

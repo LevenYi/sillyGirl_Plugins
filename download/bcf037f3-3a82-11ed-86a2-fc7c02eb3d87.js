@@ -308,7 +308,7 @@ function main() {
 			let isredi=false	//是否进行过短链重定向
 			urls.forEach(url=>{
 				if(url.match("u.jd.com")){	//短链重定向
-        			let temp= request(url).body.match(/(?<=hrl=')https:\/\/u\.jd\.com[^']+/)
+            		let temp= request(url).body.match(/(?<=hrl=')https:\/\/u\.jd\.com[^']+/)
         			if(temp){
             			let resp=request({url:temp[0],allowredirects: false})
             			if(resp.status==302){
@@ -425,7 +425,6 @@ function Spy_Manager() {
 		}
 		else if (inp == "0") {	//添加监控任务
 			let spy = {
-				ID: Listens.length,
 				Name: "",
 				Keyword: "",
 				Envs: [],
@@ -1711,11 +1710,68 @@ var UrlDecodeRule =[
 					redi:"Test1"
 				}
 			],
-//			admin:true,
+			admin:true,
 			name:"测试规则"
 		},
-		/******************KR库********************** */
+		//多库共用
 		{
+			keyword: /https:\/\/lzkj-isv.isvj(clou)?d.com\/drawCenter/,
+			name: "LZ刮刮乐",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_drawCenter_activityId"
+			}]
+		},
+		{
+			keyword: /lzkjdz-isv.isvj(clou)?d.com\/wxUnPackingActivity/,
+			name: "LZ让福袋飞",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_wxUnPackingActivity_activityId"
+			}]
+		},
+		{
+			keyword: /lzkj(dz)?-isv\.isvj(clou)?d\.com\/wxSecond/,
+			name: "LZ读秒拼手速",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_wxSecond_activityId"//kr
+			}]
+		},
+		{
+			keyword: /lzkj(dz)?-isv\.isvjcloud.com\/wxCollectCard/,
+			name: "LZ集卡抽奖",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_wxCollectCard_activityId"//kr
+			}]
+		},
+		{
+			keyword: "wxCartKoi/cartkoi",
+			name: "LZ购物车锦鲤",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_wxCartKoi_activityId"
+			}]
+		},
+		{
+			keyword: /lzkj(dz)?-isv.isvj(clou)?d.com\/wxShareActivity/,
+			name: "LZ分享有礼",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_wxShareActivity_activityId"
+			}]
+		},
+		{
+			keyword: /lzkjdz-isv.isvj(clou)?d.com\/wxFansInterActionActivity/,
+			name: "LZ粉丝互动",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_wxFansInterActionActivity_activityId"
+			}]
+		},
+		/******************KR库********************** */
+/*		{
 			keyword: /cjhy(dz)?-isv\.isvjcloud\.com\/wxTeam\/activity/,
 			name: "CJ组队瓜分",
 			trans: [{
@@ -1751,14 +1807,6 @@ var UrlDecodeRule =[
 			}]
 		},
 	
-		{
-			keyword: /lzkj(dz)?-isv\.isvjcloud.com\/wxCollectCard/,
-			name: "LZ集卡抽奖",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_wxCollectCard_activityId"//kr
-			}]
-		},
 
 
 		{
@@ -1786,24 +1834,6 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /lzkj(dz)?-isv\.isvj(clou)?d\.com\/wxSecond/,
-			name: "LZ读秒拼手速",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_wxSecond_activityId"//kr
-			}]
-		},
-
-		{
-			keyword: "wxCartKoi/cartkoi",
-			name: "LZ购物车锦鲤",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_wxCartKoi_activityId"
-			}]
-		},
-
-		{
 			keyword: "wxShopFollowActivity",
 			name: "店铺关注有礼",
 			trans: [{
@@ -1811,36 +1841,6 @@ var UrlDecodeRule =[
 				redi: "jd_wxShopFollowActivity_activityUrl"
 			}]
 		},
-		
-
-		{
-			keyword: /https:\/\/lzkj-isv.isvj(clou)?d.com\/drawCenter/,
-			name: "LZ刮刮乐",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_drawCenter_activityId"
-			}]
-		},
-
-		{
-			keyword: /lzkjdz-isv.isvj(clou)?d.com\/wxFansInterActionActivity/,
-			name: "LZ粉丝互动",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_wxFansInterActionActivity_activityId"
-			}]
-		},
-
-
-		{
-			keyword: /lzkj(dz)?-isv.isvj(clou)?d.com\/wxShareActivity/,
-			name: "LZ分享有礼",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_wxShareActivity_activityId"
-			}]
-		},
-
 		{
 			keyword: "https://jdjoy.jd.com/module/task/v2/doTask",
 			name: "JoyJD任务",
@@ -1883,14 +1883,6 @@ var UrlDecodeRule =[
 			}]
 		},
 
-		{
-			keyword: /lzkjdz-isv.isvj(clou)?d.com\/wxUnPackingActivity/,
-			name: "LZ让福袋飞",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_wxUnPackingActivity_activityId"
-			}]
-		},
 
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/wx/completeInfoActivity/view/activity",
@@ -2101,12 +2093,22 @@ var UrlDecodeRule =[
 			}]
 		},
 
-
+*/
 	
 	/*******************环境保护库********************** */	
-	{
+		{
+			keyword: /lzdz1-isv\.isvjcloud\.com\/(m\/unite\/dzlh0001)|(dingzhi\/joinCommon\/activity)/,
+			name: "常规卡通用",
+			script:"feverrun_my_scripts/jd_opencard_common.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzdz1_joinCommon_Id"
+			}]
+		},
+		{
 			keyword: /cjhy(dz)?-isv\.isvjcloud\.com\/wxTeam\/activity/,
 			name: "CJ组队瓜分",
+			script:"feverrun_my_scripts/jd_cjhydz_wxTeam.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_cjhydz_wxTeam_Id"
@@ -2116,6 +2118,7 @@ var UrlDecodeRule =[
 		{
 			keyword: /lzkj(dz)?-isv\.isvj(clou)?d.com\/wxTeam\/activity/,
 			name: "LZ组队瓜分",
+			script:"feverrun_my_scripts/jd_lzkjdz_wxTeam.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkjdz_wxTeam_Id"
@@ -2142,6 +2145,7 @@ var UrlDecodeRule =[
 		{
 			keyword: /https:\/\/lzkj-isv\.isvj(clou)?d\.com\/wxShopFollowActivity/,
 			name: "LZ店铺关注抽奖",
+			script:"feverrun_my_scripts/jd_lzkj_wxShopFollowActivity.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkj_wxShopFollowActivity_activityId"
@@ -2149,32 +2153,34 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/wxShopFollowActivity/activity",
+			script:"feverrun_my_scripts/jd_cjhy_wxShopFollowActivity.js",
 			name: "CJ店铺关注抽奖",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_cjhy_wxShopFollowActivity_activityId"
 			}]
 		},
-	
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/wxCollectionActivity/activity2",
 			name: "LZ加购有礼",
+			script:"feverrun_my_scripts/jd_lzkj_wxCollectionActivity.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkj_wxCollectionActivityId"//环保
 			}]
 		},
-
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/wxCollectionActivity/activity",
 			name: "CJ加购有礼",
+			script:"feverrun_my_scripts/jd_cjhy_wxCollectionActivity.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_cjhy_wxCollectionActivityId"//环保
 			}]
 		},
 		{
-			keyword: /https:\/\/lzkj-isv\.isvj(cloud)?\.com\/lzclient/,
+			keyword: /https:\/\/lzkj-isv\.isvj(cloud)?\.com\/(lzclient|wxDrawActivity)/,
+			script:"feverrun_my_scripts/jd_lzkj_wxDrawActivity.js",
 			name: "LZ幸运抽奖",
 			trans: [{
 				ori: "activityId",
@@ -2183,6 +2189,7 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/wxDrawActivity/activity/",
+			script:"feverrun_my_scripts/jd_cjhy_wxDrawActivity.js",
 			name: "CJ幸运抽奖",
 			trans: [{
 				ori: "activityId",
@@ -2191,6 +2198,7 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: /lzkj-isv\.isvj(clou)?d\.com\/wxGameActivity/,
+			script:"feverrun_my_scripts/jd_lzkj_wxGameActivity.js",
 			name: "LZ游戏活动",
 			trans: [{
 				ori: "activityId",
@@ -2199,7 +2207,7 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: /lzkj-isv\.isvj(clou)?d.com\/wxgame/,
-			name: "LZ游戏活动",
+			name: "LZ店铺通用游戏任务",
 			trans: [{
 				ori: "activityId",
 				redi: "WXGAME_ACT_ID"//环保
@@ -2207,6 +2215,7 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/wxGameActivity/activity",
+			script:"feverrun_my_scripts/jd_cjhy_wxGameActivity.js",
 			name: "CJ游戏活动",
 			trans: [{
 				ori: "activityId",
@@ -2215,6 +2224,7 @@ var UrlDecodeRule =[
 		},	
 		{
 			keyword: "https://lzkj-isv.isvjcloud.com/wxKnowledgeActivity/activity",
+			script:"feverrun_my_scripts/jd_lzkj_wxKnowledgeActivity.js",
 			name: "LZ知识超人",
 			trans: [{
 				ori: "activityId",
@@ -2223,15 +2233,26 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/wxKnowledgeActivity/activity",
+			script:"feverrun_my_scripts/jd_cjhy_wxKnowledgeActivity.js",
 			name: "CJ知识超人",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_cjhy_wxKnowledgeActivity_activityId"//环保
 			}]
 		},
+		{
+			keyword: "cjhy-isv.isvjcloud.com/wx/completeInfoActivity",
+			name: "cjhy完善信息",
+			script:"feverrun_my_scripts/jd_cjhy_completeInfoActivity.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_cjhy_completeInfoActivity_Ids"//环保
+			}]
+		},
 
 		{
 			keyword: "https://txzj-isv.isvjcloud.com/cart_item",
+			script:"feverrun_my_scripts/jd_txzj_cart_item.js",
 			name: "txzj加购有礼",
 			trans: [{
 				ori: "a",
@@ -2240,6 +2261,7 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: "https://txzj-isv.isvjcloud.com/collect_item",
+			script:"feverrun_my_scripts/jd_txzj_collect_item.js",
 			name: "txzj关注有礼",
 			trans: [{
 				ori: "a",
@@ -2249,6 +2271,7 @@ var UrlDecodeRule =[
 		{
 			keyword: "https://txzj-isv.isvjcloud.com/sign_in",
 			name: "txzj签到",
+			script:"feverrun_my_scripts/jd_txzj_sign_in.js",
 			trans: [{
 				ori: "a",
 				redi: "jd_txzj_sign_in_id"
@@ -2257,6 +2280,7 @@ var UrlDecodeRule =[
 		{
 			keyword: "https://txzj-isv.isvjcloud.com/lottery",
 			name: "txzj抽奖",
+			script:"feverrun_my_scripts/jd_txzj_lottery.js",
 			trans: [{
 				ori: "a",
 				redi: "jd_txzj_lottery_id"
@@ -2266,6 +2290,7 @@ var UrlDecodeRule =[
 		{
 			keyword: "https://cjhy-isv.isvjcloud.com/activity/daily/",
 			name: "cjhy每日抢",
+			script:"feverrun_my_scripts/jd_cjhy_daily.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_cjhy_daily_ids"
@@ -2290,7 +2315,8 @@ var UrlDecodeRule =[
 		// },
 		{
 			keyword: /cjhy-isv\.isvjcloud\.com\/sign\/signActivity/,
-			name: "CJ超级店铺无线签到",
+			name: "cjhy签到有礼",
+			script:"feverrun_my_scripts/jd_cjhy_signActivity.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_cjhy_signActivity_ids"
@@ -2298,7 +2324,8 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: /cjhy-isv.isvj(clou)?d.com\/sign\/sevenDay\/signActivity/,
-			name: "CJ超级店铺无线签到",
+			name: "cjhy七日签到",
+			script:"feverrun_my_scripts/jd_cjhy_sevenDay.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_cjhy_sevenDay_ids"
@@ -2306,7 +2333,8 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: /lzkj-isv.isvj(clou)?d.com\/sign\/signActivity/,
-			name: "LZ超级店铺无线签到",
+			name: "lzkj签到有礼",
+			script:"feverrun_my_scripts/jd_lzkj_signActivity2.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkj_signActivity2_ids"
@@ -2314,7 +2342,8 @@ var UrlDecodeRule =[
 		},
 		{
 			keyword: /lzkj-isv.isvj(clou)?d.com\/sign\/sevenDay/,
-			name: "LZ超级店铺无线签到",
+			name: "lzkj七日签到",
+			script:"feverrun_my_scripts/jd_lzkj_sevenDay.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkj_sevenDay_ids"
@@ -2323,6 +2352,7 @@ var UrlDecodeRule =[
 		{
 			keyword: /lzkj-isv.isvj(clou)?d.com\/wxBuildActivity/,
 			name: "LZ盖楼有礼",
+			script:"feverrun_my_scripts/jd_lzkj_wxBuildActivity.js",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkj_wxBuildActivity_activityId"
@@ -2372,6 +2402,15 @@ var UrlDecodeRule =[
 		// 	}]
 		// },
 		{
+			keyword: /interactsaas\/index\?activityType=10021/,
+			name: "lzkj_interactsaas大转盘抽奖",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_dazhuanpan.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_dazhuanpan_Ids"
+			}]
+		},
+		{
 			keyword: /interactsaas\/index\?activityType=10023/,
 			name: "lzkj_interactsaas日历签到",
 			script:"feverrun_my_scripts/jd_lzkj_interactsaas_rlqd.js",
@@ -2399,6 +2438,15 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
+			keyword: /interactsaas\/index\?activityType=10043/,
+			name: "lzkj_interactsaas分享有礼",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_fxyl.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_fxyl_activityId"
+			}]
+		},
+		{
 			keyword: /interactsaas\/index\?activityType=10047/,
 			name: "lzkj_interactsaas盖楼有礼",
 			script:"feverrun_my_scripts/jd_lzkj_interactsaas_glyl.js",
@@ -2414,6 +2462,15 @@ var UrlDecodeRule =[
 			trans: [{
 				ori: "activityId",
 				redi: "jd_lzkj_interactsaas_gzspyl_activityId"
+			}]
+		},
+		{
+			keyword: /interactsaas\/index\?activityType=10068/,
+			name: "lzkj_interactsaas邀请关注店铺有礼",
+			script:"feverrun_my_scripts/jd_lzkj_interactsaas_yqgzdpyl.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_interactsaas_yqgzdpyl_activityId"
 			}]
 		},
 		{
