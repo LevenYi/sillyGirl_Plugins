@@ -1000,7 +1000,7 @@ function Que_Manager(QLS) {
 		let flag=true	//是否所有容器异常
 		let record=[]	//记录处于冷却状态等待下一次执行的任务
 		for (let i = 0; i < QLS.length; i++) {
-			console.log(QLS[i].name+":执行\n"+JSON.stringify(QLS[i].envs)+"\n"+QLS[i].keywords)
+			console.log(QLS[i].name+":尝试执行\n"+JSON.stringify(QLS[i].envs)+"\n"+QLS[i].keywords)
 			if(!QLS[i].envs.length){
 				console.log(QLS[i].name+"无任务")
 				continue

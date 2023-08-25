@@ -6,6 +6,9 @@ const express = require('express');
 const fs = require('fs');
 const md5 = require('md5')
 const { exec } = require('child_process');
+const { v4: uuidv4 } = require('uuid');
+
+
 const app = express();
 const port = 3000;	//服务端口
 
@@ -26,6 +29,10 @@ app.get('/qr-code', (req, res) => {
       res.sendFile(__dirname + "/qr.jpg");
 	}
   });
+});
+
+app.get('/uuid', (req, res) => {
+  res.send(uuidv4())
 });
 
 app.post('/shell',(req, res)=>{
