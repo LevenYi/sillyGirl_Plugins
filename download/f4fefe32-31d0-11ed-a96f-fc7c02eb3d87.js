@@ -49,7 +49,8 @@ function main(){
     // }
 	if(s.getContent()=="执行定时"||s.getPlatform()=="cron"){
         cdd()
-        qlcron_auto_chang("JX抽现金2")
+        qlcron_auto_chang("JX抽现金")
+        qlcron_auto_chang("JD转赚红包")
         //head_auto_change()
         if(s.getPlatform()=="cron"){
             NotifyTo["content"]=message
@@ -60,7 +61,7 @@ function main(){
     }
     else if(s.getContent().match(/^session_id=/)){
         let db=new Bucket("otto")
-        let data=db.get("cdd")
+        let data=db.get("cdd_wx_token")
         let users=data?JSON.parse(data):[]
         let tip="选择更新的账号或者输入0添加新账号:\n"
         users.forEach((user,i)=>tip+=(i+1)+"、"+user.name+"\n")
@@ -84,7 +85,7 @@ function main(){
             }
             user.name=inp.getContent()
             users.push(user)
-            db.set("cdd",JSON.stringify(users))
+            db.set("cdd_wx_token",JSON.stringify(users))
             s.reply("添加成功")
         }
         else if(choose=="q"){
@@ -94,7 +95,7 @@ function main(){
         else{
             try{
                 users[Number(choose)-1].session_id=s.getContent()
-                db.set("cdd",JSON.stringify(users))
+                db.set("cdd_wx_token",JSON.stringify(users))
                 s.reply("更新成功")
             }
             catch(err){
@@ -125,7 +126,10 @@ function main(){
         if(data.code==200)
             s.reply("ok")
         else
-            s.reply("false")
+            s.reply("faild:"+JSON.stringify(data))
+    }
+    else if(s.getContent()=="提现"){
+
     }
 }
 
@@ -145,12 +149,12 @@ function qlcron_auto_chang(name){
         let temp=cron.schedule.split(" ")
         let second=Number(temp[0])
         let minute=Number(temp[1])
-        if(second>54){
-            second=second+5-60
+        if(second==59){
+            second=0
             minute++
         }
         else
-            second+=5
+            second+=1
         
         temp[0]=second
         temp[1]=minute
@@ -194,20 +198,71 @@ function cdd(){
     const otto=new Bucket("otto")
 
     //微信签到
-    let data=otto.get("cdd")
-    if(!data)
-        return "无账号数据"
-    let users=JSON.parse(data)
-    users.forEach(user=>wx_signtask(user))
-    return
+    // let data=otto.get("cdd_wx_token")
+    // if(!data)
+    //     return "无账号数据"
+    // let users=JSON.parse(data)
+    // users.forEach(user=>wx_signtask(user))
+    // return
 
     //APP任务
+    data=otto.get("cdd_app_token")
+    if(!data)
+        return "无账号数据"
+    users=JSON.parse(data)
+    users.forEach(user=>app(user))
+}
+
+function app(user){
     let headers={
-        'authorization':'Bearer '+otto.get('cdd_token')
+        'authorization':'Bearer '+user.token
     }
+    message+="【"+user.name+"】\n"
     //签到
     app_signtask(headers)
     //执行任务
+    for(let i=0;i<2;i++)
+        app_task(headers)
+    draw(headers)
+}
+
+
+//提现
+function draw(headers){ 
+    let option={
+        url:"https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/distribution",
+        headers,
+        method:"get"
+    }   
+    try{
+        //获取账号余额
+        let rewards=JSON.parse(request(option).body).data
+        message+="账号余额："+rewards.totalAmount+"+"+rewards.surplusAmount+"("+rewards.waitAmount+")\n"
+        if(rewards.surplusAmount==0)    //可提现金额为0
+            return
+        //获取账号信息
+        option.url="https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/user/loginUserInfo"
+        let userInfo=JSON.parse(request(option).body).data
+        //提现
+        option.url="https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/distributionWithdrawal"
+        option.method="post"
+        option.body={
+            name:userInfo.userName,
+            account:userInfo.payAccount,
+            amount:rewards.surplusAmount
+        }
+        if(JSON.parse(request(option).body).code==1){
+            message+="★成功提现："+rewards.surplusAmount+"\n"
+        }
+        else
+            message+="☆提现:"+rewards.surplusAmount+"失败\n"
+    }
+    catch(err){
+        message+=e+"提现失败\n"
+    }
+}
+
+function app_task(headers){
     let tasklist=app_tasklist(headers)  //任务列表
     if(!tasklist){
         message+"app任务列表获取失败"
@@ -215,9 +270,9 @@ function cdd(){
     }
     tasklist.forEach((task,i)=>{
         let temp=[] //最新任务列表
-        let info=task   //当前任务信息
+        let info=JSON.parse(JSON.stringify(task))   //当前任务信息
         if(info.userStatus==0){    //报名
-            console.log(JSON.stringify(info))
+            //console.log(JSON.stringify(task))
             if(!app_tasksign(headers,task.id)){
                 console.log(task.name+"报名失败")
                 return
@@ -225,26 +280,31 @@ function cdd(){
             else{
                 console.log(task.name+"报名成功")     
                 sleep(500)
+                //刷新任务状态信息
                 temp=app_tasklist(headers)
                 info=temp.find(ele=>ele.id==task.id)
             }
         }
         if(info.userStatus==1){ //更新用户参与信息以获取userTaskId
-            console.log(JSON.stringify(info))
+            //console.log(JSON.stringify(info))
             let type=0
             if(info.name=="美团红包天天领")
                 type=4
             else if(info.name=="饿了么红包天天领")
                 type=5
             if(type){
+                //执行任务
+                sleep(500)
                 app_userinfo(headers,type)
-                sleep(1500)
+                //刷新任务状态信息
+                temp=app_tasklist(headers)
+                sleep(500)
                 temp=app_tasklist(headers)
                 info=temp.find(ele=>ele.id==task.id)
             }
         }
         if(info.userStatus==2){ //领取任务奖励
-            console.log(JSON.stringify(info))
+            //console.log(JSON.stringify(info))
             sleep(500)
             if(task.userTaskId && app_reward(headers,task.userTaskId)){
                 message+=task.name+"奖励领取成功\n"

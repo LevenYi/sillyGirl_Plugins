@@ -4,9 +4,10 @@
  * @rule 取消霸王餐
  * @rule 霸王餐 ?
  * @rule 自动霸王餐
+ * @rule 切换霸王餐
  * @origin 自用
  * @create_at 2022-09-11 19:14:23
- * @description 餐大大自动查询霸王餐
+ * @description 餐大大霸王餐报名、取消、自动报名，自用插件，请勿使用
  * @author 自用
  * @version v1.0.1
  * @public false
@@ -16,18 +17,25 @@
  * @icon https://hi.kejiwanjia.com/wp-content/uploads/2022/01/%E4%B8%8B%E8%BD%BD-1.jpeg
  */
 const db=new Bucket('otto')
+let accounts=JSON.parse(db.get('cdd_app_token'))
+let default_account=accounts.find(account=>account["default"]==true)
+let token=""
+if(default_account)
+    token=default_account.token
+else
+    token=accounts[0].token
 let Headers={
-    'authorization':'Bearer '+db.get('cdd_token')
+    'authorization':'Bearer '+token
 }
 const s = sender
 const silly=new SillyGirl()
 const to={
-	platform:"tg",  
-    userId:"1748961147",    
+	platform:"qq",  
+    userId:"3176829386",    
     content:""
 }
 function main() {
-    if(s.getPlatform()=="cron"){
+    if(s.getPlatform()=="cron"){    //自动报名指定霸王餐店铺活动
     //if(s.getContent()=="霸王餐"){ 
         if(db.get("cdd_auto_switch")=="1")
             return
@@ -38,17 +46,17 @@ function main() {
         autoattend.forEach(shop=>{
             let act=attened.find(act=>act.releaseInformationDO.title.indexOf(shop)!=-1)
             if(act){
-                console.log(shop+"已参与")
+                console.log(shop+"已报名")
                 return
             }
-            act=acts.find(act=>act.title.indexOf(shop)!=-1 && act.forumNameStr=="美团")
+            act=acts.find(act=>act.title.indexOf(shop)!=-1 )
             //console.log(JSON.stringify(act))
             if(!act){
                 console.log(shop+"暂无活动")
                 return
             }
             else if(Attend(act,formToken())){
-                to.content+="\n已自动报名霸王餐："+act.title
+                to.content+="\n已自动报名霸王餐：【"+act.forumNameStr+"】"+act.title
             }
             console.log(to.content)
             silly.push(to)
@@ -81,11 +89,14 @@ function main() {
             return
         else
             index=inp.getContent()-1
-        if(isNaN(index))
+        if(isNaN(index)){
+            s.setContent(inp.getContent())
+            s.continue()
             return
+        }
         Attend(acts[index],formToken())
     }
-    else{
+    else if(s.getContent()=='取消霸王餐'){
         let acts=Attended()
         if(!acts.length){
             s.reply("没有已参加的活动")
@@ -97,13 +108,31 @@ function main() {
             return
         else
             index=inp.getContent()-1
-        if(index==NaN)
+        if(isNaN(index)){
+            s.setContent(inp.getContent())
+            s.continue()
             return
+        }
         let id=acts[index].id
         if(Cancel(id))
             s.reply("ok")
         else
             s.reply("failed")
+    }
+    else if(s.getContent()=='切换霸王餐'){
+        let i=accounts.findIndex(account=>account["default"])
+        //console.log(i)
+        if(i==-1){
+            accounts[0]["default"]=true
+            s.reply("切换至"+accounts[0].name)
+        }
+        else{
+            delete accounts[i]["default"]
+            next=i==accounts.length-1 ? 0 : i+1
+            accounts[next]["default"]=true
+            s.reply("切换至"+accounts[next]["name"])
+        }
+        db.set("cdd_app_token",JSON.stringify(accounts))
     }
 }
 
@@ -116,6 +145,7 @@ function Attended(){
         headers:Headers
     }) 
     if(resp.status==200){
+        //console.log(resp.body)
         let data=JSON.parse(resp.body)
         if(data.code==1){
             let message=""
@@ -131,7 +161,7 @@ function Attended(){
                     rulestr=rule.amountOne+"-"+rule.amountOne
                 else
                     rulestr=rule.amountOne+"-"+rule.amountTwo
-                message+=record.length+"、"+temp.title+":"+rulestr+"\n\n"
+                message+=record.length+"、【"+temp.forumNameStr+"】"+temp.title+":"+rulestr+"\n\n"
             }
             if(s.getPlatform()!="cron")
                 s.reply(message)
@@ -228,28 +258,38 @@ function getActs(){
                 let start=new Date(info.effectiveStart+":00")    //活动开始时间
                 let end=new Date(info.effectiveEnd+":00")    //活动结束时间
                 let rulestr="" //满减规则
+                let payed=0,rebate=0    //返利门槛及数额
                 let temp=""
-                if(rule.choiceRule==1)
+                if(rule.choiceRule==1){
                     rulestr+=":"+rule.amountOne+"-"+rule.amountOne
-                else
+                    payed=rebate=rule.amountOne
+                }
+                else{
                     rulestr+=":"+rule.amountOne+"-"+rule.amountTwo
+                    payed=rule.amountOne
+                    rebate=rule.amountTwo
+                }
                 if(info.distance>4)
                     break
                 else if(!info.surplus){  //跳过无名额的店铺
-                    log+=info.informationName+":无名额\n"
+                    log+=info.forumNameStr+"-"+info.informationName+":无名额\n"
                     continue
                 }
-                //choiceRule(返利规则): 1(设置返利上限amountOne，此时amountTwo为0)     2(满amountOne返amountTwo)
+                //choiceRule(返利规则): 1(满amountOne返amountOne，此时amountTwo为0)     2(满amountOne返amountTwo)
                 else if(rule.choiceRule==1 && rule.amountOne<13){  //跳过返利太少的或者门槛太低的店铺
-                    log+=info.informationName+" 满减太少"+rulestr+"\n"
+                    log+=info.forumNameStr+"-"+info.informationName+" 返利太少"+rulestr+"\n"
                     continue
                 }
                 else if(rule.choiceRule==2 && rule.amountTwo<13){ //跳过返利太少的店铺
-                    log+=info.informationName+" 满减太少"+rulestr+"\n"
+                    log+=info.forumNameStr+"-"+info.informationName+" 返利太少"+rulestr+"\n"
+                    continue
+                }
+                else if(payed-rebate>3){
+                    log+=info.forumNameStr+"-"+info.informationName+"返利比例太少"+rulestr+"\n"
                     continue
                 }
                 else if(now.getTime()>end.getTime()){   //活动已结束
-                    log+=info.informationName+" 已结束"+info.effectiveEndStr+"\n"
+                    log+=info.forumNameStr+"-"+info.informationName+" 已结束"+info.effectiveEndStr+"\n"
                     continue
                 }
                 record.push(info)

@@ -2143,7 +2143,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /https:\/\/lzkj-isv\.isvj(clou)?d\.com\/wxShopFollowActivity/,
+			keyword: /lzkj-isv\.isvj(clou)?d\.com\/wxShopFollowActivity/,
 			name: "LZ店铺关注抽奖",
 			script:"feverrun_my_scripts/jd_lzkj_wxShopFollowActivity.js",
 			trans: [{
@@ -2152,7 +2152,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://cjhy-isv.isvjcloud.com/wxShopFollowActivity/activity",
+			keyword: /cjhy-isv\.isvj(clou)?d\.com\/wxShopFollowActivity/,
 			script:"feverrun_my_scripts/jd_cjhy_wxShopFollowActivity.js",
 			name: "CJ店铺关注抽奖",
 			trans: [{
@@ -2161,7 +2161,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://lzkj-isv.isvjcloud.com/wxCollectionActivity/activity2",
+			keyword: /lzkj-isv.isvj(clou)?d.com\/wxCollectionActivity/,
 			name: "LZ加购有礼",
 			script:"feverrun_my_scripts/jd_lzkj_wxCollectionActivity.js",
 			trans: [{
@@ -2170,7 +2170,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://cjhy-isv.isvjcloud.com/wxCollectionActivity/activity",
+			keyword: /cjhy-isv\.isvj(clou)?d\.com\/wxCollectionActivity/,
 			name: "CJ加购有礼",
 			script:"feverrun_my_scripts/jd_cjhy_wxCollectionActivity.js",
 			trans: [{
@@ -2179,7 +2179,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /https:\/\/lzkj-isv\.isvj(cloud)?\.com\/(lzclient|wxDrawActivity)/,
+			keyword: /lzkj-isv\.isvj(cloud)?\.com\/(lzclient|wxDrawActivity)/,
 			script:"feverrun_my_scripts/jd_lzkj_wxDrawActivity.js",
 			name: "LZ幸运抽奖",
 			trans: [{
@@ -2188,7 +2188,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://cjhy-isv.isvjcloud.com/wxDrawActivity/activity/",
+			keyword: /cjhy-isv\.isvj(clou)?d.com\/wxDrawActivity/,
 			script:"feverrun_my_scripts/jd_cjhy_wxDrawActivity.js",
 			name: "CJ幸运抽奖",
 			trans: [{
@@ -2206,7 +2206,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /lzkj-isv\.isvj(clou)?d.com\/wxgame/,
+			keyword: /lzkj-isv\.isvj(clou)?d\.com\/wxgame/,
 			name: "LZ店铺通用游戏任务",
 			trans: [{
 				ori: "activityId",
@@ -2214,7 +2214,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://cjhy-isv.isvjcloud.com/wxGameActivity/activity",
+			keyword: /cjhy-isv\.isvj(clou)?d\.com\/wxGameActivity/,
 			script:"feverrun_my_scripts/jd_cjhy_wxGameActivity.js",
 			name: "CJ游戏活动",
 			trans: [{
@@ -2223,7 +2223,7 @@ var UrlDecodeRule =[
 			}]
 		},	
 		{
-			keyword: "https://lzkj-isv.isvjcloud.com/wxKnowledgeActivity/activity",
+			keyword: /lzkj-isv\.isvj(clou)?d\.com\/wxKnowledgeActivity/,
 			script:"feverrun_my_scripts/jd_lzkj_wxKnowledgeActivity.js",
 			name: "LZ知识超人",
 			trans: [{
@@ -2232,7 +2232,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://cjhy-isv.isvjcloud.com/wxKnowledgeActivity/activity",
+			keyword: /cjhy-isv\.isvj(clou)?d\.com\/wxKnowledgeActivity/,
 			script:"feverrun_my_scripts/jd_cjhy_wxKnowledgeActivity.js",
 			name: "CJ知识超人",
 			trans: [{
@@ -2251,7 +2251,7 @@ var UrlDecodeRule =[
 		},
 
 		{
-			keyword: "https://txzj-isv.isvjcloud.com/cart_item",
+			keyword: /txzj-isv.isvjcloud.com\/cart_item/,
 			script:"feverrun_my_scripts/jd_txzj_cart_item.js",
 			name: "txzj加购有礼",
 			trans: [{
@@ -2260,7 +2260,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://txzj-isv.isvjcloud.com/collect_item",
+			keyword: /txzj-isv.isvjcloud.com\/collect_item/,
 			script:"feverrun_my_scripts/jd_txzj_collect_item.js",
 			name: "txzj关注有礼",
 			trans: [{
@@ -2269,7 +2269,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://txzj-isv.isvjcloud.com/sign_in",
+			keyword: /txzj-isv.isvjcloud.com\/sign_in/,
 			name: "txzj签到",
 			script:"feverrun_my_scripts/jd_txzj_sign_in.js",
 			trans: [{
@@ -2278,7 +2278,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://txzj-isv.isvjcloud.com/lottery",
+			keyword: /txzj-isv.isvjcloud.com\/lottery/,
 			name: "txzj抽奖",
 			script:"feverrun_my_scripts/jd_txzj_lottery.js",
 			trans: [{
@@ -2288,7 +2288,7 @@ var UrlDecodeRule =[
 		},
 
 		{
-			keyword: "https://cjhy-isv.isvjcloud.com/activity/daily/",
+			keyword: /cjhy-isv.isvjcloud.com\/activity\/daily/,
 			name: "cjhy每日抢",
 			script:"feverrun_my_scripts/jd_cjhy_daily.js",
 			trans: [{
@@ -2297,7 +2297,7 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: "https://cjhy-isv.isvjcloud.com/mc/wxMcLevelAndBirthGifts/activity",
+			keyword: /cjhy-isv.isvj(clou)?d.com\/mc\/wxMcLevelAndBirthGifts/,
 			name: "CJ生日礼包和会员等级礼包",
 			trans: [{
 				ori: "activityId",
@@ -2314,7 +2314,7 @@ var UrlDecodeRule =[
 		// 	}]
 		// },
 		{
-			keyword: /cjhy-isv\.isvjcloud\.com\/sign\/signActivity/,
+			keyword: /cjhy-isv\.isvj(clou)?d\.com\/sign\/signActivity/,
 			name: "cjhy签到有礼",
 			script:"feverrun_my_scripts/jd_cjhy_signActivity.js",
 			trans: [{
@@ -2367,11 +2367,20 @@ var UrlDecodeRule =[
 			}]
 		},
 		{
-			keyword: /cjhy-isv\.isvjcloud\.com\/wxShopGift/,
+			keyword: /cjhy-isv\.isvj(clou)?d\.com\/wxShopGift/,
 			name: "cjhy店铺礼包",
 			trans: [{
 				ori: "activityId",
 				redi: "jd_cjhy_wxShopGift_ids"
+			}]
+		},
+		{
+			keyword: /cjhy-isv\.isvj(clou)?d.com\/mc\/wxPointShopView\/pointExgBeans/,
+			script:"feverrun_my_scripts/jd_cjhy_wxPointShopView.js",
+			name: "cjhy积分兑换京豆",
+			trans: [{
+				ori: "-1",
+				redi: "jd_cjhy_wxPointShopView_url"
 			}]
 		},
 		{
