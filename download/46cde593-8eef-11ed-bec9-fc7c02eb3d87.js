@@ -2,7 +2,7 @@
  * @author https://t.me/sillyGirl_Plugin
  * @version v1.0.1
  * @create_at 2022-09-22 14:36:01
- * @description 执行shell命令，基于自建服务
+ * @description 执行shell命令，基于自建服务,set otto shell_token ? 设置token
  * @title shell
  * @rule sh ?
  * @rule 升级
@@ -16,42 +16,39 @@ main()
 
 
 function shell(command){
-    request({
+    let data=request({
         url:"http://127.0.0.1:3000/shell",
         method:"post",
-        //json:true,
+        json:true,
 		headers:{
-			"accept": "application/json"
+			"accept": "application/json",
+            "Authorization":new Bucket("otto").get("shell_token")
 		},
         body:{
             command:command
         }
-    },function(error,info,body){     
-        const unit=1000
-        let data=JSON.parse(body)
-        if(!data || !data.output){
-            s.reply("shell服务已下线")
-            return
-        }
-        let message=data.output
-        if(message.length<unit){
-            s.reply(message)
-        }
-        else{
-            console.log("stdout too long")
-            console.log(message.length+":\n"+message)
-            let start=0,limit=10
-            // console.log(start+":"+message.substr(start,unit))
-            while(limit-->0){
-                console.log(start+":"+message.substr(start,unit))
-                s.reply(message.substr(start,unit))
-                start+=unit
-                if(start>message.length)
-                    break
-                sleep(500)
+    }).body
+    if(!data || !data.output){
+        s.reply(data.message?data.message:"shell服务已下线")
+        return false
+    }
+    //文本量过大时分片输出，防止平台字数限制输出失败    
+    const unit=1000     //片长限制
+    if(data.output.length<unit)
+        s.reply(data.output)
+    else{
+        let pieces=data.output.split("\n")
+        let temp=""
+        pieces.forEach(piece=>{
+            if(temp+piece>unit){
+                s.reply(temp)
+                temp=piece
             }
-        }
-    })
+            else
+                temp+=piece
+        })
+    }
+    return true
 }
 
 function main(){
@@ -91,7 +88,10 @@ function main(){
                 command=`cd /root/sillyGirl/ && mv sillyGirl ${bk} && wget ${amd64.browser_download_url} -O sillyGirl  && chmod 777 sillyGirl && ./sillyGirl -d`
                 //command="cd /root/sillyGirl/ && mv sillyGirl sillyGirl_"+bk+" && curl -o sillyGirl https://gitlab.com/cdle/amd64/-/raw/main/sillyGirl_linux_amd64_"+v+" && chmod 777 sillyGirl && ./sillyGirl -d"
                 s.reply("请稍候，执行升级命令中：\n"+command)
-                shell(command)
+                if(shell(command))
+                    s.reply("ok")
+                else
+                    s.reply("something wrong")
             }
             else{
                 s.reply("已经最新版本！")
@@ -106,8 +106,9 @@ function main(){
     else{
         command=s.param(1)
         s.reply("进入shell交互模式，使用exit命令退出本模式")
-        while(command!="exit"){
-            shell(command)
+        while(command!="exit"&&command!="q"&&command!="退出"){
+            if(!shell(command))
+                break
             let inp=s.listen(60*1000)
             if(!inp)
                 break

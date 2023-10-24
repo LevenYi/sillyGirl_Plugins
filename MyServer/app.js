@@ -1,6 +1,5 @@
 /*
 作者:https://t.me/sillyGirl_Plugin
-本服务(get)：ip:port/qr-code?base64={base64 data},返回图片
 */
 const express = require('express');
 const fs = require('fs');
@@ -11,6 +10,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const port = 3000;	//服务端口
+const token = "" //接口访问验证token
 
 app.use(express.json());
 
@@ -36,6 +36,10 @@ app.get('/uuid', (req, res) => {
 });
 
 app.post('/shell',(req, res)=>{
+	if(token!=req.header('Authorization')){
+	  res.status(400).send({ message: "invaid token" });
+	  return
+	}
 	const command=req.body.command
 	console.log(command)
     if (command.startsWith('cd ')) {

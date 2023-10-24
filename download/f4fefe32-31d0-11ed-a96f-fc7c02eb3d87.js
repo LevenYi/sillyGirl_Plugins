@@ -48,7 +48,7 @@ function main(){
 	// 	sillyGirl.push(NotifyTo)
     // }
 	if(s.getContent()=="执行定时"||s.getPlatform()=="cron"){
-        cdd()
+ //       cdd()
         qlcron_auto_chang("JX抽现金")
         qlcron_auto_chang("JD转赚红包")
         //head_auto_change()
@@ -219,10 +219,10 @@ function app(user){
     }
     message+="【"+user.name+"】\n"
     //签到
-    app_signtask(headers)
-    //执行任务
-    for(let i=0;i<2;i++)
-        app_task(headers)
+    // app_signtask(headers)
+    // //执行任务
+    // for(let i=0;i<2;i++)
+    //     app_task(headers)
     draw(headers)
 }
 
@@ -238,7 +238,7 @@ function draw(headers){
         //获取账号余额
         let rewards=JSON.parse(request(option).body).data
         message+="账号余额："+rewards.totalAmount+"+"+rewards.surplusAmount+"("+rewards.waitAmount+")\n"
-        if(rewards.surplusAmount==0)    //可提现金额为0
+        //if(rewards.surplusAmount==0)    //可提现金额为0
             return
         //获取账号信息
         option.url="https://bawangcan-prod.csmbcx.com/cloud/mbcx-user-weapp/wx/user/loginUserInfo"

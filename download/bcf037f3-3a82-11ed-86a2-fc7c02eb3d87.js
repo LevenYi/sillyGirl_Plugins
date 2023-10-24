@@ -21,7 +21,7 @@
  * @public false
  * @disable false
  * @priority 10
- * @version v1.4.7
+ * @version v1.4.8
 */
 
 
@@ -146,6 +146,7 @@ const outputOriURL=true
 2023-3-10 v1.4.5 添加支持短链,更新部分内置规则
 2023-6-28 v1.4.6 更新部分内置规则
 2023-7.2 v1.4.7 加强变量去重，防止不同仓库的同一活动重复执行，有概率误判
+2023-10-24 v.1.4.8 更新部分内置规则，修复部分自定义解析规则失效的情况
 
 /*****************数据存储******************/
 
@@ -326,8 +327,10 @@ function main() {
 			//console.log(JSON.stringify(jdurls))
 			if(outputOriURL && isredi)
 				Notify("『白眼』获取原始链接:\n\n"+msg)
-			if(jdurls.find(url=>url.match(jdurl_reg)))
+			if(jdurls.find(url=>url.match(jdurl_reg))){
+				//console.log(urls)
 				Urls_Decode(jdurls)
+			}
 		}
 		//口令监控
 		else if (msg.match(/[(|)|#|@|$|%|¥|￥|!|！][0-9a-zA-Z]{10,16}[(|)|#|@|$|%|¥|￥|!|！]/g) != null) {
@@ -1107,10 +1110,14 @@ function Que_Manager(QLS) {
 
 //根据配置urldecodes尝试解析url
 function DecodeUrl(url, rules) {
-	//console.log(url+"\n"+url.length)
+	console.log(url+"\n"+JSON.stringify(rules[rules.length-1]))
 	let spy = []//解析结果：[{name:监控变量名,value:监控变量值,act:备注名}]
 	for (let i = 0; i < rules.length; i++) {
-		if (url.match(rules[i].keyword)) {
+		if (typeof(rules[i].keyword)=="object" &&!url.match(rules[i].keyword )) 
+			continue
+		else if(typeof(rules[i].keyword)=="string" && !url.includes(rules[i].keyword))
+			continue
+		console.log("解析"+url)
 			if(rules[i].admin && !s.isAdmin()){
 				console.log("规则【"+rules[i].name+"】仅管理员可用")
 				continue
@@ -1158,7 +1165,6 @@ function DecodeUrl(url, rules) {
 				}
 				spy.push(temp)
 			}
-		}
 	}
 	return spy
 }
@@ -1713,6 +1719,7 @@ var UrlDecodeRule =[
 			admin:true,
 			name:"测试规则"
 		},
+
 		//多库共用
 		{
 			keyword: /https:\/\/lzkj-isv.isvj(clou)?d.com\/drawCenter/,
@@ -2383,121 +2390,185 @@ var UrlDecodeRule =[
 				redi: "jd_cjhy_wxPointShopView_url"
 			}]
 		},
-		{
-			keyword: /lorealjdcampaign-rc\.isvjcloud.comapps\/interact\/index\?activityType=10001/,
-			name: "loreal_interact签到",
-			script:"feverrun_my_scripts/jd_loreal_interact_ljqdysl.js",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_loreal_interact_ljqdysl_Ids"
-			}]
-		},
-		{
-			keyword: /interact\/index\?activityType=10006/,
-			name: "loreal邀请入会有礼",
-			script:"feverrun_my_scripts/jd_lzkj_interact_yqrhyl.js",
-			trans: [{
-				ori: "activityId",
-				redi: "jd_lzkj_interact_yqrhyl_activityId"
-			}]
-		},
 		// {
-		// 	keyword: /interactsaas\/index\?activityType=10006/,
-		// 	name: "邀请入会有礼",
-		// 	script:"",
+		// 	keyword: /lorealjdcampaign-rc\.isvjcloud.comapps\/interact\/index\?activityType=10001/,
+		// 	name: "loreal_interact签到",
+		// 	script:"feverrun_my_scripts/jd_loreal_interact_ljqdysl.js",
 		// 	trans: [{
 		// 		ori: "activityId",
-		// 		redi: "jd_lzkj_interactsaas_yqrhyl_activityId"
+		// 		redi: "jd_loreal_interact_ljqdysl_Ids"
+		// 	}]
+		// },
+		// {
+		// 	keyword: /interact\/index\?activityType=10006/,
+		// 	name: "loreal邀请入会有礼",
+		// 	script:"feverrun_my_scripts/jd_lzkj_interact_yqrhyl.js",
+		// 	trans: [{
+		// 		ori: "activityId",
+		// 		redi: "jd_lzkj_interact_yqrhyl_activityId"
 		// 	}]
 		// },
 		{
-			keyword: /interactsaas\/index\?activityType=10021/,
-			name: "lzkj_interactsaas大转盘抽奖",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_dazhuanpan.js",
+			keyword: /interactsaas\/(index)?\?activityType=10020/,
+			name: "lzkj_10020九宫格抽奖",
+			script:"feverrun_my_scripts/jd_lzkj_10020_jgkcq.js",
+			script:"",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_dazhuanpan_Ids"
+				redi: "jd_lzkj_10020_jgkcq_Ids"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10023/,
-			name: "lzkj_interactsaas日历签到",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_rlqd.js",
+			keyword: /interactsaas\/(index)?\?activityType=10021/,
+			name: "lzkj_10021大转盘抽奖",
+			script:"feverrun_my_scripts/jd_lzkj_10021_dazhuanpan.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_rlqd_Ids"
+				redi: "jd_lzkj_10021_dazhuanpan_Ids"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10024/,
-			name: "lzkj_interactsaas加购有礼",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_jgyl.js",
+			keyword: /interactsaas\/(index)?\?activityType=10023/,
+			name: "lzkj_10023日历签到",
+			script:"feverrun_my_scripts/jd_lzkj_10023_rlqd.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_jgyl_activityId"
+				redi: "jd_lzkj_10023_rlqd_Ids"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10040/,
-			name: "lzkj_interactsaas签到",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_qrqd.js",
+			keyword: /interactsaas\/(index)?\?activityType=10024/,
+			name: "lzkj_10024加购有礼",
+			script:"feverrun_my_scripts/jd_lzkj_10024_jgyl.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_qrqd_Ids"
+				redi: "jd_lzkj_10024_jgyl_activityId"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10043/,
-			name: "lzkj_interactsaas分享有礼",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_fxyl.js",
+			keyword: /interactsaas\/(index)?\?activityType=10026/,
+			name: "lzkj_10026积分抽奖",
+			script:"feverrun_my_scripts/jd_lzkj_10026_jfcj.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_fxyl_activityId"
+				redi: "jd_lzkj_10026_jfcj_Ids"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10047/,
-			name: "lzkj_interactsaas盖楼有礼",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_glyl.js",
+			keyword: /interactsaas\/(index)?\?activityType=10033/,
+			name: "lzkj_10033组队瓜分",
+			script:"feverrun_my_scripts/jd_lzkj_10033_zdgf.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_glyl_Ids"
+				redi: "jd_lzkj_10033_zdgf_Ids"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10053/,
+			keyword: /interactsaas\/(index)?\?activityType=10038/,
+			name: "邀请好友帮砍价",
+			script:"feverrun_my_scripts/jd_lzkj_10038_lrkj.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_10038_lrkj_activityId"
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10040/,
+			name: "lzkj_10040签到",
+			script:"feverrun_my_scripts/jd_lzkj_10040_qrqd.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_10040_qrqd_Ids"
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10043/,
+			name: "lzkj_10043分享有礼",
+			script:"feverrun_my_scripts/jd_lzkj_10043_fxyl.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_10043_fxyl_activityId"
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10044/,
+			name: "lzkj_10044投票有礼抽奖",
+			script:"feverrun_my_scripts/jd_lzkj_10044_tpyl.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_10044_tpyl_Ids"
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10047/,
+			name: "lzkj_10047盖楼有礼",
+			script:"feverrun_my_scripts/jd_lzkj_10047_glyl.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_10047_glyl_Ids"
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10053/,
 			name: "lzkj_interactsaas关注商品有礼",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_gzspyl.js",
+			script:"feverrun_my_scripts/jd_lzkj_10053_gzspyl.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_gzspyl_activityId"
+				redi: "jd_lzkj_10053_gzspyl_activityId"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10068/,
-			name: "lzkj_interactsaas邀请关注店铺有礼",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_yqgzdpyl.js",
+			keyword: /interactsaas\/(index)?\?activityType=10054/,
+			name: "lzkj_10054上上签",
+			script:"feverrun_my_scripts/jd_lzkj_10054_ssq.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_yqgzdpyl_activityId"
+				redi: "jd_lzkj_10054_ssq_Ids"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10069/,
-			name: "lzkj_interactsaas关注店铺有礼",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_gzyl.js",
+			keyword: /interactsaas\/(index)?\?activityType=10058/,
+			name: "lzkj_10058店铺礼包",
+			script:"feverrun_my_scripts/jd_lzkj_10058_dplb.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_gzyl_activityId"
+				redi: "jd_lzkj_10058_dplb_activityId"
 			}]
 		},
 		{
-			keyword: /interactsaas\/index\?activityType=10070/,
-			name: "lzkj_interactsaas邀请好友入会",
-			script:"feverrun_my_scripts/jd_lzkj_interactsaas_yqhyrh.js",
+			keyword: /interactsaas\/(index)?\?activityType=10068/,
+			name: "lzkj_10068邀请关注店铺有礼",
+			script:"feverrun_my_scripts/jd_lzkj_10068_yqgzdpyl.js",
 			trans: [{
 				ori: "activityId",
-				redi: "jd_lzkj_interactsaas_yqhyrh_activityId"
+				redi: "jd_lzkj_10068_yqgzdpyl_activityId"
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10069/,
+			name: "lzkj_10069关注店铺有礼",
+			script:"feverrun_my_scripts/jd_lzkj_10069_gzyl.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_10069_gzyl_activityId"
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10070/,
+			name: "lzkj_10070邀请好友入会",
+			script:"feverrun_my_scripts/jd_lzkj_10070_yqhyrh.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_10070_yqhyrh_activityId"
+			}]
+		},
+		{
+			keyword: /interactsaas\/(index)?\?activityType=10079/,
+			name: "lzkj_10079积分兑换",
+			script:"feverrun_my_scripts/jd_lzkj_10079_jfdh.js",
+			trans: [{
+				ori: "activityId",
+				redi: "jd_lzkj_10079_jfdh_Ids"
 			}]
 		},
 
