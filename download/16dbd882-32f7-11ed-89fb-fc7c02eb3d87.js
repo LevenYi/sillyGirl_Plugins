@@ -57,14 +57,14 @@ const qlc=1
 //依次为nolanPro、nark，不可用的方式填0
 //例:[2,1]表示优先调用nolanPro登陆，nolanPro不可用时自动切换至nark
 //例:[0,1]表示仅使用nark登陆
-const SP=[1,2]
+const SP=[1,0]
 
 //【扫码登陆优先级】
 //依次为nolanPro、qrabbit,其他同上
 const QP=[1,2]
 
-//【是否禁止未失效客户重复登陆】
-const FBA=true
+//【是否禁止未失效客户重复登陆】仅适用扫码
+const CheckBefore=true
 
 //【其他说明】
 //口令登陆等同于扫码登陆，扫码登陆为将登陆链接转换为二维码（基于pwmqr.com），而口令登陆为将登陆链接转换为京东口令(基于nolan公益api)
@@ -92,6 +92,10 @@ const handle=function(s){
 	sleep(400)
 }
 
+function notifyMasters(msg){
+	if(!s.isAdmin())
+		sillyGirl.notifyMasters(msg)
+}
 function main(){
 	if(BlackList.indexOf(s.getUserId().toString())!=-1){
 		// s.reply("禁止上车，请联系管理员")//不需要通知请注释本行 
@@ -147,7 +151,7 @@ function main(){
 		const rabbit=jddb.get("qrabbit_addr")
 		const token=jddb.get("nolanPro_token")
 		let message=""
-		let Tel="138"+(Math.floor(Math.random()*9e7)+1e7).toString()	//随机手机号
+		let Tel="138"+Math.floor(Math.random()*9e8).toString()	//随机手机号
 		let data=null
 		s.reply("请稍候...")
 		console.log("生成随机手机号码:"+Tel)
@@ -189,7 +193,7 @@ function main(){
 			return
 		}
 		//检查绑定账号是否失效
-		if(FBA && !s.isAdmin() && pins.length && !NeedLogin(pins,QLS[DefaultQL-1])){
+		if(CheckBefore  && pins.length && !NeedLogin(pins,QLS[DefaultQL-1])){
 			s.reply("您的账号尚未失效，无需重新登陆\n若需添加新账号，请联系管理员或者使用短信登陆")
 			return
 		}
@@ -204,7 +208,7 @@ function main(){
 				return login.method()
 			return false
 		}))
-			s.reply("扫码暂时不可用,您可以发送“呆瓜”获取其他登陆方式")
+			s.reply("扫码暂时不可用,您可以发送“呆瓜”获取其他登陆方式或者稍后再试")
 	
 	
 		//更新变量
@@ -295,15 +299,15 @@ function QRabbitSms(Tel){
 				else
 					s.reply("提交失败，请尝试手动提交或者联系管理员\n"+result)
 				if(pins.indexOf(pin)!=-1)
-					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：qrabbit短信wskey")
+					notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：qrabbit短信wskey")
 				else
-					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信wskey")
+					notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信wskey")
 			}
 		}		
 		return result	
 	}
 	else{
-		sillyGirl.notifyMasters("报告老板，qrabbit疑似挂了！")
+		notifyMasters("报告老板，qrabbit疑似挂了！")
 		return false
 	}
 }
@@ -339,15 +343,15 @@ function NolanProSms(Tel){
 				else
 					s.reply("提交失败，请尝试手动提交或者联系管理员\n"+result)
 				if(pins.indexOf(pin)!=-1)
-					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
+					notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
 				else
-					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
+					notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
 			}
 		}		
 		return result	
 	}
 	else{
-		sillyGirl.notifyMasters("报告老板，nolanPro疑似挂了！")
+		notifyMasters("报告老板，nolanPro疑似挂了！")
 		return false
 	}
 }
@@ -379,15 +383,16 @@ function NarkSms(Tel){
 				else
 					s.reply("提交失败，请尝试手动提交或者联系管理员\n"+result)
 				if(pins.indexOf(pin)!=-1)
-					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：Nark短信")
+					notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：Nark短信")
 				else
-					sillyGirl.notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：Nark短信")
+					notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：Nark短信")
+				
 			}
 		}		
 		return result	
 	}
 	else{
-		sillyGirl.notifyMasters("报告老板，nark疑似挂了！")
+		notifyMasters("报告老板，nark疑似挂了！")
 		return false
 	}
 }
@@ -399,20 +404,20 @@ function Reply(loginkey,code){
 	//回复登陆二维码
 	s.reply(s.getPlatform()=="qq"?st.CQ_Image(qrurl):image(qrurl))	
 	//回复登陆口令
-	if(!code){	//没有口令，生成口令
-		let limit=3
-		while(limit-->0){
-			code=st.NolanEncode(loginurl,"登陆")
-			if(code)
-				break
-			else
-				sleep(3000)
-		}
-	}
+	// if(!code){	//没有口令，生成口令
+	// 	let limit=3
+	// 	while(limit-->0){
+	// 		code=st.NolanEncode(loginurl,"登陆")
+	// 		if(code)
+	// 			break
+	// 		else
+	// 			sleep(3000)
+	// 	}
+	// }
 	if(code)
 		s.reply("请使用京东app扫码\n或者复制本段文字后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
-	else
-		s.reply("登陆口令生成失败")
+	// else
+	// 	s.reply("登陆口令生成失败")
 }
 
 //nolanPro扫码登陆与口令登陆，服务失效返回false，登陆成功返回pin，超时返回true
@@ -446,7 +451,7 @@ function NolanProQR(){
 	//轮询是否登陆成功
 	let limit=100
 	while(limit-->0){
-		sleep(1500)
+		sleep(2000)
         let option={
     		url:addr+"/qr/CheckQRKey",
 			headers:{"Content-Type":"application/json"},
@@ -463,17 +468,24 @@ function NolanProQR(){
         if(data.success){	//登陆成功
 			let pin=decodeURI(data.data.username)==data.data.username ? encodeURI(data.data.username) : data.data.username	//分析pin是否已经过编码，未编码则进行编码，以防中文pin
 			if(pins.indexOf(pin)!=-1)
-				sillyGirl.notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：nolanPro扫码")
+				notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：nolanPro扫码")
 			else
-				sillyGirl.notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：nolanPro扫码")
+				notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：nolanPro扫码")
+			
 			UpdateUserData(pin)	//更新账号数据
         	s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 			return pin
         }
-		else if(data.message=="请先获取二维码")	//二维码失效
-            break
+		else if(data.message=="请先获取二维码"){	//二维码失效      
+    		s.reply("扫码超时")
+			return true
+		}
+		else if(data.message=="二维码已取消授权"){
+			s.reply(data.message)
+			return true
+		}
 	}
-    s.reply("超时")
+    s.reply("扫码超时")
 	return true
 }
 
@@ -507,7 +519,7 @@ function RabbitQR(){
 	//轮询是否登陆成功
 	let limit=100
     while(limit-->0){
-        sleep(1500) 
+        sleep(2000) 
     	resp=request({
             url:addr+"/api/QrCheck",
 			headers:{"Content-Type":"application/json"},
@@ -523,22 +535,25 @@ function RabbitQR(){
         if(data.code==200){	//登陆成功
 			let pin=decodeURI(data.pin)==data.pin ? encodeURI(data.pin):data.pin
 			if(pins.indexOf(pin)!=-1)
-				sillyGirl.notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：rabbit扫码")
+				notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：rabbit扫码")
 			else
-				sillyGirl.notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：rabbit扫码")
+				notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：rabbit扫码")
+			
 			UpdateUserData(pin)	//更新账号数据
         	s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 			return pin
         }
-		else if(data.code==503){
+		else if(data.code==503){	//扫码后取消登陆
 			s.reply(data.msg)
-			break
+			return true
 		}
-		else if(data.code==502)	//二维码失效
-            break
+		else if(data.code==502){	//二维码失效
+            s.reply("扫码超时")
+			return true
+		}
 		//其他code 56:未扫码 57:扫码未确认 503:取消扫码
 	}
-    s.reply("超时")
+    s.reply("扫码超时")
 	return true
 }
 
@@ -554,13 +569,16 @@ function getQR(addr,token){
 		option.headers["Authorization"]="Bearer "+token
 		option.body["botApitoken"]=token
 	}
-	let resp=request(option)
-	if(resp.status==200)
-		return JSON.parse(resp.body)
-	else {
-		console.log(JSON.stringify(resp))
-		return null
+	let limit=3
+	while(limit-->0){
+		let resp=request(option)
+		if(resp.status==200)
+			return JSON.parse(resp.body)
+		else {
+			console.log(JSON.stringify(resp))
+		}
 	}
+	return null
 }
 
 
@@ -602,7 +620,7 @@ function Update_JDCOOKIE(QL){
 //检查pins中是否存在失效账号
 function NeedLogin(pins,QL){
 	if(!pins.length)	//新用户，尚未未绑定账号
-		return false
+		return true
 	let envs=ql.Get_QL_Envs(QL.host,QL.token)
 	if(!envs){
 		console.log("获取青龙变量失败")
@@ -682,6 +700,27 @@ function VerifyCode(Tel,addr,token){
 		option.headers["Authorization"]="Bearer "+token
 		option.body["botApitoken"]=token
 	}
+	let TryAgain=function (i,data){
+		 if(data.message){
+			if(data.message.indexOf("错误")!=-1){	//身份证号验证错误
+				if(i==VerifyTimes-1){
+					s.reply("错误次数过多，退出")
+				}
+				else{	//再次提交验证码
+					s.reply(data.message)
+					return true
+				}
+			}
+			else if(data.message.indexOf("账号存在风险")!=-1){
+				s.reply("该账号受京东风控，请晚上8点后重试或者使用其他登陆方式")
+			}
+			else
+				s.reply(data.message)
+		}
+		else
+			s.reply("未知错误，请联系管理员\n"+JSON.stringify(data))
+		return false
+	}
 	for(let i=0;i<VerifyTimes;i++){
 		s.reply("请输入验证码：")
 		let inp=s.listen(handle,WAIT)
@@ -738,47 +777,55 @@ function VerifyCode(Tel,addr,token){
 				data=JSON.parse(resp.body)
 				if(data.success)	//登陆成功
 					return data.data.ck?data.data.ck:data.data.username
-				else if(data.message){
-					if(data.message.indexOf("错误")!=-1){	//身份证号验证错误
-						if(j==VerifyTimes-1){
-							s.reply("错误次数过多，退出")
-						}
-						else{
-							s.reply(data.message)
-							continue
-						}
-					}
-					else if(data.message.indexOf("账号存在风险")!=-1){
-						s.reply("该账号受京东风控，请晚上8点后重试或者使用其他登陆方式")
-					}
-					else
-						s.reply(data.message)
-				}
-				else
-					s.reply("未知错误，请联系管理员\n"+JSON.stringify(data))
-				return true
-			}
-		}
-		else if(data.message){
-			if(data.message.indexOf("错误")!=-1 ){	//验证码错误
-				if(i==VerifyTimes-1){
-					s.reply("错误次数过多，请重新登陆！")
-				}
-				else{
-					s.reply(data.message)
+				// else if(data.message){
+				// 	if(data.message.indexOf("错误")!=-1){	//身份证号验证错误
+				// 		if(j==VerifyTimes-1){
+				// 			s.reply("错误次数过多，退出")
+				// 		}
+				// 		else{
+				// 			s.reply(data.message)
+				// 			continue
+				// 		}
+				// 	}
+				// 	else if(data.message.indexOf("账号存在风险")!=-1){
+				// 		s.reply("该账号受京东风控，请晚上8点后重试或者使用其他登陆方式")
+				// 	}
+				// 	else
+				// 		s.reply(data.message)
+				// }
+				// else
+				// 	s.reply("未知错误，请联系管理员\n"+JSON.stringify(data))
+				// return true
+				else if(TryAgain(j,data))
 					continue
-				}
-			}
-			else if(data.message.indexOf("账号存在风险")!=-1){
-				s.reply("该账号受京东风控，请晚上8点后重试或者使用其他登陆方式")
-			}
-			else{
-				s.reply(data.message)
+				else
+					return true
 			}
 		}
+		// else if(data.message){
+		// 	if(data.message.indexOf("错误")!=-1 ){	//验证码错误
+		// 		if(i==VerifyTimes-1){
+		// 			s.reply("错误次数过多，请重新登陆！")
+		// 		}
+		// 		else{
+		// 			s.reply(data.message)
+		// 			continue
+		// 		}
+		// 	}
+		// 	else if(data.message.indexOf("账号存在风险")!=-1){
+		// 		s.reply("该账号受京东风控，请晚上8点后重试或者使用其他登陆方式")
+		// 	}
+		// 	else{
+		// 		s.reply(data.message)
+		// 	}
+		// }
+		// else
+		// 	s.reply("未知错误，请联系管理员\n"+JSON.stringify(data))
+		// return true
+		else if(TryAgain(i,data))
+			continue
 		else
-			s.reply("未知错误，请联系管理员\n"+JSON.stringify(data))
-		return true
+			return true
 	}
 	return true
 }

@@ -101,12 +101,20 @@ function main(){
     s.reply("已为您接入chatGPT对话模式，回复q可退出")
     while(prompt!="exit" && prompt!="q" && prompt!="退出"){
         message_id=uuid()
+        if(!message_id){
+            s.reply("uuid服务已下线，请联系管理员")
+            return
+        }
         s.reply("正在生成，请稍候...")
         let body={model,stream,conversation_id,parent_message_id,message_id,prompt}
         let data=Req("/api/conversation/talk","post",body)
+        if(body.detail&&body.detail.msg){
+            s.reply("服务异常："+body.detail.msg)
+            return
+        }
+        //console.log(JSON.stringify(body)+"\n\n"+JSON.stringify(data))
         parent_message_id=data.message.id
         data.message.content.parts.forEach(text=>s.reply(text))
-        //console.log(JSON.stringify(body)+"\n\n"+JSON.stringify(data))
         
         let inp=s.listen(60*1000)
         if(!inp)
