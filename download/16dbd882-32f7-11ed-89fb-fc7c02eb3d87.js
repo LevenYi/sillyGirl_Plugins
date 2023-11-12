@@ -28,7 +28,7 @@ const BlackList=[]
 const DefaultQL=1
 
 //【Nolan】
-//对接nark
+//对接nark--本功能已删除
 //set jd_cookie nolan_addr ?
 //例：set jd_cookie nolan_addr http://127.0.0.1:5710
 
@@ -40,8 +40,9 @@ const DefaultQL=1
 
 
 //【rabbit】
-//对接rabbitPro:set jd_cookie rabbitPro addr ?
-//设置rabbitPro上车容器:set jd_cookie rabbitPro_ql ?
+//对接rabbitPro:set jd_cookie rabbitPro_addr ?
+//设置rabbitPro上车容器:set jd_cookie rabbitPro_ql ? (rabbitPro后台容器序号)
+
 //【提交ck】--本功能已删除
 //短信登陆后上传ck的容器(对应“青龙管理”的容器序号，若将ck交由芝士处理，本项设置为0)
 //注1：若将ck交由芝士处理，便于ck分发以及可以即时查询账号信息，若由本插件上传ck，将无法即时更新账号状态，即虽然ck有效但查询仍旧提示无效，需过几分钟才能正常查询
@@ -65,7 +66,7 @@ const CheckBefore=true
 //口令登陆等同于扫码登陆，扫码登陆为将登陆链接转换为二维码（基于pwmqr.com），而口令登陆为将登陆链接转换为京东口令(基于nolan公益api)
 //感谢以上服务提供者
 
-//扫码登陆与口令登陆不经手wskey，等同于网页登陆
+//本插件等同于网页登陆
 //nolanPro获取的wskey存储于nolanPro并由其负责分发及维护ck的更新，qrabbbit获取的wskey由其上传至青龙(与本插件无关)，并由其负责维护ck的更新
 //本插件也不负责wskey更新ck的维护
 /************************************** */ 
@@ -251,7 +252,7 @@ function NolanProSms(Tel){
 		let result=VerifyCode(Tel,nolanPro)
 		if(result && result!==true){	//登陆成功
 			console.log(result)
-			let pin=result
+			let pin=decodeURI(result)==result?encodeURI(result):result
 			s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 			if(pins.indexOf(pin)!=-1)
 				notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
@@ -277,7 +278,7 @@ function RabbitProSms(Tel){
 		let result=VerifyCode(Tel,rabbitPro)
 		if(result && result!==true){	//登陆成功
 			console.log(result)
-			let pin=result
+			let pin=decodeURI(result)==result?encodeURI(result):result
 			UpdateUserData(pin)	//更新账号数据
 			s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 			if(pins.indexOf(pin)!=-1)
@@ -294,28 +295,6 @@ function RabbitProSms(Tel){
 	}
 }
 
-//生成登陆二维码或者登陆口令并回复用户
-function Reply(loginkey,code){
-	let loginurl="https://qr.m.jd.com/p?k="+loginkey
-	let qrurl="https://api.pwmqr.com/qrcode/create/?url="+loginurl
-	//回复登陆二维码
-	s.reply(s.getPlatform()=="qq"?st.CQ_Image(qrurl):image(qrurl))	
-	//回复登陆口令
-	// if(!code){	//没有口令，生成口令
-	// 	let limit=3
-	// 	while(limit-->0){
-	// 		code=st.NolanEncode(loginurl,"登陆")
-	// 		if(code)
-	// 			break
-	// 		else
-	// 			sleep(3000)
-	// 	}
-	// }
-	if(code)
-		s.reply("请使用京东app扫码\n或者复制本段文字后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+code)
-	// else
-	// 	s.reply("登陆口令生成失败")
-}
 
 //nolanPro扫码登陆与口令登陆，服务失效返回false，登陆成功返回pin，超时返回true
 function NolanProQR(){
@@ -342,7 +321,11 @@ function NolanProQR(){
 	//console.log(data.data.key)
 	console.log("NolanPro在线")
 	let loginkey=data.data.key
-	Reply(loginkey)
+	let loginurl="https://qr.m.jd.com/p?k="+loginkey
+	let qrurl="https://api.pwmqr.com/qrcode/create/?url="+loginurl
+	//回复登陆二维码
+	s.reply(s.getPlatform()=="qq"?st.CQ_Image(qrurl):image(qrurl))	
+	s.reply("请使用京东app扫码\n")
 
 	//轮询是否登陆成功
 	let limit=100
@@ -408,7 +391,11 @@ function RabbitProQR(){
 	}
 	console.log("qrabbit在线")
 	let loginkey=data.QRCodeKey
-	Reply(loginkey,data.jcommond)
+	let loginurl="https://qr.m.jd.com/p?k="+loginkey
+	let qrurl="https://api.pwmqr.com/qrcode/create/?url="+loginurl
+	//回复登陆二维码
+	s.reply(s.getPlatform()=="qq"?st.CQ_Image(qrurl):image(qrurl))	
+	s.reply("请使用京东app扫码\n或者复制本段文字后进入京东APP（需开启京东app读取剪切板权限）:\n\n"+data.jcommond)
 
 	//轮询是否登陆成功
 	let limit=100
