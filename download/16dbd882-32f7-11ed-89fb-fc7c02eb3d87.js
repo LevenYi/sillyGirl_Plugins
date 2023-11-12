@@ -35,32 +35,27 @@ const DefaultQL=1
 //对接nolan Pro
 //设置nolan Pro地址
 //set jd_cookie nolanPro_addr ?
-
 //设置nolan Pro对接机器人的token
 //set jd_cookie nolanPro_token ?
 
 
 //【rabbit】
-//对接qrabbit扫码
-//set jd_cookie qrabbit_addr ?
-
-//设置rabbit扫码上车容器，对应qrabbit所对接的容器序号
-//set jd_cookie rabbit_qr_ql ?
-
-//【提交ck】
+//对接rabbitPro:set jd_cookie rabbitPro addr ?
+//设置rabbitPro上车容器:set jd_cookie rabbitPro_ql ?
+//【提交ck】--本功能已删除
 //短信登陆后上传ck的容器(对应“青龙管理”的容器序号，若将ck交由芝士处理，本项设置为0)
 //注1：若将ck交由芝士处理，便于ck分发以及可以即时查询账号信息，若由本插件上传ck，将无法即时更新账号状态，即虽然ck有效但查询仍旧提示无效，需过几分钟才能正常查询
 //注2：本项设置与扫码无关,nolan Pro扫码ck分发由Pro负责，rabbit扫码ck分发见上文【rabbit】设置
 const qlc=1
 
 //【短信登陆优先级】
-//依次为nolanPro、nark，不可用的方式填0
-//例:[2,1]表示优先调用nolanPro登陆，nolanPro不可用时自动切换至nark
-//例:[0,1]表示仅使用nark登陆
-const SP=[1,0]
+//依次为nolanPro、rabbitPro，不可用的方式填0
+//例:[2,1]表示优先调用nolanPro登陆，nolanPro不可用时自动切换至rabbitPro
+//例:[0,1]表示仅使用rabbitPro登陆
+const SP=[2,1]
 
 //【扫码登陆优先级】
-//依次为nolanPro、qrabbit,其他同上
+//依次为nolanPro、rabbitPro,其他同上
 const QP=[1,2]
 
 //【是否禁止未失效客户重复登陆】仅适用扫码
@@ -85,6 +80,10 @@ const QLS=ql.QLS()	//获取芝士对接的青龙
 const sillyGirl=new SillyGirl()
 const WAIT=3*60*1000	//输入等待时长
 const VerifyTimes=3	//验证重试次数
+const nolanPro=jddb.get("nolanPro_addr")
+const rabbitPro=jddb.get("rabbitPro_addr")
+const ql_server=jddb.get("rabbitPro_ql")
+
 
 const handle=function(s){
 	if(s.getChatId())
@@ -135,7 +134,7 @@ function main(){
 		let tipid=s.reply("请稍候...")
 		let Login=[
 			{method:NolanProSms,weight:SP[0]},
-			{method:NarkSms,weight:SP[1]}
+			{method:RabbitProSms,weight:SP[1]}
 		]
 		Login.sort((a,b)=>b.weight-a.weight)
 		if(!Login.find(login=>{
@@ -146,7 +145,7 @@ function main(){
 			s.reply("短信登陆暂时不可用，您可以尝试'扫码登陆'登陆或者手动抓取ck")
 	}
 	else if(s.isAdmin() && s.getContent().match(/^登(陆|录)检(测|查)$/)){
-		const nark=jddb.get("nolan_addr")
+		const rabbitPro=jddb.get("rabbitPro_addr")
 		const nolanPro=jddb.get("nolanPro_addr")
 		const rabbit=jddb.get("qrabbit_addr")
 		const token=jddb.get("nolanPro_token")
@@ -159,20 +158,20 @@ function main(){
 			message+="★NolanPro短信：正常\n"
 		else
 			message+="☆NolanPro短信：失败\n"
-		if(SendSMS(Tel,nark+"/api/SendSMS"))
-			message+="★nark短信：正常\n"
+		if(SendSMS(Tel,rabbitPro+"/api/sendSMS"))
+			message+="★rabbitPro短信：正常\n"
 		else
-			message+="☆nark短信：失败\n"
+			message+="☆rabbitPro短信：失败\n"
 		data=getQR(nolanPro+"/qr/GetQRKey",token)
     	if(data && data.success)
 			message+="★NolanPro扫码：正常\n"
 		else
 			message+="☆NolanPro扫码：失败\n"
-	 	data=getQR(rabbit+"/api/BeanQrCode")
+	 	data=getQR(rabbit+"/api/GenQrCode")
     	if(data && data.code==0)
-			message+="★rabbit扫码：正常\n"
+			message+="★rabbitPro扫码：正常\n"
 		else
-			message+="☆rabbit扫码：失败\n"
+			message+="☆rabbitPro扫码：失败\n"
 		message+="\n若提示失败，请查看日志，可能原因包括但不限于未对接、对接失败、面板已挂等"
 		s.reply(message)
 		return
@@ -193,14 +192,14 @@ function main(){
 			return
 		}
 		//检查绑定账号是否失效
-		if(CheckBefore  && pins.length && !NeedLogin(pins,QLS[DefaultQL-1])){
+		if(!s.isAdmin()&&CheckBefore  && pins.length && !NeedLogin(pins,QLS[DefaultQL-1])){
 			s.reply("您的账号尚未失效，无需重新登陆\n若需添加新账号，请联系管理员或者使用短信登陆")
 			return
 		}
 		let tipid=s.reply("请稍候...")
 		let Login=[
 			{method:NolanProQR,weight:QP[0]},
-			{method:RabbitQR,weight:QP[1]}
+			{method:RabbitProQR,weight:QP[1]}
 		]
 		Login.sort((a,b)=>b.weight-a.weight)
 		if(!Login.find(login=>{
@@ -236,117 +235,29 @@ function main(){
 	}
 }
 
-//自动图形验证
-function AutoCaptcha(Tel,addr,token){
-	let option={
-   		url:addr,
-		headers:{"Content-Type":"application/json"},
-    	method:"post",
-		body:{
- 			"Phone": Tel,
- 			"QQ": s.getUserId(),
- 			"qlkey": 0
-		}
-	}
-	if(token){
-		option.headers["Authorization"]="Bearer "+token
-		option.body["botApitoken"]=token
-	}
-	for(let i=0;i<VerifyTimes;i++){	//自动图形验证
-		let resp=request(option)
-		let data=JSON.parse(resp.body)
-		if(data.success)
-			return true
-		else
-			console.log(resp.body)
-	}
-	return false
-}
 
-//qrabbit短信wskey
-function QRabbitSms(Tel){
-	const rabbit=jddb.get("qrabbit_addr")
-	const token=jddb.get("rabbit_qr_token")
-	if(!rabbit){
-		console.log("未对接qrabbit！")
-		if(!token){
-			s.reply("未设置对接nolanPro对接机器人的token，请使用命令'set jd_cookie rabbit_qr_token ?'设置token进行对接")
-		}
-		return false
-	}
-	if(SendSMS(Tel,rabbit+"/api/SendSMS",token)){	
-		console.log("qrabbit在线")
-		if(!AutoCaptcha(Tel,rabbit+"/api/AutoCaptcha",token)){
-			console.log("qrabbit短信wskey自动图形验证失败")
-			return false
-		}
-		let result=VerifyCode(Tel,rabbit+"/api",token)		
-		if(result && result!==true){	//登陆成功
-			console.log(result)
-			let pin=result.match(/(?<=pin=)[^;]+/)[0]
-			if(!qlc){	//交由其他插件（芝士）处理ck
-				s.setContent(result)
-				s.continue()	
-			}
-			else{	//由本插件提交ck		
-				UpdateUserData(pin)	//更新账号数据
-				if(Submit_QL(QLS[qlc-1].host,QLS[qlc-1].token,{
-					name:"JD_WSCK",
-					value:result,
-					remarks:s.getPlatform()+":"+s.getUserId()
-				}))
-        			s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
-				else
-					s.reply("提交失败，请尝试手动提交或者联系管理员\n"+result)
-				if(pins.indexOf(pin)!=-1)
-					notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：qrabbit短信wskey")
-				else
-					notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信wskey")
-			}
-		}		
-		return result	
-	}
-	else{
-		notifyMasters("报告老板，qrabbit疑似挂了！")
-		return false
-	}
-}
 
 function NolanProSms(Tel){
-	const nolanPro=jddb.get("nolanPro_addr")
-	const token=jddb.get("nolanPro_token")
+	//const token=jddb.get("nolanPro_token")
 	if(!nolanPro){
 		console.log("未对接nolanPro！")
-		if(!token){
-			s.reply("未设置对接nolanPro对接机器人的token，请使用命令'set jd_cookie nolanPro_token ?'设置token进行对接")
-		}
+		// if(!token){
+		// 	s.reply("未设置对接nolanPro对接机器人的token，请使用命令'set jd_cookie nolanPro_token ?'设置token进行对接")
+		// }
 		return false
 	}
-	if(SendSMS(Tel,nolanPro+"/sms/SendSMS",token)){	
+	if(SendSMS(Tel,nolanPro+"/sms/SendSMS")){	
 		console.log("nolanPro在线")
-		let result=VerifyCode(Tel,nolanPro+"/sms",token)
+		let result=VerifyCode(Tel,nolanPro)
 		if(result && result!==true){	//登陆成功
 			console.log(result)
-			let pin=result.match(/(?<=pin=)[^;]+/)[0]
-			if(!qlc){	//交由其他插件（芝士）处理ck
-				s.setContent(result)
-				s.continue()	
-			}
-			else{	//由本插件提交ck		
-				UpdateUserData(pin)	//更新账号数据
-				if(Submit_QL(QLS[qlc-1].host,QLS[qlc-1].token,{
-					name:"JD_COOKIE",
-					value:result,
-					remarks:s.getPlatform()+":"+s.getUserId()
-				}))
-        			s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
-				else
-					s.reply("提交失败，请尝试手动提交或者联系管理员\n"+result)
-				if(pins.indexOf(pin)!=-1)
-					notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
-				else
-					notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
-			}
+			let pin=result
+			s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
+			if(pins.indexOf(pin)!=-1)
+				notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
+			else
+				notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
+			
 		}		
 		return result	
 	}
@@ -356,43 +267,29 @@ function NolanProSms(Tel){
 	}
 }
 
-function NarkSms(Tel){
-	const nark=jddb.get("nolan_addr")
-	if(!nark){
-		console.log("未对接nark！")
+function RabbitProSms(Tel){
+	if(!rabbitPro){
+		console.log("未对接rabbitPro！")
 		return false
 	}
-	if(SendSMS(Tel,nark+"/api/SendSMS")){	
-		console.log("nark在线")	
-		let result=VerifyCode(Tel,nark+"/api")
+	if(SendSMS(Tel,rabbitPro+ "/sms/sendSMS")){	
+		console.log("rabbitPro在线")	
+		let result=VerifyCode(Tel,rabbitPro)
 		if(result && result!==true){	//登陆成功
 			console.log(result)
-			let pin=result.match(/(?<=pin=)[^;]+/)[0]
-			if(!qlc){	//交由其他插件（芝士）处理ck
-				s.setContent(result)
-				s.continue()	
-			}
-			else{	//由本插件提交ck		
-				UpdateUserData(pin)	//更新账号数据
-				if(Submit_QL(QLS[qlc-1].host,QLS[qlc-1].token,{
-					name:"JD_COOKIE",
-					value:result,
-					remarks:s.getPlatform()+":"+s.getUserId()
-				}))
-        			s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
-				else
-					s.reply("提交失败，请尝试手动提交或者联系管理员\n"+result)
-				if(pins.indexOf(pin)!=-1)
-					notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：Nark短信")
-				else
-					notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：Nark短信")
-				
-			}
+			let pin=result
+			UpdateUserData(pin)	//更新账号数据
+			s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
+			if(pins.indexOf(pin)!=-1)
+				notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：rabbitPro短信")
+			else
+				notifyMasters("报告老板，[ "+pin+" ]添加账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：rabbitPro短信")
+			
 		}		
 		return result	
 	}
 	else{
-		notifyMasters("报告老板，nark疑似挂了！")
+		notifyMasters("报告老板，rabbitPro疑似挂了！")
 		return false
 	}
 }
@@ -422,17 +319,16 @@ function Reply(loginkey,code){
 
 //nolanPro扫码登陆与口令登陆，服务失效返回false，登陆成功返回pin，超时返回true
 function NolanProQR(){
-	const addr=jddb.get("nolanPro_addr")
-	const token=jddb.get("nolanPro_token")
-	if(!addr){
+//	const token=jddb.get("nolanPro_token")
+	if(!nolanPro){
 		console.log("未设置nolan扫码地址")
 		return false
 	}
-	else if(!token){
-		s.reply("未设置nolan扫码token")
-		return false
-	}
-	let data=getQR(addr+"/qr/GetQRKey")
+	// else if(!token){
+	// 	s.reply("未设置nolan扫码token")
+	// 	return false
+	// }
+	let data=getQR(nolanPro+"/qr/GetQRKey")
     if(!data || !data.success){
 		let tip="报告老板,NolanPro面板疑似挂了\n"
 		tip+=data ? JSON.stringify(data) : ""
@@ -453,7 +349,7 @@ function NolanProQR(){
 	while(limit-->0){
 		sleep(2000)
         let option={
-    		url:addr+"/qr/CheckQRKey",
+    		url:nolanPro+"/qr/CheckQRKey",
 			headers:{"Content-Type":"application/json"},
         	method:"post",
 			body:{"qrkey":loginkey}
@@ -490,18 +386,16 @@ function NolanProQR(){
 }
 
 //登陆成功返回pin
-function RabbitQR(){
-	let addr=jddb.get("qrabbit_addr")
-	let ql_server=jddb.get("rabbit_qr_ql")
-	if(!addr){
-		console.log("未设置rabbit扫码地址")
+function RabbitProQR(){
+	if(!rabbitPro){
+		console.log("未设置rabbitPro扫码地址")
 		return false
 	}
 	else if(!ql_server){
-		s.reply("未设置rabbit上车服务器！\nset jd_cookie rabbit_qr_ql ?\n")
+		s.reply("未设置rabbitPro上车服务器！\nset jd_cookie rabbitPro_ql ?\n")
 		return false
 	}
-    let data=getQR(addr+"/api/BeanQrCode")
+    let data=getQR(rabbitPro+ "/api/GenQrCode")
     if(!data || data.code!=0){	
 		let tip="报告老板,rabbit扫码面板疑似挂了\n"
 		tip+=data ? JSON.stringify(data) : ""
@@ -521,12 +415,12 @@ function RabbitQR(){
     while(limit-->0){
         sleep(2000) 
     	resp=request({
-            url:addr+"/api/QrCheck",
+            url:rabbitPro+"/api/QrCheck",
 			headers:{"Content-Type":"application/json"},
             method:"post",
             body:{
                 "token": "",
-                "qlkey": Number(ql_server),
+                "container_id": Number(ql_server),
                 "QRCodeKey": loginkey
             }
         })
@@ -582,40 +476,6 @@ function getQR(addr,token){
 }
 
 
-
-
-//wskey更新,自用功能
-function Update_JDCOOKIE(QL){
-	let msg=""
-	sleep(10000)
-	let envs=ql.Get_QL_Envs(QL.host,QL.token)
-	let ids=[]
-	/*for(let i=0;i<envs.length;i++){
-		if(envs[i].name=="JD_R_WSCK"){
-			let id=envs[i].id?envs[i].id:envs[i]._id
-			ids.push(id)
-			ql.Update_QL_Env(QL.host,QL.token,id,"JD_WSCK",envs[i].value,envs[i].remarks)
-		}
-	}*/
-	let crons=ql.Get_QL_Crons(QL.host,QL.token,"ws")
-	for(let i=0;i<crons.length;i++){
-		if(crons[i].command.indexOf("KingRan_KR/jd_wskey.py")!=-1){
-			let id=crons[i].id?crons[i].id:crons[i]._id
-			if(!ql.Start_QL_Crons(QL.host,QL.token,[id]))
-				return "转换执行失败"
-		}
-	}
-	sleep(15000)
-	for(let i=0;i<crons.length;i++){
-		if(crons[i].command.indexOf("jd_wskey_encode.py")!=-1){
-			let id=crons[i].id?crons[i].id:crons[i]._id
-			if(!ql.Start_QL_Crons(QL.host,QL.token,[id]))
-				return "加密执行失败"
-		}
-	}
-	if(!ql.Delete_QL_Envs(QL.host,QL.token,ids))
-		return "JD_WSCK删除失败"
-}
 
 //检查pins中是否存在失效账号
 function NeedLogin(pins,QL){
@@ -687,13 +547,12 @@ function JD_isLogin(ck){
 function VerifyCode(Tel,addr,token){
 	let resp=null
 	let option={
-   		url:addr+"/VerifyCode",
+   		url:addr+"/sms/VerifyCode",
 		headers:{"Content-Type":"application/json"},
     	method:"post",
 		body:{
  			"Phone": Tel,
- 			"QQ": s.getUserId(),
- 			"qlkey": 0
+			"container_id": Number(ql_server)
 		}
 	}
 	if(token){
@@ -744,7 +603,7 @@ function VerifyCode(Tel,addr,token){
 		}
 		let data=JSON.parse(resp.body)
 		if(data.success)	//登陆成功
-			return data.data.ck?data.data.ck:data.data.username
+			return data.pin?data.pin:data.data.username
 		//二验
 		else if(data.data.status==555){
 			if(data.data.mode=="USER_ID")
@@ -771,57 +630,18 @@ function VerifyCode(Tel,addr,token){
 					s.reply("已退出")
 					return true
 				}	
-				option.url=addr.indexOf("sms")==-1 ? addr+"/VerifyCardCode" : addr+"/VerifyCard"	//兼容nark与nolanPro
+				option.url=addr+"/sms/VerifyCard"	
 				option.body["Code"]=inp.getContent()
 				resp=request(option)
 				data=JSON.parse(resp.body)
 				if(data.success)	//登陆成功
-					return data.data.ck?data.data.ck:data.data.username
-				// else if(data.message){
-				// 	if(data.message.indexOf("错误")!=-1){	//身份证号验证错误
-				// 		if(j==VerifyTimes-1){
-				// 			s.reply("错误次数过多，退出")
-				// 		}
-				// 		else{
-				// 			s.reply(data.message)
-				// 			continue
-				// 		}
-				// 	}
-				// 	else if(data.message.indexOf("账号存在风险")!=-1){
-				// 		s.reply("该账号受京东风控，请晚上8点后重试或者使用其他登陆方式")
-				// 	}
-				// 	else
-				// 		s.reply(data.message)
-				// }
-				// else
-				// 	s.reply("未知错误，请联系管理员\n"+JSON.stringify(data))
-				// return true
+					return data.pin?data.pin:data.data.username
 				else if(TryAgain(j,data))
 					continue
 				else
 					return true
 			}
 		}
-		// else if(data.message){
-		// 	if(data.message.indexOf("错误")!=-1 ){	//验证码错误
-		// 		if(i==VerifyTimes-1){
-		// 			s.reply("错误次数过多，请重新登陆！")
-		// 		}
-		// 		else{
-		// 			s.reply(data.message)
-		// 			continue
-		// 		}
-		// 	}
-		// 	else if(data.message.indexOf("账号存在风险")!=-1){
-		// 		s.reply("该账号受京东风控，请晚上8点后重试或者使用其他登陆方式")
-		// 	}
-		// 	else{
-		// 		s.reply(data.message)
-		// 	}
-		// }
-		// else
-		// 	s.reply("未知错误，请联系管理员\n"+JSON.stringify(data))
-		// return true
 		else if(TryAgain(i,data))
 			continue
 		else
@@ -838,8 +658,7 @@ function SendSMS(Tel,addr,token){
     	method:"post",
 		body:{
 			"Phone": Tel,
-			"qlkey": 0,
-			"botApitoken":token
+			"container_id": Number(ql_server)
 		}
 	}
 	if(token){
