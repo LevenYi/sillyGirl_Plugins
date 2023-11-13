@@ -1,8 +1,8 @@
 /**
  * @author https://t.me/sillyGirl_Plugin
- * @version v1.2.5
+ * @version v1.3.0
  * @create_at 2022-09-19 15:06:22
- * @description 京东登陆插件，已对接nark、nolanPro及qrabbit，需傻妞对接芝士，并安装qinglong与something模块
+ * @description 京东登陆插件，已对接nolanPro与rabbitPro，需安装qinglong与something模块
  * @title 京东登陆
  * @rule raw ^(短信)?登(陆|录)$
  * @rule raw ^扫码登(陆|录)$
@@ -53,7 +53,7 @@ const qlc=1
 //依次为nolanPro、rabbitPro，不可用的方式填0
 //例:[2,1]表示优先调用nolanPro登陆，nolanPro不可用时自动切换至rabbitPro
 //例:[0,1]表示仅使用rabbitPro登陆
-const SP=[2,1]
+const SP=[1,2]
 
 //【扫码登陆优先级】
 //依次为nolanPro、rabbitPro,其他同上
@@ -93,7 +93,8 @@ const handle=function(s){
 }
 
 function notifyMasters(msg){
-	if(!s.isAdmin())
+	sleep(2000)
+	//if(!s.isAdmin())
 		sillyGirl.notifyMasters(msg)
 }
 function main(){
@@ -311,7 +312,7 @@ function NolanProQR(){
     if(!data || !data.success){
 		let tip="报告老板,NolanPro面板疑似挂了\n"
 		tip+=data ? JSON.stringify(data) : ""
-		sillyGirl.notifyMasters(tip)
+		notifyMasters(tip)
         return false
     }
 	else if(!data.data.key){
