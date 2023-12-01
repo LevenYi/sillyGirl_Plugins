@@ -14,9 +14,9 @@
 
 /***********配置命令************* */
 // 对接qbittorrent面板
-//设置qbittorrent ip及端口，set qbittorent host http://127.0.0.1:8080
-//设置qbittorrent登陆用户名:set qbittorent username admin
-//设置qbittorrent登陆密码:set qbittorent password adminadmin
+//设置qbittorrent ip及端口，set qbittorrent host http://127.0.0.1:8080
+//设置qbittorrent登陆用户名:set qbittorrent username admin
+//设置qbittorrent登陆密码:set qbittorrent password adminadmin
 
 // 使用方式：
 // 发送磁链直接下载，或者使用"下载 ?"命令搜索资源下载
@@ -29,14 +29,14 @@
 const s = sender
 
 function main(){
-    const qb=new Bucket("qbittorent")
+    const qb=new Bucket("qbittorrent")
     const host=qb.get("host")
     const uname=qb.get("username")
     const pwd=qb.get("password")
     if(!host || !uname || !pwd){
-        let tip="请使用命令'set qbittorent host ip:端口'设置qb面板地址\n"
-        tip+="请使用命令'set qbittorent username 账号'设置qb面板登录账号\n"
-        tip+="请使用命令'set qbittorent password 账号'设置qb面板登录密码\n"
+        let tip="请使用命令'set qbittorrent host ip:端口'设置qb面板地址\n"
+        tip+="请使用命令'set qbittorrent username 账号'设置qb面板登录账号\n"
+        tip+="请使用命令'set qbittorrent password 账号'设置qb面板登录密码\n"
         s.reply(tip)
         return
     }
@@ -178,6 +178,10 @@ function main(){
         let inp=s.listen(60000)
         if(!inp || isNaN(Number(inp.getContent())) || Math.abs(inp.getContent())>maxnum){
             s.reply("未选择或者输入有误")
+            return
+        }
+        else if(inp.getContent()=="q"){
+            s.reply("已取消退出")
             return
         }
         if(torrAdd(host,ck,results[inp.getContent()-1].fileUrl))    

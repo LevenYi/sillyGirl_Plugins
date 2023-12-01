@@ -1,6 +1,6 @@
 /**
  * @author https://t.me/sillyGirl_Plugin
- * @version v1.3.0
+ * @version v1.3.2
  * @create_at 2022-09-19 15:06:22
  * @description 京东登陆插件，已对接nolanPro与rabbitPro，需安装qinglong与something模块
  * @title 京东登陆
@@ -35,13 +35,14 @@ const DefaultQL=1
 //对接nolan Pro
 //设置nolan Pro地址
 //set jd_cookie nolanPro_addr ?
-//设置nolan Pro对接机器人的token
+
+//设置nolan Pro对接机器人的token--无需设置
 //set jd_cookie nolanPro_token ?
 
 
 //【rabbit】
 //对接rabbitPro:set jd_cookie rabbitPro_addr ?
-//设置rabbitPro上车容器:set jd_cookie rabbitPro_ql ? (rabbitPro后台容器序号)
+//设置rabbitPro上车容器:set jd_cookie rabbitPro_ql ? (rabbitPro后台容器序号，默认2号容器，即除bot容器外的第一个容器)
 
 //【提交ck】--本功能已删除
 //短信登陆后上传ck的容器(对应“青龙管理”的容器序号，若将ck交由芝士处理，本项设置为0)
@@ -53,7 +54,7 @@ const qlc=1
 //依次为nolanPro、rabbitPro，不可用的方式填0
 //例:[2,1]表示优先调用nolanPro登陆，nolanPro不可用时自动切换至rabbitPro
 //例:[0,1]表示仅使用rabbitPro登陆
-const SP=[1,2]
+const SP=[2,1]
 
 //【扫码登陆优先级】
 //依次为nolanPro、rabbitPro,其他同上
@@ -83,13 +84,15 @@ const WAIT=3*60*1000	//输入等待时长
 const VerifyTimes=3	//验证重试次数
 const nolanPro=jddb.get("nolanPro_addr")
 const rabbitPro=jddb.get("rabbitPro_addr")
-const ql_server=jddb.get("rabbitPro_ql")
+var temp=jddb.get("rabbitPro_ql")
+const ql_server=temp?temp:2
 
 
 const handle=function(s){
-	if(s.getChatId())
+	if(s.getChatId()){
+		sleep(500)
 		s.recallMessage(Number(s.getMessageId()).toString())
-	sleep(400)
+	}
 }
 
 function notifyMasters(msg){
@@ -254,6 +257,7 @@ function NolanProSms(Tel){
 		if(result && result!==true){	//登陆成功
 			console.log(result)
 			let pin=decodeURI(result)==result?encodeURI(result):result
+			UpdateUserData(pin)	//更新账号数据
 			s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 			if(pins.indexOf(pin)!=-1)
 				notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：NolanPro短信")
@@ -356,12 +360,14 @@ function NolanProQR(){
         	s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 			return pin
         }
-		else if(data.message=="请先获取二维码"){	//二维码失效      
-    		s.reply("扫码超时")
-			return true
+		else if(data.message=="请手机客户端确认登录" || data.message=="二维码未扫描，请扫描二维码"){
+			continue
 		}
-		else if(data.message=="二维码已取消授权"){
-			s.reply(data.message)
+		else if(data.message=="请先获取二维码"){	//二维码失效      
+    		break
+		}
+		else{
+			s.reply("异常,请联系管理员："+data.message?data.message:resp.body)
 			return true
 		}
 	}
@@ -414,7 +420,10 @@ function RabbitProQR(){
         })
 		data=JSON.parse(resp.body)
 		console.log(unescape(resp.body.replace(/\\u/g,"%u")))
-        if(data.code==200){	//登陆成功
+		if(data.code==56 || data.code==57){		//继续轮询 未扫码:56 扫码未确认:57
+			continue
+		}
+        else if(data.code==200){	//登陆成功
 			let pin=decodeURI(data.pin)==data.pin ? encodeURI(data.pin):data.pin
 			if(pins.indexOf(pin)!=-1)
 				notifyMasters("报告老板，[ "+pin+" ]更新账号！\n绑定客户："+s.getUserId()+"("+s.getPlatform()+")\n登陆方式：rabbit扫码")
@@ -425,15 +434,13 @@ function RabbitProQR(){
         	s.reply("登陆成功，账号更新中...\n请等待几分钟后再查询账号信息")
 			return pin
         }
-		else if(data.code==503){	//扫码后取消登陆
-			s.reply(data.msg)
-			return true
-		}
 		else if(data.code==502){	//二维码失效
-            s.reply("扫码超时")
+            break
+		}
+		else{	//其他code  账号风控:220  扫码后取消:503 
+			s.reply("异常，请联系管理员："+data.msg?data.msg:resp.body)
 			return true
 		}
-		//其他code 56:未扫码 57:扫码未确认 503:取消扫码
 	}
     s.reply("扫码超时")
 	return true
@@ -603,6 +610,13 @@ function VerifyCode(Tel,addr,token){
 					let tip="该账号需进行短信验证，请在三分钟内使用手机"+info.phone+"编辑短信“"+info.uplink_tocontent+"”发送至"+info.uplink_tophone
 				 	tip+="\n请在完成如上操作后,回复“已确认”"
 					s.reply(tip)
+			}
+			else if(data.RiskUrl){
+				// let qrurl="https://api.pwmqr.com/qrcode/create/?url="+data.RiskUrl
+				// s.reply(s.getPlatform()=="qq"?st.CQ_Image(qrurl):image(qrurl))
+				// s.reply("请使用京东app扫码或者点击访问：")
+				s.reply("请打开以下链接进行二次验证，并在二次验证后重新登陆："+data.RiskUrl)
+				return true
 			}
 			else{
 				s.reply("未知验证，请联系管理员！\n\n"+JSON.stringify(data))
